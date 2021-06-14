@@ -9,16 +9,16 @@
 #'
 
 merge_small <- function(pref, split_codes){
-  
+
   # initialize the merge the municipalities that are not designated to be split by user
-  merged <- pref[pref$code %in% split_codes == FALSE, ]  %>% group_by(code) %>% 
-    summarize(geometry = st_union(geometry), pop = sum(pop))
-  
+  merged <- pref[pref$code %in% split_codes == FALSE, ]  %>% group_by(code) %>%
+    summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+
   # adding back the split municipalities
   for (muni in split_codes) {
     merged <- dplyr::bind_rows(pref[pref$code == muni, ], merged)
   }
-  
+
   return(merged)
-  
+
 }

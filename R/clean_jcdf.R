@@ -10,13 +10,13 @@
 clean_jcdf <- function(path){
 
   # download the raw JCDF data
-  pref_raw <- st_read(path)
+  pref_raw <- sf::st_read(path)
 
   # filter out water surfaces and extraneous port data
   pref <- pref_raw %>%
-      filter(pref_raw$HCODE != 8154, )  %>%
-      group_by(PREF, CITY, KIHON1) %>%
-      summarize(geometry = st_union(geometry), JINKO = sum(JINKO))
+      dplyr::filter(pref_raw$HCODE != 8154, )  %>%
+      dplyr::group_by(PREF, CITY, KIHON1) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO))
 
   # reformatting the types of the JCDF data
   pref$PREF <- as.numeric(pref$PREF)
