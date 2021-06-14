@@ -8,29 +8,29 @@
 #'
 
 clean_jcdf <- function(path){
-  
+
   # download the raw JCDF data
   pref_raw <- st_read(path)
-  
+
   # filter out water surfaces and extraneous port data
-  pref <- pref_raw %>% 
-      filter(nagasaki_raw$HCODE != 8154, )  %>%
-      group_by(PREF, CITY, KIHON1) %>% 
+  pref <- pref_raw %>%
+      filter(pref_raw$HCODE != 8154, )  %>%
+      group_by(PREF, CITY, KIHON1) %>%
       summarize(geometry = st_union(geometry), JINKO = sum(JINKO))
-  
+
   # reformatting the types of the JCDF data
   pref$PREF <- as.numeric(pref$PREF)
   pref$CITY <- as.numeric(pref$CITY)
-  
+
   # creates municipality codes, of the form XXYYY
-  pref$REGION <- (1000*pref$PREF + pref$CITY) 
-  
+  pref$REGION <- (1000*pref$PREF + pref$CITY)
+
   pref <- pref[, -c(1, 2)]
   names(pref) <- c("town", "geometry", "pop", "code")
-  
+
   # deleting redundant municipality-wide shapes
   pref <- pref[which(pref$town != "0000"), ]
-  
+
   return(pref)
-  
+
 }
