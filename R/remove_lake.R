@@ -20,8 +20,10 @@ remove_lake <- function(pref_raw, sf_lake, name_lake){
     dplyr::filter(W09_001 %in% name_lake) %>%
     sf::st_sf()
 
+  pref_nolake <- sf::st_difference(pref_raw, sf_lake)
+
   # Difference
-  return(sf::st_difference(pref_raw, sf_lake))
+  return(pref_nolake)
 
 }
 
