@@ -1,14 +1,16 @@
 #' Adding ferry-related adjacencies
 #'
 #' @param pref sf object of cleaned, collated, census data for a prefecture
-#' @param pref_num numeric prefix for prefecture (e.g. Hokkaido: 1, Shiga: 25).
 #'
 #' @return array with two columns, containing start port location to end port location for boats
 #'
 #' @concept organizedata
 #'
 
-add_ferries <- function(pref, pref_num){
+add_ferries <- function(pref){
+
+  # find numeric prefix for prefecture
+  pref_num <- floor(pref$code[1]/1000)
 
   # import route and port data
   data("route_data")
