@@ -2,7 +2,7 @@
 #'
 #' @param pref_raw sf object of census data for a prefecture
 #' @param sf_lake sf object of GIS data of Japanese lakes
-#' @param name_lake name of character vector. Use quotation marks.
+#' @param name_lake character vector containing name of lakes
 #'
 #' @return an array with the municipality name and corresponding codes
 #'
@@ -17,10 +17,11 @@ remove_lake <- function(pref_raw, sf_lake, name_lake){
 
   # Specify lake
   sf_lake <- sf_lake %>%
-    dplyr::filter(W09_001 == name_lake) %>%
+    dplyr::filter(W09_001 %in% name_lake) %>%
     sf::st_sf()
 
   # Difference
-  sf::st_difference(pref_raw, sf_lake)
+  return(sf::st_difference(pref_raw, sf_lake))
+
 }
 
