@@ -26,6 +26,7 @@ clean_jcdf <- function(path){
   # creates municipality codes, of the form XXYYY
   pref$REGION <- (1000*pref$PREF + pref$CITY)
 
+  # delete columns and relabel
   pref <- pref[, -c(1, 2)]
   names(pref) <- c("town", "geometry", "pop", "code")
 

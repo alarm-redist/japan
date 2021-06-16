@@ -19,6 +19,7 @@ merge_small <- function(pref, split_codes){
     merged <- dplyr::bind_rows(pref[pref$code == muni, ], merged)
   }
 
+  # return the result
   return(merged)
 
 }

@@ -9,20 +9,26 @@
 #' @concept getdata
 #'
 
-status_quo_match <- function(pref, sf_district, pref_code){
+status_quo_match <- function(pref, pref_code){
+
+  sf_district <- data("district_data")
 
   # subset to the interested prefecture
   sf_district <- sf_district %>%
     dplyr::filter(ken == pref_code)
 
-  # Re-projecting sf_district to match pref's CRS.
+  # re-projecting sf_district to match pref's CRS.
   sf::st_crs(sf_district) <- sf::st_crs(pref)
 
+  # find intersection to label the districts
   pref_ku <- sf::st_intersection(pref, sf_district) %>%
     dplyr::select(town, pop, code, ku, geometry)
 
+  # relabel columns
   names(pref_ku) <- c("town", "pop", "code", "cd", "geometry")
 
+  # return the result
   return(pref_ku)
+
 }
 

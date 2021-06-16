@@ -1,7 +1,6 @@
 #' Remove a Lake
 #'
 #' @param pref_raw sf object of census data for a prefecture
-#' @param sf_lake sf object of GIS data of Japanese lakes
 #' @param name_lake character vector containing name of lakes
 #'
 #' @return an array with the municipality name and corresponding codes
@@ -10,19 +9,22 @@
 #'
 
 # Function
-remove_lake <- function(pref_raw, sf_lake, name_lake){
+remove_lake <- function(pref_raw, name_lake){
 
-  # Re-projecting df_lake to match sf_pref's CRS.
-  sf::st_crs(sf_lake) <- sf::st_crs(pref_raw)
+  data("lake_data")
 
-  # Specify lake
-  sf_lake <- sf_lake %>%
+  # re-projecting sf_lake to match pref_raw's CRS.
+  sf::st_crs(lake_data) <- sf::st_crs(pref_raw)
+
+  # specify lake
+  lake_data <- lake_data %>%
     dplyr::filter(W09_001 %in% name_lake) %>%
     sf::st_sf()
 
-  pref_nolake <- sf::st_difference(pref_raw, sf_lake)
+  # find geographical difference
+  pref_nolake <- sf::st_difference(pref_raw, lake_data)
 
-  # Difference
+  # return result
   return(pref_nolake)
 
 }
