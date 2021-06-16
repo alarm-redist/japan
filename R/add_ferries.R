@@ -1,0 +1,56 @@
+#' Adding ferry-related adjacencies
+#'
+#' @param pref sf object of cleaned, collated, census data for a prefecture
+#' @param pref_num numeric prefix for prefecture (e.g. Hokkaido: 1, Shiga: 25).
+#'
+#' @return array with two columns, containing start port location to end port location for boats
+#'
+#' @concept organizedata
+#'
+
+add_ferries <- function(pref, pref_num){
+
+  # import route and port data
+  data("route_data")
+  data("port_data")
+
+  # re-projecting port and route data to match pref's CRS.
+  sf::st_crs(route_data) <- sf::st_crs(pref)
+  sf::st_crs(port_data) <- sf::st_crs(pref)
+
+  # selecting columns of route data (start port, stop port)
+  route_data <- route_data %>% dplyr::select(N09_011, N09_014)
+  names(route_data) <- c("start", "stop", "geometry")
+
+  # filter out the routes that are intra-prefectural
+  pref_internal <- route_data %>% dplyr::filter(substr(route_data$start, 1, 2) == as.character(pref_num)
+                                                & substr(route_data$stop, 1, 2) == as.character(pref_num), )
+
+  # find the ports located within prefecture of choice
+  pref_ports <- port_data %>% dplyr::filter(substr(N09_001, 1, 2) == as.character(pref_num), )
+
+  # create "closest" column that finds the municipality/district in which the port is located
+  pref_ports$closest <- flatten(nngeo:::st_nn(pref_ports, pref))
+
+  # sort the ports in order
+  for (x in 1:length(pref_internal$start)) {
+
+    array <- as.numeric(c(pref_ports$closest[which(pref_ports$N09_001 == pref_internal$start[x])],
+                          pref_ports$closest[which(pref_ports$N09_001 == pref_internal$stop[x])]))
+
+    pref_internal$start[x] <- min(array)
+    pref_internal$stop[x] <- max(array)
+
+  }
+
+  # isolate unique routes
+  pref_internal <- unique(cbind(as.numeric(pref_internal$start), as.numeric(pref_internal$stop)))
+
+  # delete routes where start/stop municipalities are the same
+  pref_internal <- pref_internal %>% dplyr::filter(pref_internal[, 1] != pref_internal[, 2], )
+
+  # return result
+  return(pref_internal)
+
+}
+
