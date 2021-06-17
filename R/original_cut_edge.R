@@ -1,4 +1,4 @@
-#' Calculate Compactness (cut edge)
+#' Calculate Original Compactness (cut edge)
 #'
 #' @param pref an sf object with cleaned, collated version of the census data
 #' @param pop_tol the vector of precinct populations. Defaults to the pop, population, or total_pop columns, if one exists.
