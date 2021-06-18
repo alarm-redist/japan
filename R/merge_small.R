@@ -24,7 +24,6 @@ merge_small <- function(pref, split_codes){
         bound <- dplyr::bind_rows(split, merged)
   
   # return the result
-  pref <- bound
-  return(pref)
+  return(bound)
 
 }
