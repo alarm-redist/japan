@@ -12,18 +12,16 @@
 merge_small <- function(pref, split_codes){
 
   # initialize the merge the municipalities that are not designated to be split by user
-  collapsed <- pref[pref$code %in% intact_codes == FALSE,] %>%
-          group_by(code) %>%
-          summarise(geometry = st_union(geometry), pop = sum(pop))
-
+  merged <- pref[pref$code %in% split_codes == FALSE, ]  %>%
+            group_by(code) %>%
+            summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+  
   # adding back the split municipalities
-  for(i in intact_codes){
-                intact <- pref[pref$code ==  i,] %>%
-                group_by(code) %>%
-                 summarise(geometry = st_union(geometry), pop = sum(pop))
-            }
+  for(i in split_codes){
+          split <- dplyr::bind_rows(nagasaki[nagasaki$code == split_codes,])
+        }
   # Bind together
-        bound <- dplyr::bind_rows(intact, collapsed)
+        bound <- dplyr::bind_rows(split, merged)
   
   # return the result
   pref <- bound
