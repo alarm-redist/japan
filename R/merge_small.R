@@ -8,19 +8,25 @@
 #' @concept getdata
 #'
 
+#Ex: nagasaki <- merge_small(nagasaki, split_codes = c(42201, 42202))
 merge_small <- function(pref, split_codes){
 
   # initialize the merge the municipalities that are not designated to be split by user
-  merged <- pref[pref$code %in% split_codes == FALSE, ]  %>%
-    group_by(code, cd) %>%
-    summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+  collapsed <- pref[pref$code %in% intact_codes == FALSE,] %>%
+          group_by(code) %>%
+          summarise(geometry = st_union(geometry), pop = sum(pop))
 
   # adding back the split municipalities
-  for (muni in split_codes) {
-    merged <- dplyr::bind_rows(pref[pref$code == muni, ], merged)
-  }
-
+  for(i in intact_codes){
+                intact <- pref[pref$code ==  i,] %>%
+                group_by(code) %>%
+                 summarise(geometry = st_union(geometry), pop = sum(pop))
+            }
+  # Bind together
+        bound <- dplyr::bind_rows(intact, collapsed)
+  
   # return the result
-  return(merged)
+  pref <- bound
+  return(pref)
 
 }
