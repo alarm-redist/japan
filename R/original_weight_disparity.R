@@ -30,8 +30,8 @@ original_weight_disparity <- function(pref, parameter){
     }
 
   }else if(parameter == "HH"){
-    # To be fixed
-    score <- NA
+
+    score <- sum(orig$pop^2)/sum(orig$pop)^2
   }
 
   return(score)
