@@ -18,7 +18,7 @@ merge_small <- function(pref, split_codes){
   
   # adding back the split municipalities
   for(i in split_codes){
-          split <- dplyr::bind_rows(nagasaki[nagasaki$code == split_codes,])
+          split <- dplyr::bind_rows(pref[pref$code == split_codes,])
         }
   # Bind together
         bound <- dplyr::bind_rows(split, merged)
