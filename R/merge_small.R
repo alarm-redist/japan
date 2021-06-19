@@ -9,21 +9,64 @@
 #'
 
 #Ex: nagasaki <- merge_small(nagasaki, split_codes = c(42201, 42202))
-merge_small <- function(pref, split_codes){
-
-  # initialize the merge the municipalities that are not designated to be split by user
-  merged <- pref[pref$code %in% split_codes == FALSE, ]  %>%
+merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
+  if(missing(split_codes)) {
+     if(missing(intact_codes)){
+     #######No municipality split +  no wards to keep#########
+       print("No need to use this function")
+     }
+    
+    else{
+    #######No municipality split + one or more wards to keep intact########
+    #(as in the case of Kyoto)
+      #municipalities to keep intact  
+      collapsed <- pref[pref$code %in% intact_codes == FALSE,] %>%
+        group_by(code) %>%
+        summarise(geometry = st_union(geometry), pop = sum(pop))
+      #group together the wards
+      for(i in intact_codes){
+        intact <- dplyr::bind_rows(pref[pref$code ==  intact_codes,] %>%
+             group_by(code) %>%
+             summarise(geometry = st_union(geometry), pop = sum(pop)))
+        }
+      #Bind together
+      bound <- dplyr::bind_rows(intact, collapsed)
+    }
+    
+  } else {
+    if(missing(intact_codes)){
+    ########One or more municipality split + no wards to keep intact########
+    #(as in the case of Nagasaki)
+        #municipalities to keep intact
+        merged <- pref[pref$code %in% split_codes == FALSE, ]  %>%
             group_by(code) %>%
             summarize(geometry = sf::st_union(geometry), pop = sum(pop))
-  
-  # adding back the split municipalities
-  for(i in split_codes){
+        # municipalities to split(Ex: Nagasaki, Sasebo)
+        for(i in split_codes){
           split <- dplyr::bind_rows(pref[pref$code == split_codes,])
         }
-  # Bind together
+        # adding back the municipalities  
         bound <- dplyr::bind_rows(split, merged)
-  
-  # return the result
+        
+    }else{
+      #########One or more municipality split + one or more wards to keep intact#########
+      #municipalities to split
+      for(i in split_codes){
+        split <- dplyr::bind_rows(pref[pref$code == split_codes,])
+      }
+      #group together the wards
+      for(i in intact_codes){
+        intact <- dplyr::bind_rows(pref[pref$code ==  intact_codes,] %>%
+                                     group_by(code) %>%
+                                     summarise(geometry = st_union(geometry), pop = sum(pop)))
+      }
+      #other municipalities
+      merged <- pref[pref$code %in% c(split_codes, intact_codes) == FALSE, ]  %>%
+        group_by(code) %>%
+        summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+      #adding back the municipalities
+      bound <- dplyr::bind_rows(split, intact, merged)
+    }
+  }
   return(bound)
-
 }
