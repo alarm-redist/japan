@@ -9,11 +9,10 @@
 
 original_weight_disparity_table <- function(pref){
 
+  # group by districts
   orig <- pref %>%
     group_by(cd) %>%
     summarise(JINKO=sum(JINKO))
-
-  original_weight_disparity <- NA
 
   # Max to Min ratio
   max_to_min <- NA
@@ -34,6 +33,7 @@ original_weight_disparity_table <- function(pref){
   HH <- NA
   HH <- sum(orig$JINKO^2)/sum(orig$JINKO)^2
 
+  # create table output
   original_weight_disparity_table <- NA
   original_weight_disparity_table <- dplyr::tibble(
     `max_to_min` = max_to_min,
