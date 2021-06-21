@@ -11,28 +11,28 @@ original_weight_disparity_table <- function(pref){
 
   orig <- pref %>%
     group_by(cd) %>%
-    summarise(pop=sum(pop))
+    summarise(JINKO=sum(JINKO))
 
   original_weight_disparity <- NA
 
   # Max to Min ratio
   max_to_min <- NA
-  max_to_min <- max(orig$pop)/min(orig$pop)
+  max_to_min <- max(orig$JINKO)/min(orig$JINKO)
 
   # Gini Coefficient
   Gini <- NA
-  Gini <- reldist::gini(x = orig$pop,
+  Gini <- reldist::gini(x = orig$JINKO,
                         weights = rep(1, nrow(orig)))
 
   # Loosemore Hanby index
   LH <- NA
   for (i in 1:nrow(orig)){
-    LH <-  (abs((orig$pop[i] / sum(orig$pop)) - (1 / nrow(orig)))) / 2
+    LH <-  (abs((orig$JINKO[i] / sum(orig$JINKO)) - (1 / nrow(orig)))) / 2
   }
 
   # Hirshman Herfindahl index
   HH <- NA
-  HH <- sum(orig$pop^2)/sum(orig$pop)^2
+  HH <- sum(orig$JINKO^2)/sum(orig$JINKO)^2
 
   original_weight_disparity_table <- NA
   original_weight_disparity_table <- dplyr::tibble(
