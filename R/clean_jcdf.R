@@ -7,30 +7,30 @@
 #' @concept getdata
 #'
 
-clean_jcdf <- function(path){
+clean_jcdf <- function(path) {
 
   # download the raw JCDF data
   pref_raw <- sf::st_read(path)
   pref_raw <- sf::st_make_valid(pref_raw)
 
+  # initialize pref object
+  pref <- NA
+
   # filter out water surfaces and extraneous port data
   pref <- pref_raw %>%
     dplyr::filter(pref_raw$KIHON1 != "0000" & pref_raw$HCODE != 8154, )  %>%
-    dplyr::group_by(PREF, CITY, KIHON1) %>%
-    dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO))
+    dplyr::group_by(PREF, CITY, KIHON1, CITY_NAME) %>%
 
-  # reformatting the types of the JCDF data
-  pref$PREF <- as.numeric(pref$PREF)
-  pref$CITY <- as.numeric(pref$CITY)
+    # make smallest geopolitical subdivision to level 2
+    dplyr::slice(1) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO), S_NAME) %>%
 
-  # creates municipality codes, of the form XXYYY
-  pref$REGION <- (1000*pref$PREF + pref$CITY)
-
-  # delete columns and relabel
-  pref <- pref[, -c(1, 2)]
-  names(pref) <- c("town", "geometry", "pop", "code")
+    # make 5 digit municipality code
+    dplyr::mutate(code = 1000*as.numeric(PREF) + as.numeric(CITY)) %>%
+    dplyr::select(code, CITY_NAME, S_NAME, KIHON1, JINKO, geometry)
 
   # return final
   return(pref)
 
 }
+
