@@ -33,8 +33,10 @@ calc_kokumin <- function(pref, path_age){
   age_pops$foreign[is.na(age_pops$foreign)] <- 0
 
   # calculate number of Japanese nationals
-  age_pops$KOKUMIN <- (age_pops$JINKO - age_pops$foreign)
-  age_pops <- age_pops %>% dplyr::filter(age_pops$KIHON1 != "0000", ) %>% dplyr::select(code, KIHON1, KOKUMIN)
+  age_pops$pop_national <- (age_pops$JINKO - age_pops$foreign)
+  age_pops <- age_pops %>%
+              dplyr::filter(age_pops$KIHON1 != "0000", ) %>%
+              dplyr::select(code, KIHON1, pop_national)
 
   # left join with original pref shapefile to format properly.
   pref_new <- dplyr::left_join(pref, age_pops, by = c("code", "KIHON1"))
