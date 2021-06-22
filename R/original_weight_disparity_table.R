@@ -2,7 +2,7 @@
 #'
 #' @param pref an sf object with cleaned, collated version of the census data
 #'
-#' @return a table with the ippyo no kakusa parameters for the oiginal plan
+#' @return a table with the ippyo no kakusa parameters for the original plan
 #'
 #' @concept calculate
 #'

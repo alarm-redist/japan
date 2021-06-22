@@ -3,7 +3,7 @@
 #' @param pref an sf object with cleaned, collated version of the census data
 #' @param parameter character vector of parameter (`max_to_min`, `Gini`, `LH`, and `HH`).
 #'
-#' @return a vector with the ippyo no kakusa for the oiginal plan
+#' @return a vector with the ippyo no kakusa for the original plan
 #'
 #' @concept calculate
 #'
