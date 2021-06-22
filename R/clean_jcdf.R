@@ -22,12 +22,11 @@ clean_jcdf <- function(path) {
     dplyr::group_by(PREF, CITY, KIHON1, CITY_NAME) %>%
 
     # make smallest geopolitical subdivision to level 2
-    dplyr::slice(1) %>%
-    dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO), S_NAME) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO)) %>%
 
     # make 5 digit municipality code
     dplyr::mutate(code = 1000*as.numeric(PREF) + as.numeric(CITY)) %>%
-    dplyr::select(code, CITY_NAME, S_NAME, KIHON1, JINKO, geometry)
+    dplyr::select(code, CITY_NAME, KIHON1, JINKO, geometry)
 
   # return final
   return(pref)
