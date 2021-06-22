@@ -4,7 +4,7 @@
 #'
 #'
 #' @param pref an sf object with cleaned, collated version of the census data
-#' @param path_age file path to the csv containing population by age
+#' @param age_pops csv containing population by age + foreigner population
 #'
 #' @return a dataframe similar to pref, with an additional KOKUMIN column containing the number of Japanese nationals
 #'
@@ -12,10 +12,7 @@
 #' @concept calculate
 #'
 
-calc_kokumin <- function(pref, path_age){
-
-  # read in the csv data for population by age
-  age_pops <- read.csv(file = path_age, fileEncoding = "Shift-JIS", skip = 5)
+calc_kokumin <- function(pref, age_pops){
 
   # select relevant columns and rename
   age_pops <- age_pops[which(age_pops[, 4] == 2), c(2, 3, 12, 42)]

@@ -1,16 +1,15 @@
 #' Download JCDF (Japan Census Data File)
 #'
-#' @param path string containing path to the shapefile census data
+#' @param pref_raw raw prefecture shapefile data downloaded using download_shp function
 #'
 #' @return a sf object with cleaned, collated version of the census data
 #'
 #' @concept getdata
 #'
 
-clean_jcdf <- function(path) {
+clean_jcdf <- function(pref_raw) {
 
-  # download the raw JCDF data
-  pref_raw <- sf::st_read(path)
+  # validate the pref_raw data to bypass sf-related errors
   pref_raw <- sf::st_make_valid(pref_raw)
 
   # initialize pref object
