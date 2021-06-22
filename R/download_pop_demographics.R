@@ -21,14 +21,13 @@ download_pop_demographics <- function(pref_code){
   }
 
   # download the files from the Japanese Government Statistics Portal (e-Stat)
-  fn = paste('data/003_', as.character(pref_code), '.csv', sep = '')
+  fn = paste('003_', as.character(pref_code), '.csv', sep = '')
 
   download.file(paste('https://github.com/reiy24/jcdf_data/releases/download/06232021/',
-                      fn, sep = ''),
-                paste('data/', fn, sep = ''))
+                      fn, sep = ''), paste('data/', fn, sep = ''))
 
   # return array
-  age_pops <- read.csv(file = paste('data/', fn, sep = ''), fileEncoding = "Shift-JIS", skip = 5)
+  age_pops <- read.csv(file = paste('data/', fn, sep = ''), fileEncoding = "Shift-JIS", skip = 5)[, -1]
   return(age_pops)
 
 }
