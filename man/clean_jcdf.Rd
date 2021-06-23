@@ -4,10 +4,10 @@
 \alias{clean_jcdf}
 \title{Download JCDF (Japan Census Data File)}
 \usage{
-clean_jcdf(path)
+clean_jcdf(pref_raw)
 }
 \arguments{
-\item{path}{string containing path to the shapefile census data}
+\item{pref_raw}{raw prefecture shapefile data downloaded using download_shp function}
 }
 \value{
 a sf object with cleaned, collated version of the census data

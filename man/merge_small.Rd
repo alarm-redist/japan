@@ -4,7 +4,7 @@
 \alias{merge_small}
 \title{Merge Components of Municipalities of Choice}
 \usage{
-merge_small(pref, split_codes)
+merge_small(pref, split_codes = NULL, intact_codes = NULL)
 }
 \arguments{
 \item{pref}{sf object of cleaned, collated, census data for a prefecture}

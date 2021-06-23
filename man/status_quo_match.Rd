@@ -4,14 +4,10 @@
 \alias{status_quo_match}
 \title{Match current districts}
 \usage{
-status_quo_match(pref, sf_district, pref_code)
+status_quo_match(pref)
 }
 \arguments{
 \item{pref}{sf object of cleaned, collated, census data for a prefecture}
-
-\item{sf_district}{sf object for legislative districts}
-
-\item{pref_num}{numeric prefix for prefecture (e.g. Hokkaido: 1, Shiga: 25).}
 }
 \value{
 sf object with current legislative district code added

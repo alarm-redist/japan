@@ -4,12 +4,10 @@
 \alias{remove_lake}
 \title{Remove a Lake}
 \usage{
-remove_lake(pref_raw, sf_lake, name_lake)
+remove_lake(pref_raw, name_lake)
 }
 \arguments{
 \item{pref_raw}{sf object of census data for a prefecture}
-
-\item{sf_lake}{sf object of GIS data of Japanese lakes}
 
 \item{name_lake}{character vector containing name of lakes}
 }
