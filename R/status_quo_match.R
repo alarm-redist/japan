@@ -19,7 +19,7 @@ status_quo_match <- function(pref){
 
   # subset to the interested prefecture
   sf_district <- sf_district %>%
-    dplyr::filter(ken == pref_num)
+    dplyr::filter(ken == pref_num, )
 
   # re-projecting sf_district to match pref's CRS.
   sf::st_crs(sf_district) <- sf::st_crs(pref)
