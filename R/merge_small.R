@@ -7,6 +7,8 @@
 #'
 #' @concept getdata
 #'
+#' @export
+#'
 
 #Ex: nagasaki <- merge_small(nagasaki, split_codes = c(42201, 42202))
 merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
@@ -15,11 +17,11 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
      #######No municipality split +  no wards to keep#########
        print("No need to use this function")
      }
-    
+
     else{
     #######No municipality split + one or more wards to keep intact########
     #(as in the case of Kyoto)
-      #municipalities to keep intact  
+      #municipalities to keep intact
       bound <- pref[pref$code %in% intact_codes == FALSE,] %>%
         group_by(code) %>%
         summarise(geometry = st_union(geometry), pop = sum(pop))
@@ -27,11 +29,11 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       for(i in 1:length(intact_codes)){
         intact <- pref[pref$code ==  intact_codes[i],] %>%
           group_by(code) %>%
-          summarise(geometry = st_union(geometry), pop = sum(pop)) 
+          summarise(geometry = st_union(geometry), pop = sum(pop))
         bound <- dplyr::bind_rows(bound, intact)
       }
     }
-    
+
   } else {
     if(missing(intact_codes)){
     ########One or more municipality split + no wards to keep intact########
@@ -46,7 +48,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
           split <- pref[pref$code == split_codes[i],]
           bound <- dplyr::bind_rows(bound, split)
         }
-        
+
     }else{
       #########One or more municipality split + one or more wards to keep intact#########
       #other municipalities

@@ -6,6 +6,7 @@
 #'
 #' @concept organizedata
 #'
+#' @export
 
 add_ferries <- function(pref){
 

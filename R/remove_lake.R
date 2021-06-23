@@ -7,6 +7,8 @@
 #'
 #' @concept getdata
 #'
+#' @export
+#'
 
 # Function
 remove_lake <- function(pref_raw, name_lake){

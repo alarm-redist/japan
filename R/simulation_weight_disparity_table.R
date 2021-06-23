@@ -6,6 +6,8 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
 
 simulation_weight_disparity_table <- function(redist_simulation_output){
 

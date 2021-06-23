@@ -7,6 +7,8 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
 
 original_cut_edge <- function(pref, pop_tol){
 

@@ -6,6 +6,8 @@
 #'
 #' @concept getdata
 #'
+#' @export
+#'
 
 get_municodes <- function(pref_raw){
 

@@ -6,6 +6,8 @@
 #'
 #' @concept getdata
 #'
+#' @export
+#'
 
 status_quo_match <- function(pref){
 

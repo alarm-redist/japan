@@ -11,6 +11,8 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
 
 calc_kokumin <- function(pref, age_pops){
 

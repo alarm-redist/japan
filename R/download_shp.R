@@ -6,6 +6,8 @@
 #'
 #' @concept downloaddata
 #'
+#' @export
+#'
 
 download_shp <- function(pref_code){
 

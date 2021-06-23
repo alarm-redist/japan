@@ -6,6 +6,8 @@
 #'
 #' @concept getdata
 #'
+#' @export
+#'
 
 clean_jcdf <- function(pref_raw) {
 

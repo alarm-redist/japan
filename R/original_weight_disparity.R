@@ -7,6 +7,8 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
 
 original_weight_disparity <- function(pref, parameter){
 

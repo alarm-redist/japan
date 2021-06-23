@@ -6,6 +6,10 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
+#' @importFrom reldist gini
+#'
 
 original_weight_disparity_table <- function(pref){
 

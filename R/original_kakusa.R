@@ -6,6 +6,8 @@
 #'
 #' @concept calculate
 #'
+#' @export
+#'
 
 original_kakusa <- function(pref){
 

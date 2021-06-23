@@ -6,6 +6,8 @@
 #'
 #' @concept downloaddata
 #'
+#' @export
+#'
 
 download_pop_demographics <- function(pref_code){
 
