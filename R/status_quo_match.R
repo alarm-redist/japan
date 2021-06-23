@@ -15,17 +15,17 @@ status_quo_match <- function(pref){
   pref_num <- floor(pref$code[1]/1000)
 
   # improt SMD shapefile data
-  sf_district <- data("district_data")
+  data("district_data")
 
   # subset to the interested prefecture
-  sf_district <- sf_district %>%
+  district_data <- district_data %>%
     dplyr::filter(ken == pref_num, )
 
   # re-projecting sf_district to match pref's CRS.
-  sf::st_crs(sf_district) <- sf::st_crs(pref)
+  sf::st_crs(district_data) <- sf::st_crs(pref)
 
   # find intersection to label the districts
-  pref_ku <- sf::st_intersection(pref, sf_district) %>%
+  pref_ku <- sf::st_intersection(pref, district_data) %>%
     dplyr::select(KIHON1, JINKO, code, ku, geometry)
 
   # return the result
