@@ -6,6 +6,8 @@
 #'
 #' @concept getdata
 #'
+#' @importFrom dplyr %>%
+#'
 #' @export
 #'
 
