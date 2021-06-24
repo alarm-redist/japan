@@ -28,7 +28,7 @@ status_quo_match <- function(pref){
 
   # find intersection to label the districts
   pref_ku <- sf::st_intersection(pref, district_data) %>%
-    dplyr::select(KIHON1, JINKO, code, ku, geometry)
+    dplyr::select(names(pref), ku)
 
   # return the result
   return(pref_ku)
