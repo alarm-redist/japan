@@ -14,16 +14,16 @@
 merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   if(missing(split_codes)) {
      if(missing(intact_codes)){
-     #######No municipality split +  no wards to keep#########
+      #######No municipality split +  no wards to keep#########
        bound <- pref %>%
          group_by(code) %>%
          summarise(geometry = st_union(geometry), pop = sum(pop))
      }
-    
+
     else{
     #######No municipality split + one or more wards to keep intact########
     #(as in the case of Kyoto)
-      #municipalities to keep intact  
+      #municipalities to keep intact
       bound <- pref[pref$code %in% intact_codes == FALSE,] %>%
         group_by(code) %>%
         summarise(geometry = st_union(geometry), pop = sum(pop))
@@ -31,11 +31,11 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       for(i in 1:length(intact_codes)){
         intact <- pref[pref$code ==  intact_codes[i],] %>%
           group_by(code) %>%
-          summarise(geometry = st_union(geometry), pop = sum(pop)) 
+          summarise(geometry = st_union(geometry), pop = sum(pop))
         bound <- dplyr::bind_rows(bound, intact)
       }
     }
-    
+
   } else {
     if(missing(intact_codes)){
     ########One or more municipality split + no wards to keep intact########
@@ -50,7 +50,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
           split <- pref[pref$code == split_codes[i],]
           bound <- dplyr::bind_rows(bound, split)
         }
-        
+
     }else{
       #########One or more municipality split + one or more wards to keep intact#########
       #other municipalities
@@ -73,3 +73,15 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   }
   return(bound)
 }
+© 2021 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
