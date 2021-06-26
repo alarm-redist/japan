@@ -16,26 +16,26 @@ original_weight_disparity_table <- function(pref){
   # group by districts
   orig <- pref %>%
     group_by(cd) %>%
-    summarise(JINKO=sum(JINKO))
+    summarise(pop=sum(pop))
 
   # Max to Min ratio
   max_to_min <- NA
-  max_to_min <- max(orig$JINKO)/min(orig$JINKO)
+  max_to_min <- max(orig$pop)/min(orig$pop)
 
   # Gini Coefficient
   Gini <- NA
-  Gini <- reldist::gini(x = orig$JINKO,
+  Gini <- reldist::gini(x = orig$pop,
                         weights = rep(1, nrow(orig)))
 
   # Loosemore Hanby index
   LH <- NA
   for (i in 1:nrow(orig)){
-    LH <-  (abs((orig$JINKO[i] / sum(orig$JINKO)) - (1 / nrow(orig)))) / 2
+    LH <-  (abs((orig$pop[i] / sum(orig$pop)) - (1 / nrow(orig)))) / 2
   }
 
   # Hirshman Herfindahl index
   HH <- NA
-  HH <- sum(orig$JINKO^2)/sum(orig$JINKO)^2
+  HH <- sum(orig$pop^2)/sum(orig$pop)^2
 
   # create table output
   original_weight_disparity_table <- NA
