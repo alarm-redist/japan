@@ -24,8 +24,10 @@ clean_2020_census <- function(total, foreigner) {
     tidyr::separate(...2, into = c("PREF", "PREF_NAME")) %>%
     # repeat the process with city code
     tidyr::separate(...3, into = c("code", "CITY_NAME")) %>%
-    # subset data
-    dplyr::select(PREF, code, total_pop)
+    # subset data with converting objects to numeric
+    dplyr::select(PREF = as.numeric(PREF),
+                  code = as.numeric(code),
+                  total_pop = as.numeric(total_pop))
 
   # clean foreigner data set
   # rename first column name for convenience
@@ -42,13 +44,14 @@ clean_2020_census <- function(total, foreigner) {
     tidyr::separate(...1, into = c("PREF", "PREF_NAME")) %>%
     tidyr::separate(...2, into = c("code", "CITY_NAME")) %>%
     # subset data
-    dplyr::select(code, foreigner_pop)
+    dplyr::select(code = as.numeric(code),
+                  foreigner_pop = as.numeric(foreigner_pop))
 
   # combine those two with using `code` column as key
   combined <- clean_total %>%
-    left_join(clean_foreigner, by = c('code')) %>%
+    dplyr::left_join(clean_foreigner, by = c('code')) %>%
     # calculate the population of nationals
-    dplyr::mutate(pop_national = as.numeric(total_pop) - as.numeric(foreigner_pop))
+    dplyr::mutate(pop_national = total_pop - foreigner_pop)
 
   # return final
   return(combined)
