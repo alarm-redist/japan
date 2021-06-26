@@ -48,7 +48,7 @@ clean_2020_census <- function(total, foreigner) {
   combined <- clean_total %>%
     left_join(clean_foreigner, by = c('code')) %>%
     # calculate the population of nationals
-    dplyr::mutate(national_pop = as.numeric(total_pop) - as.numeric(foreigner_pop))
+    dplyr::mutate(pop_national = as.numeric(total_pop) - as.numeric(foreigner_pop))
 
   # return final
   return(combined)
