@@ -20,18 +20,13 @@ clean_2020_census <- function(total, foreigner) {
     dplyr::mutate(total_pop = ...4 ) %>%
     # separate prefecture code and name
     # R cannot treat Japanese character
-    # thus, PREF_NAME will be removed later
-    tidyr::separate(...2, into = c("PREF", "PREF_NAME")) %>%
-    # repeat the process with city code
+    # thus, CITY_NAME will be removed later
     tidyr::separate(...3, into = c("code", "CITY_NAME")) %>%
     # subset data with converting objects to numeric
-    dplyr::select(PREF = as.numeric(PREF),
-                  code = as.numeric(code),
-                  total_pop = as.numeric(total_pop))
+    dplyr::summarise(code = as.numeric(code),
+                     total_pop = as.numeric(total_pop))
 
   # clean foreigner data set
-  # rename first column name for convenience
-  names(foreigner)[1] <- "...1"
   # same process with above
   clean_foreigner <- foreigner %>%
     # remove non-data columns
@@ -40,12 +35,11 @@ clean_2020_census <- function(total, foreigner) {
     dplyr::mutate(foreigner_pop = ...3) %>%
     # separate prefecture code and name
     # R cannot treat Japanese character
-    # thus, PREF_NAME will be removed later
-    tidyr::separate(...1, into = c("PREF", "PREF_NAME")) %>%
+    # thus, CITY_NAME will be removed later
     tidyr::separate(...2, into = c("code", "CITY_NAME")) %>%
     # subset data
-    dplyr::select(code = as.numeric(code),
-                  foreigner_pop = as.numeric(foreigner_pop))
+    dplyr::summarise(code = as.numeric(code),
+                     foreigner_pop = as.numeric(foreigner_pop))
 
   # combine those two with using `code` column as key
   combined <- clean_total %>%
