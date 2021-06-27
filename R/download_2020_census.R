@@ -32,11 +32,12 @@ download_2020_census <- function(type){
     download.file("https://www.e-stat.go.jp/stat-search/file-download?statInfId=000032092574&fileKind=0",
                   "data/2020census/z01.xlsx")
     # return the data frame
-    census_2020 <- readxl::read_excel("data/2020census/z01.xlsx")
+    census_2020 <- readxl::read_excel("data/2020census/z01.xlsx", col_types = c("text", "text", "numeric"))
 
   } else{
-    census_2020 <- stop("Specify data type either 'total' or 'foreigner'. ")
+    census_2020 <- stop("Specify data type either 'total' or 'foreigner'.")
   }
 
   return(census_2020)
+
 }
