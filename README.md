@@ -2,16 +2,16 @@
 
 # Work Flow
 
-## Download data. 
+## Download Data   
 1. `download_shp`
 2. `download_2020_census`
 
-## Clean data. 
+## Clean Data 
 1. `clean_jcdf`
 2. `clean_2020_census`
-3. merged <- pref %>%
-   group_by(code, CITY_NAME) %>%
-   summarise(geometry = sf::st_union(geometry)) %>%
+3. merged <- pref %>%   
+   group_by(code, CITY_NAME) %>%  
+   summarise(geometry = sf::st_union(geometry)) %>%  
    dplyr::left_join(census2020, by = c('code'))
   
 ## Add/Remove Elements
