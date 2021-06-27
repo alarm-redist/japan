@@ -9,10 +9,11 @@
 ## Clean Data 
 1. `clean_jcdf`
 2. `clean_2020_census`
-3. merged <- pref %>%   
-   group_by(code, CITY_NAME) %>%  
-   summarise(geometry = sf::st_union(geometry)) %>%  
-   dplyr::left_join(census2020, by = c('code'))
+3. Combine them. For example,   
+   COMBINED <- pref %>%   
+               dplyr::group_by(code, CITY_NAME) %>%  
+               summarise(geometry = sf::st_union(geometry)) %>%  
+               dplyr::left_join(census2020, by = c('code'))
   
 ## Add/Remove Elements
 1. `add_ferries`
