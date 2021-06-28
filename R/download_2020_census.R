@@ -12,10 +12,10 @@
 download_2020_census <- function(type){
 
   # check if data/ folder exists in working directory
-  if(!file.exists("data/2020census")){
+  if(!file.exists("~/data/2020census")){
 
     # if not, create data folder
-    dir.create("data/2020census")
+    dir.create("~/data/2020census")
 
   }
 
@@ -25,14 +25,14 @@ download_2020_census <- function(type){
     download.file("https://www.e-stat.go.jp/stat-search/file-download?statInfId=000032092710&fileKind=0",
                   "data/2020census/a01.xlsx")
     # return the data frame
-    census_2020 <- readxl::read_excel("data/2020census/a01.xlsx")
+    census_2020 <- readxl::read_excel("~/data/2020census/a01.xlsx")
 
   } else if(type == "foreigner"){
     ## foreigners
     download.file("https://www.e-stat.go.jp/stat-search/file-download?statInfId=000032092574&fileKind=0",
-                  "data/2020census/z01.xlsx")
+                  "~/data/2020census/z01.xlsx")
     # return the data frame
-    census_2020 <- readxl::read_excel("data/2020census/z01.xlsx", col_types = c("text", "text", "numeric"))
+    census_2020 <- readxl::read_excel("~/data/2020census/z01.xlsx", col_types = c("text", "text", "numeric"))
 
   } else{
     census_2020 <- stop("Specify data type either 'total' or 'foreigner'.")

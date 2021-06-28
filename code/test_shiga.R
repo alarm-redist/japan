@@ -1,6 +1,7 @@
 library(tidyverse)
 
 # pull functions from jcdf
+setwd("R")
 files.sources = list.files()
 sapply(files.sources, source)
 
