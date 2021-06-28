@@ -23,7 +23,7 @@ clean_2020_census <- function(total, foreigner) {
     # thus, CITY_NAME will be removed later
     tidyr::separate(...3, into = c("code", "CITY_NAME")) %>%
     # subset data with converting objects to numeric
-    dplyr::summarise(code = sprintf('%05d', as.numeric(code)),
+    dplyr::summarise(code = as.numeric(code),
                      pop_total = as.numeric(pop_total))
 
   # clean foreigner data set
@@ -38,7 +38,7 @@ clean_2020_census <- function(total, foreigner) {
     # thus, CITY_NAME will be removed later
     tidyr::separate(...2, into = c("code", "CITY_NAME")) %>%
     # subset data
-    dplyr::summarise(code = sprintf('%05d', as.numeric(code)),
+    dplyr::summarise(code = as.numeric(code),
                      pop_foreigner = as.numeric(pop_foreigner))
 
   # combine those two with using `code` column as key
