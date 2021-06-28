@@ -17,7 +17,7 @@
 calc_kokumin <- function(pref, age_pops){
 
   # select relevant columns and rename
-  age_pops <- age_pops[which(age_pops[, 4] == 2), c(1, 2, 11, 41)]
+  age_pops <- age_pops[which(age_pops[, 3] == 2), c(1, 2, 11, 41)]
   names(age_pops) <- c("code", "KIHON1", "JINKO", "foreign")
 
   # adding padded zeros to match the pref shapefile format
