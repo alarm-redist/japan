@@ -2,7 +2,7 @@ library(tidyverse)
 
 # pull functions from jcdf
 # set working directory to the function folder
-setwd("../R")
+setwd("R")
 files.sources = list.files()
 sapply(files.sources, source)
 # set working directory back to `jcdf`
