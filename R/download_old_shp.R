@@ -33,6 +33,7 @@ download_old_shp <- function(pref_code){
   file.remove("data/old_shp_data.zip")
   
   # return the shp file
-  pref_raw <- sf::st_read(paste("data/N03-001001_", as.character(pref_code), '-g_AdministrativeBoundary.shp', sep = ''))
+  pref_raw <- sf::st_read(paste("data/N03-001001_", as.character(pref_code), '-g_AdministrativeBoundary.shp', sep = ''),
+                          options = "ENCODING = CP932")
   return(pref_raw)
 }
