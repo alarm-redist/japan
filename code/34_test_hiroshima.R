@@ -11,3 +11,19 @@ setwd("..")
 # Clean data
 pref_raw <- download_shp(34) #34:Hiroshima
 pref <- clean_jcdf(pref_raw = pref_raw)
+
+
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
+merged <- pref %>%
+  group_by(code, CITY_NAME) %>%
+  summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code'))
+
+check <- merged %>%
+  ggplot() +
+  geom_sf(fill = "red")
+
