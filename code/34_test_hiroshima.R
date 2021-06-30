@@ -33,14 +33,11 @@ census2020 %>%
 #the 1st ~ 4th largest municipalities will be split.
 #江田島市 and 三原市, which are currently split, will no longer be split.
 
-merged <- pref %>%
-  group_by(code, CITY_NAME) %>%
-  summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code'))
+#Estimate 2020 Pop at the 小地域-level (pref is currently based on 2015 Census)
+#*Note: when splitting the 4 municipalities based on the pre-gappei boundaries,
+#*the poplation data will be based on the 2015 Census
+#*this inconsistency will be resolved once we get access to the 2020 Census
 
-check <- merged %>%
-  ggplot() +
-  geom_sf(fill = "red")
 
 #-------- SMC: 0 split -----------#
 
