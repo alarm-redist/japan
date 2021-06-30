@@ -66,12 +66,12 @@ pref0 <- merge_gun(pref0)
 # simulation parameters
 prefadj <- redist::redist.adjacency(pref) # Adjacency list
 # set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
-pref_map <- redist::redist_map(pref,
+ndists_new <- 6
+ndists_old <- 7
+pref_map <- redist::redist_map(pref0,
                                ndists = ndists_new,
                                pop_tol= 0.08,
-                               total_pop = pop_national,
+                               total_pop = pop,
                                adj = prefadj)
 
 # --------- Merge Split simulation ----------------#
