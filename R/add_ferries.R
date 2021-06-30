@@ -49,6 +49,9 @@ add_ferries <- function(pref){
   # isolate unique routes
   pref_internal <- unique(cbind(as.numeric(pref_internal$start), as.numeric(pref_internal$stop)))
 
+  # create data frame
+  pref_internal <- as.data.frame(pref_internal)
+
   # delete routes where start/stop municipalities are the same
   pref_internal <- pref_internal[which(pref_internal[, 1] != pref_internal[, 2]), ]
 
