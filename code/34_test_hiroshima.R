@@ -61,7 +61,6 @@ pref0 <- merge_gun(pref0)
 #Ferries
 edge <- add_ferries(pref0)
 
-
 # -------- set up for simulation ------------#
 # simulation parameters
 pref0adj <- redist::redist.adjacency(pref0) # Adjacency list
@@ -79,7 +78,7 @@ pref0_map <- redist::redist_map(pref0,
 
 # --------- Merge Split simulation ----------------#
 sim_ms_pref0 <- redist::redist_mergesplit(map = pref0_map,
-                                         nsims = 100,
+                                         nsims = 10,
                                          warmup = 1,
                                          compactness = 1.4)
 
@@ -90,13 +89,13 @@ redist::redist.plot.plans(sim_ms_pref,
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_pref <- redist::redist_smc(pref_map,
+sim_smc_pref0 <- redist::redist_smc(pref0_map,
                                    nsims = 25000,
                                    pop_temper = 0.05)
 # test with map
-redist::redist.plot.plans(sim_smc_pref,
+redist::redist.plot.plans(sim_smc_pref0,
                           draws = 1:6,
-                          geom = pref_map) +
+                          geom = pref0_map) +
   labs(caption = "SMC")
 
 # -------- enumeration ------------#
