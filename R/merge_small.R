@@ -1,16 +1,3 @@
-#' Merge Components of Municipalities of Choice
-#'
-#' @param pref sf object of cleaned, collated, census data for a prefecture
-#' @param split_codes an array of codes for municipalities to split
-#'
-#' @return an sf object with the chosen municipalities split
-#'
-#' @concept getdata
-#'
-#' @export
-#'
-
-#Ex: nagasaki <- merge_small(nagasaki, split_codes = c(42201, 42202))
 merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   pref <- pref %>%
     select(code, CITY_NAME, KIHON1, pop, geometry)
@@ -75,4 +62,3 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   }
   return(bound)
 }
-

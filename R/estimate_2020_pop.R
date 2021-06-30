@@ -12,6 +12,8 @@
 
 estimate_2020_pop <- function(pref, census2020) {
   
+  pref_new <- pref
+  
   # Get the aggregate municipality-level totals from the 2015 Census
   totals_2015 <- cbind.data.frame(pref$code, pref$pop_national)
   names(totals_2015) <- c("code", "pop_2015")
@@ -31,7 +33,9 @@ estimate_2020_pop <- function(pref, census2020) {
     
   }
   
+  pref_new$pop_estimate <- estimates
+  
   # return result
-  return(estimates)
+  return(pref_new)
   
 }
