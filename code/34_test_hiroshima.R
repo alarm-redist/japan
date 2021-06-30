@@ -46,10 +46,6 @@ pop <- as.data.frame(pop)
 pref <- bind_cols(pref, pop)
 #The column "pop" in "pref" now indicates the "estimated number of Japanese nationals"
 
-# -------- Ferries ------------#
-add_ferries(pref)
-#******************did not work, not sure why**********************#
-
 
 ##############First try with 0 splits#######################
 pref0 <- merge_small(pref, intact_codes = c(34101, 34102, 34103, 34104, 34105,
@@ -62,21 +58,28 @@ pref0 <- merge_small(pref, intact_codes = c(34101, 34102, 34103, 34104, 34105,
 #Merge gun (No exceptions in this case; all the gun will be merged together)
 pref0 <- merge_gun(pref0)
 
+#Ferries
+edge <- add_ferries(pref0)
+
+
 # -------- set up for simulation ------------#
 # simulation parameters
-prefadj <- redist::redist.adjacency(pref0) # Adjacency list
+pref0adj <- redist::redist.adjacency(pref0) # Adjacency list
+#add edge
+addedge <- geomander::add_edge(pref0adj, edge$V1, edge$V2)
+
 # set number of district (check external information)
 ndists_new <- 6
 ndists_old <- 7
-pref_map <- redist::redist_map(pref0,
+pref0_map <- redist::redist_map(pref0,
                                ndists = ndists_new,
                                pop_tol= 0.08,
                                total_pop = pop,
-                               adj = prefadj)
+                               adj = addedge)
 
 # --------- Merge Split simulation ----------------#
-sim_ms_pref <- redist::redist_mergesplit(map = pref_map,
-                                         nsims = 25000,
+sim_ms_pref0 <- redist::redist_mergesplit(map = pref0_map,
+                                         nsims = 100,
                                          warmup = 1,
                                          compactness = 1.4)
 
