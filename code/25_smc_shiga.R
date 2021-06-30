@@ -1,5 +1,6 @@
 # ----------- set up functions-------------#
 library(tidyverse)
+set.seed(12345)
 # pull functions from jcdf
 # set working directory to the function folder
 setwd("R")
@@ -33,24 +34,33 @@ pref <- pref %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020, by = c('code'))
+
+# merge gun
+pref <- pref %>%
+  # change column name to use function
+  dplyr::rename(pop = pop_national) %>%
+  merge_gun()
+
+# Add Ferries
+edge <- add_ferries(pref)
+
 # check map
 pref %>%
   ggplot() +
   geom_sf(fill = "red")
-# get municodes
-municodes <- pref$code
-# Add Ferries
-pref <- add_ferries(pref)
 
 # -------- set up for simulation ------------#
 # simulation parameters
 prefadj <- redist::redist.adjacency(pref) # Adjacency list
+#add edge
+prefadj <- geomander::add_edge(prefadj, edge$V1, edge$V2)
+
 
 # set map
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
                                pop_tol= 0.3,
-                               total_pop = pop_national,
+                               total_pop = pop,
                                adj = prefadj)
 
 # --------- SMC simulation ----------------#
