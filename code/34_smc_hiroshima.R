@@ -24,7 +24,7 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-#check to see pop ranking by mun
+########Choose which cities to split#####################
 census2020 %>%
   filter(code > 34200 & code < 35000) %>% #excluding 34100 Hiroshima City
   arrange(desc(pop_national))
@@ -37,66 +37,48 @@ census2020 %>%
 #the 1st ~ 4th largest municipalities will be split.
 #江田島市 and 三原市, which are currently split, will no longer be split.
 
-#Estimate 2020 Pop at the 小地域-level (pref is currently based on 2015 Census)
-#*Note: when splitting the 4 municipalities based on the pre-gappei boundaries,
-#*the population data will be based on the 2015 Census
-#*this inconsistency will be resolved once we get access to the 2020 Census
-pop <- estimate_2020_pop(pref, census2020)
-pop <- as.data.frame(pop)
-pref <- bind_cols(pref, pop)
-#The column "pop" in "pref" now indicates the "estimated number of Japanese nationals"
-
-
 ##############First try with 0 splits#######################
-pref0 <- merge_small(pref, intact_codes = c(34101, 34102, 34103, 34104, 34105,
-                                            34106, 34107, 34108))
-#made sure to group together the 8 Wards of Hiroshima City together
-#wards are treated as single municipalities; splitting Hiroshima City doesn't count as a municipality split
-
-#Will skip reflect_old_boundaries() for now because I do not split any municipalities
+#no need to use merge_small() this time
+pref <- pref %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry), pop = sum(pop_national)) %>%
+  dplyr::left_join(census2020, by = c('code'))
 
 #Merge gun (No exceptions in this case; all the gun will be merged together)
-pref0 <- merge_gun(pref0)
+pref <- merge_gun(pref)
 
 #Ferries
-edge <- add_ferries(pref0)
+edge <- add_ferries(pref)
 
 # -------- set up for simulation ------------#
 # simulation parameters
-pref0adj <- redist::redist.adjacency(pref0) # Adjacency list
+prefadj <- redist::redist.adjacency(pref) # Adjacency list
 #add edge
-addedge <- geomander::add_edge(pref0adj, edge$V1, edge$V2)
+prefadj <- geomander::add_edge(prefadj, edge$V1, edge$V2)
 
 # set number of district (check external information)
 ndists_new <- 6
 ndists_old <- 7
-pref0_map <- redist::redist_map(pref0,
+pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
                                pop_tol= 0.08,
                                total_pop = pop,
-                               adj = addedge)
+                               adj = prefadj)
 
-# --------- Merge Split simulation ----------------#
-sim_ms_pref0 <- redist::redist_mergesplit(map = pref0_map,
-                                         nsims = 10,
-                                         warmup = 1,
-                                         compactness = 1.4)
-
-redist::redist.plot.plans(sim_ms_pref,
-                          draws = 1:6,
-                          geom = pref_map) +
-  labs(caption = "Merge Split")
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_pref0 <- redist::redist_smc(pref0_map,
+sim_smc_pref <- redist::redist_smc(pref0_map,
                                    nsims = 25000,
                                    pop_temper = 0.05)
 # test with map
-redist::redist.plot.plans(sim_smc_pref0,
+redist::redist.plot.plans(sim_smc_pref,
                           draws = 1:6,
-                          geom = pref0_map) +
+                          geom = pref_map) +
   labs(caption = "SMC")
+
+simulation_weight_disparity_table(sim_smc_pref)
+#probably around 1.10
 
 # -------- enumeration ------------#
 # simulation
@@ -112,3 +94,22 @@ redist::redist.plot.plans(sim_enumerate_pref,
                           draws = 1:6,
                           geom = pref_map) +
   labs(caption = "Enumeration")
+
+
+
+###############Workflow for 1 split##################
+
+#Estimate 2020 Pop at the 小地域-level (pref is currently based on 2015 Census)
+#*Note: when splitting the 4 municipalities based on the pre-gappei boundaries,
+#*the population data will be based on the 2015 Census
+#*this inconsistency will be resolved once we get access to the 2020 Census
+pref <- estimate_2020_pop(pref, census2020)
+#The column "pop" in "pref" now indicates the "estimated number of Japanese nationals"
+
+
+pref <- merge_small(pref, split_codes = c(), intact_codes = c(34101, 34102, 34103, 34104, 34105,
+                                           34106, 34107, 34108))
+#made sure to group together the 8 Wards of Hiroshima City together
+#wards are treated as single municipalities; splitting Hiroshima City doesn't count as a municipality split
+
+pref <- reflect_old_boundaries(34)
