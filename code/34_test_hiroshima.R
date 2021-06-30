@@ -64,7 +64,7 @@ pref0 <- merge_gun(pref0)
 
 # -------- set up for simulation ------------#
 # simulation parameters
-prefadj <- redist::redist.adjacency(pref) # Adjacency list
+prefadj <- redist::redist.adjacency(pref0) # Adjacency list
 # set number of district (check external information)
 ndists_new <- 6
 ndists_old <- 7
