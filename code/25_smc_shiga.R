@@ -1,5 +1,6 @@
 # ----------- set up functions-------------#
 library(tidyverse)
+set.seed(12345)
 # pull functions from jcdf
 # set working directory to the function folder
 setwd("R")
@@ -33,18 +34,22 @@ pref <- pref %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020, by = c('code'))
+# merge gun
+pref <- merge_gun(pref)
+# Add Ferries
+edge <- add_ferries(pref)
+
 # check map
 pref %>%
   ggplot() +
   geom_sf(fill = "red")
-# get municodes
-municodes <- pref$code
-# Add Ferries
-pref <- add_ferries(pref)
 
 # -------- set up for simulation ------------#
 # simulation parameters
 prefadj <- redist::redist.adjacency(pref) # Adjacency list
+#add edge
+prefadj <- geomander::add_edge(prefadj, edge$V1, edge$V2)
+
 
 # set map
 pref_map <- redist::redist_map(pref,
