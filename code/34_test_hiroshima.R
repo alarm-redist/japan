@@ -52,8 +52,14 @@ add_ferries(pref)
 
 
 ##############First try with 0 splits#######################
-pref0 <- merge_small(pref)
+pref0 <- merge_small(pref, intact_codes = c(34101, 34102, 34103, 34104, 34105,
+                                            34106, 34107, 34108))
+#made sure to group together the 8 Wards of Hiroshima City together
+#wards are treated as single municipalities; splitting Hiroshima City doesn't count as a municipality split
 
+#Will skip reflect_old_boundaries() for now because I do not split any municipalities
+
+pref0 <- merge_gun(pref0)
 
 # -------- set up for simulation ------------#
 # simulation parameters
