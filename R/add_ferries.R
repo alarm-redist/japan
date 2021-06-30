@@ -50,7 +50,7 @@ add_ferries <- function(pref){
   pref_internal <- unique(cbind(as.numeric(pref_internal$start), as.numeric(pref_internal$stop)))
 
   # delete routes where start/stop municipalities are the same
-  pref_internal <- pref_internal %>% dplyr::filter(pref_internal[, 1] != pref_internal[, 2], )
+  pref_internal <- pref_internal[which(pref_internal[, 1] != pref_internal[, 2]), ]
 
   # return result
   return(pref_internal)
