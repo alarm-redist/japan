@@ -46,10 +46,60 @@ pop <- as.data.frame(pop)
 pref <- bind_cols(pref, pop)
 #The column "pop" in "pref" now indicates the "estimated number of Japanese nationals"
 
-#-------- SMC: 0 split -----------#
+# -------- Ferries ------------#
+add_ferries(pref)
+#******************did not work, not sure why**********************#
 
-#-------- SMC: 1 split -----------#
 
-#######enumeration##################
+##############First try with 0 splits#######################
+pref0 <- merge_small(pref)
 
-#######save as RData###############
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefadj <- redist::redist.adjacency(pref) # Adjacency list
+# set number of district (check external information)
+ndists_new <- 3
+ndists_old <- 4
+pref_map <- redist::redist_map(pref,
+                               ndists = ndists_new,
+                               pop_tol= 0.08,
+                               total_pop = pop_national,
+                               adj = prefadj)
+
+# --------- Merge Split simulation ----------------#
+sim_ms_pref <- redist::redist_mergesplit(map = pref_map,
+                                         nsims = 25000,
+                                         warmup = 1,
+                                         compactness = 1.4)
+
+redist::redist.plot.plans(sim_ms_pref,
+                          draws = 1:6,
+                          geom = pref_map) +
+  labs(caption = "Merge Split")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref <- redist::redist_smc(pref_map,
+                                   nsims = 25000,
+                                   pop_temper = 0.05)
+# test with map
+redist::redist.plot.plans(sim_smc_pref,
+                          draws = 1:6,
+                          geom = pref_map) +
+  labs(caption = "SMC")
+
+# -------- enumeration ------------#
+# simulation
+sim_enumerate_pref <- redist::redist.enumerate(prefadj,
+                                               ndists = ndists_new,
+                                               popvec = pref$pop_national,
+                                               nconstraintlow = NULL,
+                                               nconstrainthigh = NULL,
+                                               popcons = NULL,
+                                               contiguitymap = "rooks")
+# test with map
+redist::redist.plot.plans(sim_enumerate_pref,
+                          draws = 1:6,
+                          geom = pref_map) +
+  labs(caption = "Enumeration")
