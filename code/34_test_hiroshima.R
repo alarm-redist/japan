@@ -59,6 +59,7 @@ pref0 <- merge_small(pref, intact_codes = c(34101, 34102, 34103, 34104, 34105,
 
 #Will skip reflect_old_boundaries() for now because I do not split any municipalities
 
+#Merge gun (No exceptions in this case; all the gun will be merged together)
 pref0 <- merge_gun(pref0)
 
 # -------- set up for simulation ------------#
