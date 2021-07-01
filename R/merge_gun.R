@@ -56,7 +56,7 @@ merge_gun <- function(pref, exception = NULL){
         bound <- pref %>%
           group_by(code) %>%
           summarise(geometry = sf::st_union(geometry), pop = sum(pop))
-        bound <- st_as_sf(bound)
+        bound <- sf::st_as_sf(bound)
         return(bound)################
       }
       else{
@@ -112,7 +112,7 @@ merge_gun <- function(pref, exception = NULL){
           summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         ######Same as Scenario 1###############
         bound <- dplyr::bind_rows(pref_grouped, pref_separate)
-        bound <- st_as_sf(bound)
+        bound <- sf::st_as_sf(bound)
         return(bound)
       }
     }
