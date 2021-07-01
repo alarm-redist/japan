@@ -215,7 +215,7 @@ pref1adj <- geomander::add_edge(pref1adj, edge1$V1, edge1$V2)
 # create map
 pref1_map <- redist::redist_map(pref1,
                                 ndists = ndists_new,
-                                pop_tol= 0.5,
+                                pop_tol= 0.35,
                                 total_pop = pop,
                                 adj = pref1adj)
 
