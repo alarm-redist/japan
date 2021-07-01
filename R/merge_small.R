@@ -14,7 +14,7 @@
 
 merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   pref <- pref %>%
-    select(code, CITY_NAME, KIHON1, pop, geometry)
+    select(code, pop, geometry)
   if(missing(split_codes)) {
      if(missing(intact_codes)){
       #######No municipality split +  no wards to keep#########
