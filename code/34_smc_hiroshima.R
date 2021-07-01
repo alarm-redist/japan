@@ -98,13 +98,10 @@ test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
   labs(caption = "SMC")
 
 
-###############Skip(0 split analysis)#############
-simulation_weight_disparity_table(sim_smc_pref)
-#probably around 1.10
-
+###############Further analysis#############
 # -------- enumeration ------------#
 # simulation
-sim_enumerate_pref <- redist::redist.enumerate(prefadj,
+sim_enumerate_pref0 <- redist::redist.enumerate(pref0adj,
                                                ndists = ndists_new,
                                                popvec = pref$pop_national,
                                                nconstraintlow = NULL,
@@ -112,10 +109,34 @@ sim_enumerate_pref <- redist::redist.enumerate(prefadj,
                                                popcons = NULL,
                                                contiguitymap = "rooks")
 # test with map
-redist::redist.plot.plans(sim_enumerate_pref,
+redist::redist.plot.plans(sim_enumerate_pref0,
                           draws = 1:6,
-                          geom = pref_map) +
+                          geom = pref0_map) +
   labs(caption = "Enumeration")
+
+
+# -------- Evaluating Original Plan ------------#
+#Not sure about original plan; re-check
+pref_original_district <- status_quo_match(pref)
+pref0_original_district %>%
+  dplyr::rename(cd = ku) %>%
+  original_weight_disparity_table()
+
+
+# -------- Evaluating Redistricting Plan (0 split)------------#
+# get plans
+pref0_smc_plans <- redist::get_plans_matrix(sim_smc_pref0)
+
+#best ippyo no kakusa
+pref0_pops <- matrix(sim_smc_pref0$total_pop, ncol = 6, byrow = TRUE)
+pref0_ippyo_kakusa <- c()
+for (x in 1:dim(pref0_pops)[1]){
+  pref0_ippyo_kakusa <- append(pref0_ippyo_kakusa, max(pref0_pops[x, ])/min(pref0_pops[x, ]))
+}
+min(pref0_ippyo_kakusa) #was 1.029566
+
+# get disparity data
+wgt_tbl0 <- simulation_weight_disparity_table(sim_smc_pref0)
 
 
 
@@ -225,5 +246,5 @@ saveRDS(sim_smc_pref1, paste("simulation/",
 test_map_pref1 <- redist::redist.plot.plans(sim_smc_pref1,
                                             draws = 1:6,
                                             geom = pref1_map) +
-  labs(caption = "SMC")
+  labs(caption = "SMC 25000 One split (Fukuyama)")
 
