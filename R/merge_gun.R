@@ -15,7 +15,7 @@
 
 merge_gun <- function(pref, exception = NULL){
   #Determine the prefecture code (Ex: Kyoto: 26)
-  pref_10<- pref$code[1] %/% 1000 #2 digits
+  pref_10 <- pref$code[1] %/% 1000 #2 digits
   pref_code <- pref_10*1000 #5 digits
   ########################This function does not work for Hokkaido and Okinawa.#############
   if(pref_code == 1000){
