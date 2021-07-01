@@ -19,7 +19,7 @@ merge_gun_exception <- c(0)
 nsims <- 25000
 sim_type <- as.character("smc")
 nsplit <- 0
-
+pop_tol <- 0.3
 #-------- Clean data (2015 Census)-----------#
 # Clean data
 pref_raw <- download_shp(pref_num)
@@ -63,7 +63,7 @@ pref0adj <- geomander::add_edge(pref0adj, edge0$V1, edge0$V2)
 
 pref0_map <- redist::redist_map(pref0,
                                 ndists = ndists_new,
-                                pop_tol= 0.3,
+                                pop_tol= pop_tol,
                                 total_pop = pop,
                                 adj = pref0adj)
 
