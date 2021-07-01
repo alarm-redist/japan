@@ -69,7 +69,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       for(i in 1:length(intact_codes)){
         intact <- pref[pref$code ==  intact_codes[i],] %>%
                                      group_by(code) %>%
-                                     summarise(geometry = st_union(geometry), pop = sum(pop))
+                                     summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         bound <- dplyr::bind_rows(bound, intact)
       }
     }
