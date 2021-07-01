@@ -16,7 +16,7 @@ ndists_new <- 3
 ndists_old <- 4
 lakes_removed <- c("琵琶湖")
 nsims <- 25000
-sim_type <- as.character("smc_1split")
+sim_type <- as.character("smc_0split")
 
 #-------- Clean data (2015 Census)-----------#
 # Clean data
@@ -109,13 +109,27 @@ optimal_map <- redist::redist.plot.plans(sim_smc_pref0,
                           draws = optimal[1],
                           geom = pref0_map) +
   labs(title = paste(pref_name,
-                       sim_type,
-                       "optimal plan",
-                       sep = "_"),
+                     sim_type,
+                     nsims,
+                     "optimal plan",
+                     sep = "_"),
        subtitle = paste("Max to Min Ratio",
                         round(min(wgt_tbl0$max_to_min), 4),
                         sep = "="),
        caption = paste("#",
                        optimal[1],
-                       sep = "="))
+                       sep = ""))
 optimal_map
+
+# save it
+ggsave(filename = paste("plots/",
+                        as.character(pref_num),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        ".png",
+                        sep = ""),
+       plot = optimal_map)
