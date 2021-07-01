@@ -15,7 +15,7 @@
 
 merge_gun <- function(pref, exception = NULL){
   #Determine the prefecture code (Ex: Kyoto: 26)
-  pref_10<- pref$code[1] %/% 1000 #2 digits
+  pref_10 <- pref$code[1] %/% 1000 #2 digits
   pref_code <- pref_10*1000 #5 digits
   ########################This function does not work for Hokkaido and Okinawa.#############
   if(pref_code == 1000){
@@ -56,6 +56,7 @@ merge_gun <- function(pref, exception = NULL){
         bound <- pref %>%
           group_by(code) %>%
           summarise(geometry = sf::st_union(geometry), pop = sum(pop))
+        bound <- sf::st_as_sf(bound)
         return(bound)################
       }
       else{
@@ -111,6 +112,7 @@ merge_gun <- function(pref, exception = NULL){
           summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         ######Same as Scenario 1###############
         bound <- dplyr::bind_rows(pref_grouped, pref_separate)
+        bound <- sf::st_as_sf(bound)
         return(bound)
       }
     }
