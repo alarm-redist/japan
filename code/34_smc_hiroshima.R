@@ -76,15 +76,29 @@ pref0_map <- redist::redist_map(pref0,
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_pref <- redist::redist_smc(pref0_map,
-                                   nsims = 25000,
-                                   pop_temper = 0.05)
+sim_smc_pref0 <- redist::redist_smc(pref0_map,
+                                   nsims = nsims)
+
+# save it
+saveRDS(sim_smc_pref0, paste("simulation/",
+                            as.character(pref_num),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(sim_type),
+                            "_",
+                            as.character(nsims),
+                            ".Rds",
+                            sep = ""))
+
 # test with map
 redist::redist.plot.plans(sim_smc_pref,
                           draws = 1:6,
                           geom = pref_map) +
   labs(caption = "SMC")
 
+
+###############0 split analysis#############
 simulation_weight_disparity_table(sim_smc_pref)
 #probably around 1.10
 
