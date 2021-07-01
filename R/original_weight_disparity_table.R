@@ -29,8 +29,11 @@ original_weight_disparity_table <- function(pref){
 
   # Loosemore Hanby index
   LH <- NA
-  for (i in 1:nrow(orig)){
-    LH <-  (abs((orig$pop[i] / sum(orig$pop)) - (1 / nrow(orig)))) / 2
+  lh_total <- 0
+  for (i in 1:nrow(simulation)){
+    LH <- lh_total +
+      (abs((simulation$total_pop[i] / sum(simulation$total_pop)) -
+             (1 / nrow(simulation)))) / 2
   }
 
   # Hirshman Herfindahl index
