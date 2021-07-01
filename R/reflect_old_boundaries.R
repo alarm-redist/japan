@@ -87,6 +87,9 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   #merge with the data that excludes the designated city
   merged <- dplyr::bind_rows(old_joined_simp, post_gappei_except_for_designated_city)
 
+  #remove duplicated municipalities
+  merged <- merged[!duplicated(merged$code), ]
+
   return(merged)
 }
 
