@@ -186,6 +186,14 @@ pref1adj <- redist::redist.adjacency(pref1) # Adjacency list
 #add edge
 pref1adj <- geomander::add_edge(pref1adj, edge1$V1, edge1$V2)
 
+###For this case, I need to add one adjacency manually because there is an island (福山市内海町)
+###that is not connected by a ferry to mainland 福山市. 内海町 is connected to 福山市 by a bridge.
+###This would not a problem when 福山市 is not split, but now that
+###福山市 is divided based on the old administrative districts, 内海町 is treated as a single municipality
+###and thus needs to be connected to its neighboring municipality.
+pref1adj <- geomander::add_edge(pref1adj, 1, 2)
+#1 corresponds to 福山市 and 2 corresponds to 内海町
+
 pref1_map <- redist::redist_map(pref1,
                                 ndists = ndists_new,
                                 pop_tol= 0.08,
