@@ -86,7 +86,9 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
     # Loosemore Hanby index
     lh_total <- 0
     for (i in 1:nrow(simulation)){
-      lh_total <- lh_total + (abs((simulation$total_pop[i] / sum(simulation$total_pop)) - (1 / nrow(simulation)))) / 2
+      lh_total <- lh_total +
+        (abs((simulation$total_pop[i] / sum(simulation$total_pop)) -
+               (1 / nrow(simulation)))) / 2
     }
     LH[k] <- lh_total
 
