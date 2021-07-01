@@ -98,23 +98,114 @@ test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
   labs(caption = "SMC")
 
 
-###############Skip(0 split analysis)#############
-simulation_weight_disparity_table(sim_smc_pref)
-#probably around 1.10
+###############Further analysis (0 splits)#############
+# -------- Evaluating Original Plan ------------#
+#Not sure about original plan; re-check
+#pref_original_district <- status_quo_match(pref)
+#pref0_original_district %>%
+  #dplyr::rename(cd = ku) %>%
+  #original_weight_disparity_table()
+
+# -------- Evaluating Redistricting Plan (0 split)------------#
+# get plans
+pref0_smc_plans <- redist::get_plans_matrix(sim_smc_pref0)
+
+#best ippyo no kakusa
+pref0_pops <- matrix(sim_smc_pref0$total_pop, ncol = 6, byrow = TRUE)
+pref0_ippyo_kakusa <- c()
+for (x in 1:dim(pref0_pops)[1]){
+  pref0_ippyo_kakusa <- append(pref0_ippyo_kakusa, max(pref0_pops[x, ])/min(pref0_pops[x, ]))
+}
+min(pref0_ippyo_kakusa) #was 1.029566
+
+# get disparity data
+wgt_tbl0 <- simulation_weight_disparity_table(sim_smc_pref0)
+n <- c(1:25000)
+n <- as.data.frame(n)
+wgt_tbl0 <- cbind(n, wgt_tbl0)
+
+wgt_tbl0$n[which(wgt_tbl0$max_to_min == min(wgt_tbl0$max_to_min))]
+#Results were 96, 2375, 4296, 4946, 5474, 6010, 6885,7110, 7408, 7761, 9612
+#9703, 14788, 15974, 18680, 19821, 24020
+#-> n. 96 is optimal plan
+
+#print optimal plan
+redist::redist.plot.plans(sim_smc_pref0,
+                          draws = 96,
+                          geom = pref0_map) +
+  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
+
+
+##########Realized that optimal plan includes 飛び地-> will attempt to remove 飛び地###################
+#-------- Use 2020 census data at the municipality level (0 splits this time)-----------#
+pref01 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+#Merge gun (No exceptions in this case; all the gun will be merged together)
+pref01 <- merge_gun(pref01)
+
+#Ferries
+edge01 <- add_ferries(pref01) %>%
+  filter(V1 != 3)
+####will remove the ferry route departing from 広島市南区(34103)
+####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
+
+# -------- set up for simulation ------------#
+# simulation parameters
+pref01adj <- redist::redist.adjacency(pref01) # Adjacency list
+#add edge
+pref01adj <- geomander::add_edge(pref01adj, edge01$V1, edge01$V2)
+
+pref01_map <- redist::redist_map(pref01,
+                                ndists = ndists_new,
+                                pop_tol= 0.08,
+                                total_pop = pop,
+                                adj = pref01adj)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref01 <- redist::redist_smc(pref01_map,
+                                    nsims = nsims)
+
+# save it
+saveRDS(sim_smc_pref0, paste("simulation/",
+                             as.character(pref_num),
+                             "_",
+                             as.character(pref_name),
+                             "_",
+                             as.character(sim_type),
+                             "_",
+                             as.character(nsims),
+                             "0 split (exclude Minami-ku)",
+                             ".Rds",
+                             sep = ""))
+
+# test with map
+test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
+                                            draws = 1:6,
+                                            geom = pref0_map) +
+  labs(caption = "SMC")
+
 
 # -------- enumeration ------------#
 # simulation
-sim_enumerate_pref <- redist::redist.enumerate(prefadj,
-                                               ndists = ndists_new,
-                                               popvec = pref$pop_national,
-                                               nconstraintlow = NULL,
-                                               nconstrainthigh = NULL,
-                                               popcons = NULL,
-                                               contiguitymap = "rooks")
+sim_enumerate_pref0 <- redist::redist.enumerate(pref0adj,
+                                                ndists = ndists_new,
+                                                popvec = pref$pop_national,
+                                                nconstraintlow = NULL,
+                                                nconstrainthigh = NULL,
+                                                popcons = NULL,
+                                                contiguitymap = "rooks")
 # test with map
-redist::redist.plot.plans(sim_enumerate_pref,
+redist::redist.plot.plans(sim_enumerate_pref0,
                           draws = 1:6,
-                          geom = pref_map) +
+                          geom = pref0_map) +
   labs(caption = "Enumeration")
 
 
@@ -186,6 +277,14 @@ pref1adj <- redist::redist.adjacency(pref1) # Adjacency list
 #add edge
 pref1adj <- geomander::add_edge(pref1adj, edge1$V1, edge1$V2)
 
+###For this case, I need to add one adjacency manually because there is an island (福山市内海町)
+###that is not connected by a ferry to mainland 福山市. 内海町 is connected to 福山市 by a bridge.
+###This would not a problem when 福山市 is not split, but now that
+###福山市 is divided based on the old administrative districts, 内海町 is treated as a single municipality
+###and thus needs to be connected to its neighboring municipality.
+pref1adj <- geomander::add_edge(pref1adj, 1, 2)
+#1 corresponds to 福山市 and 2 corresponds to 内海町
+
 pref1_map <- redist::redist_map(pref1,
                                 ndists = ndists_new,
                                 pop_tol= 0.08,
@@ -217,5 +316,5 @@ saveRDS(sim_smc_pref1, paste("simulation/",
 test_map_pref1 <- redist::redist.plot.plans(sim_smc_pref1,
                                             draws = 1:6,
                                             geom = pref1_map) +
-  labs(caption = "SMC")
+  labs(caption = "SMC 25000 One split (Fukuyama)")
 
