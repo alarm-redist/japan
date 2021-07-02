@@ -198,10 +198,10 @@ prefT <- merge_gun(prefT)
 #Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
 prefT <- avoid_enclave(prefT, c(34107, 34300))
 
-
 #Ferries
 edgeT <- add_ferries(prefT) %>%
   filter(V1 != 3)
+
 ####will remove the ferry route departing from 広島市南区(34103)
 ####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
 
@@ -209,20 +209,20 @@ edgeT <- add_ferries(prefT) %>%
 # simulation parameters
 prefTadj <- redist::redist.adjacency(prefT) # Adjacency list
 #add edge
-pref01adj <- geomander::add_edge(pref01adj, edge01$V1, edge01$V2)
+prefTadj <- geomander::add_edge(prefTadj, edgeT$V1, edgeT$V2)
 
-pref01_map <- redist::redist_map(pref01,
+prefT_map <- redist::redist_map(prefT,
                                  ndists = ndists_new,
                                  pop_tol= 0.08,
                                  total_pop = pop,
-                                 adj = pref01adj)
+                                 adj = prefTadj)
 
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_pref01 <- redist::redist_smc(pref01_map,
-                                     nsims = nsims)
+sim_smc_prefT <- redist::redist_smc(prefT_map,
+                                     nsims = 10)
 
 # save it
 saveRDS(sim_smc_pref01, paste("simulation/",
