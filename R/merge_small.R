@@ -20,7 +20,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       #######No municipality split +  no wards to keep#########
        bound <- pref %>%
          group_by(code) %>%
-         summarise(geometry = st_union(geometry), pop = sum(pop))
+         summarise(geometry = sf::st_union(geometry), pop = sum(pop))
      }
 
     else{
@@ -29,12 +29,12 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       #municipalities to keep intact
       bound <- pref[pref$code %in% intact_codes == FALSE,] %>%
         group_by(code) %>%
-        summarise(geometry = st_union(geometry), pop = sum(pop))
+        summarise(geometry = sf::st_union(geometry), pop = sum(pop))
       #group together the wards and merge dataframe
       for(i in 1:length(intact_codes)){
         intact <- pref[pref$code ==  intact_codes[i],] %>%
           group_by(code) %>%
-          summarise(geometry = st_union(geometry), pop = sum(pop))
+          summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         bound <- dplyr::bind_rows(bound, intact)
       }
     }
@@ -46,7 +46,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
         #municipalities to keep intact
         bound <- pref[pref$code %in% split_codes == FALSE, ]  %>%
             group_by(code) %>%
-            summarize(geometry = st_union(geometry), pop = sum(pop))
+            summarize(geometry = sf::st_union(geometry), pop = sum(pop))
         # specify municipalities to split(Ex: Nagasaki, Sasebo)
         # and merge dataframe
         for(i in 1:length(split_codes)){
@@ -69,7 +69,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
       for(i in 1:length(intact_codes)){
         intact <- pref[pref$code ==  intact_codes[i],] %>%
                                      group_by(code) %>%
-                                     summarise(geometry = st_union(geometry), pop = sum(pop))
+                                     summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         bound <- dplyr::bind_rows(bound, intact)
       }
     }
