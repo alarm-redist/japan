@@ -97,7 +97,6 @@ test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
                           geom = pref0_map) +
   labs(caption = "SMC")
 
-
 ###############Further analysis (0 splits)#############
 # -------- Evaluating Original Plan ------------#
 #Not sure about original plan; re-check
@@ -125,8 +124,7 @@ n <- as.data.frame(n)
 wgt_tbl0 <- cbind(n, wgt_tbl0)
 
 wgt_tbl0$n[which(wgt_tbl0$max_to_min == min(wgt_tbl0$max_to_min))]
-#Results were 96, 2375, 4296, 4946, 5474, 6010, 6885,7110, 7408, 7761, 9612
-#9703, 14788, 15974, 18680, 19821, 24020
+#Results were 96, 2375, 4296, 4946, 5474, 6010, 6885,7110, 7408, 7761, 9612, 9703, 14788, 15974, 18680, 19821, 24020
 #-> n. 96 is optimal plan
 
 #print optimal plan
@@ -134,7 +132,6 @@ redist::redist.plot.plans(sim_smc_pref0,
                           draws = 96,
                           geom = pref0_map) +
   labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
-
 
 ##########Realized that optimal plan includes 飛び地-> will attempt to remove 飛び地###################
 #-------- Use 2020 census data at the municipality level (0 splits this time)-----------#
@@ -174,7 +171,7 @@ sim_smc_pref01 <- redist::redist_smc(pref01_map,
                                     nsims = nsims)
 
 # save it
-saveRDS(sim_smc_pref0, paste("simulation/",
+saveRDS(sim_smc_pref01, paste("simulation/",
                              as.character(pref_num),
                              "_",
                              as.character(pref_name),
@@ -186,11 +183,83 @@ saveRDS(sim_smc_pref0, paste("simulation/",
                              ".Rds",
                              sep = ""))
 
-# test with map
-test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
-                                            draws = 1:6,
-                                            geom = pref0_map) +
-  labs(caption = "SMC")
+##########Another Attempt to remove all 飛び地###################
+#-------- Use 2020 census data at the municipality level (0 splits)-----------#
+prefT <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+#Merge gun (No exceptions in this case; all the gun will be merged together)
+prefT <- merge_gun(prefT)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+prefT <- avoid_enclave(prefT, c(34107, 34300))
+
+
+#Ferries
+edgeT <- add_ferries(prefT) %>%
+  filter(V1 != 3)
+####will remove the ferry route departing from 広島市南区(34103)
+####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefTadj <- redist::redist.adjacency(prefT) # Adjacency list
+#add edge
+pref01adj <- geomander::add_edge(pref01adj, edge01$V1, edge01$V2)
+
+pref01_map <- redist::redist_map(pref01,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.08,
+                                 total_pop = pop,
+                                 adj = pref01adj)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref01 <- redist::redist_smc(pref01_map,
+                                     nsims = nsims)
+
+# save it
+saveRDS(sim_smc_pref01, paste("simulation/",
+                              as.character(pref_num),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "0 split (exclude Minami-ku)",
+                              ".Rds",
+                              sep = ""))
+
+
+
+
+
+
+
+
+
+###############Further analysis (0 splits without Minami-ku)#############
+# -------- Evaluating Redistricting Plan (0 split)------------#
+# get disparity data
+wgt_tbl01 <- simulation_weight_disparity_table(sim_smc_pref01)
+n <- c(1:25000)
+n <- as.data.frame(n)
+wgt_tbl01 <- cbind(n, wgt_tbl01)
+
+wgt_tbl01$n[which(wgt_tbl01$max_to_min == min(wgt_tbl01$max_to_min))]
+
+#print optimal plan
+redist::redist.plot.plans(sim_smc_pref01,
+                          draws = 310,
+                          geom = pref0_map) +
+  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
 
 
 # -------- enumeration ------------#
@@ -269,7 +338,10 @@ pref1 <- reflect_old_boundaries(pref1,
                                  new_code = 34207) #code of merged municipality (Fukuyamashi)
 
 # -------- Ferries ------------#
-edge1 <- add_ferries(pref1)
+edge1 <- add_ferries(pref1) %>%
+  filter(V1 != 8)
+####will remove the ferry route departing from 広島市南区(34103)
+####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
 
 # -------- set up for simulation ------------#
 # simulation parameters
@@ -314,7 +386,23 @@ saveRDS(sim_smc_pref1, paste("simulation/",
 
 # test with map
 test_map_pref1 <- redist::redist.plot.plans(sim_smc_pref1,
-                                            draws = 1:6,
+                                            draws = 1,
                                             geom = pref1_map) +
   labs(caption = "SMC 25000 One split (Fukuyama)")
+
+###############Further analysis (1 split)#############
+# -------- Evaluating Redistricting Plan (0 split)------------#
+# get disparity data
+wgt_tbl1 <- simulation_weight_disparity_table(sim_smc_pref1)
+n <- c(1:25000)
+n <- as.data.frame(n)
+wgt_tbl1 <- cbind(n, wgt_tbl1)
+
+wgt_tbl1$n[which(wgt_tbl1$max_to_min == min(wgt_tbl1$max_to_min))]
+
+#print optimal plan
+redist::redist.plot.plans(sim_smc_pref1,
+                          draws = 988,
+                          geom = pref1_map) +
+  labs(caption = "Hiroshima 1 split \nSMC (25,000 Iterations) Optimal Plan")
 
