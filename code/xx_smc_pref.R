@@ -20,6 +20,7 @@ nsims <- 25000
 sim_type <- as.character("smc")
 nsplit <- 0
 pop_tol <- 0.3
+
 #-------- Clean data (2015 Census)-----------#
 # Clean data
 pref_raw <- download_shp(pref_num)

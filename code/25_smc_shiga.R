@@ -308,3 +308,16 @@ ggsave(filename = paste("plots/",
                         "split.png",
                         sep = ""),
        plot = optimal_map)
+
+saveRDS(optimal_map, paste("plots/",
+                           as.character(pref_num),
+                           "_",
+                           as.character(pref_name),
+                           "_",
+                           as.character(sim_type),
+                           "_",
+                           as.character(nsims),
+                           "_",
+                           as.character(nsplit),
+                           "split.Rds",
+                           sep = ""))
