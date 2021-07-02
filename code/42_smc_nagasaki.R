@@ -295,4 +295,17 @@ wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 
 status_quo <- status_quo_match(pref_2)
 
-redist::redist.prec.pop.overlap()
+overlap_2 <- vector(length = nsims_2)
+
+for (i in 1:nsims_2){
+  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_ms_plans_2[, i], pref_2$pop,
+                                                  weighting = "s", index_only = TRUE)
+}
+
+plot(overlap_2, wgt_tbl_2$LH, xlab = "Dissimilarity", ylab = "Loosemore-Hanby", pch=18)
+
+good_plans <- which(overlap_2 < 0.009 & wgt_tbl_2$max_to_min < 1.03, )
+
+redist::redist.plot.plans(sim_smc_pref_2,
+                          draws = good_plans,
+                          geom = pref_map_2)
