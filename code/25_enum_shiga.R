@@ -1,8 +1,55 @@
-# ----------- set up -------------#
+############# manual entry ###############
+#-------- Set-up -----------#
+# prefectural information
+sim_type <- "enum"
+pref_code <- 25
+pref_name <- "shiga"
+lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
+merge_gun_exception <- c()  # enter `c()` if not applicable
+gov_designated_city <- c() # enter `c()`if not applicable
+# set number of district (check external information)
+ndists_new <- 3
+ndists_old <- 4
+
+#------- Specify municipality splits -------------#
+# 0 splits
+nsplits_n <- 0
+split_codes_n <- c()  # enter `c()` if not applicable
+intact_codes_n <- c()  # enter `c()` if not applicable
+
+# 1 splits
+nsplits_1 <- 1 # enter NULL if there is no more than this splits
+split_codes_1 <- c() # enter `c()` if not applicable
+intact_codes_1 <- c() # enter `c()` if not applicable
+
+# 2 splits
+nsplits_2 <- NULL # enter NULL if there is no more than this splits
+split_codes_2 <- c() # enter `c()` if not applicable
+intact_codes_2 <- c() # enter `c()` if not applicable
+
+# 3 splits
+nsplits_3 <- NULL # enter NULL if there is no more than this splits
+split_codes_3 <- c() # enter `c()` if not applicable
+intact_codes_3 <- c() # enter `c()` if not applicable
+
+# 4 splits
+nsplits_4 <- NULL # enter NULL if there is no more than this splits
+split_codes_4 <- c() # enter `c()` if not applicable
+intact_codes_4 <- c() # enter `c()` if not applicable
+
+# 5 splits
+nsplits_5 <- NULL # enter NULL if there is no more than this splits
+split_codes_5 <- c() # enter `c()` if not applicable
+intact_codes_5 <- c() # enter `c()` if not applicable
+
+################ automated process ##################
+# the following is the uniformed process to automate
+
+############# set up ###############
+#-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-
-remotes::install_github("alarm-redist/redist@dev")
+#remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -12,23 +59,19 @@ sapply(files.sources, source)
 # set working directory back to `jcdf`
 setwd("..")
 
-#-------- Set-up -----------#
-# shapefile
-pref_code <- 42
-pref_name <- "nagasaki"
-sim_type_0 <- "enum"
-nsims_0 <- 5000
-nsplits_0 <- 0
-
-# set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
-
+#------------- get and clean census data --------
+# download census shp
 pref_raw <- download_shp(pref_code)
-
+# clean shp
 pref <- clean_jcdf(pref_raw = pref_raw)
 
-# combining two data
+# download 2020 census data
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+# Clean 2020 census
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
+# combining those two data
 pref <- pref %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
@@ -36,20 +79,17 @@ pref <- pref %>%
   dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, pop, geometry)
 
-# remove lake, not necessarily for Nagasaki
-# pref <- remove_lake(pref, [insert lake string])
+# remove lake
+if(is_null(lakes_removed)){
+  pref <- pref
+} else {
+  pref <- remove_lake(pref, lakes_removed)
+}
 
 # check map
 pref %>%
   ggplot() +
   geom_sf(fill = "red")
-
-# 2020 census
-total <- download_2020_census(type = "total")
-foreigner <- download_2020_census(type = "foreigner")
-
-# clean it
-census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
 # download historical boundary data
 old_pref <- download_old_shp(pref_code)
@@ -57,61 +97,69 @@ old_pref <- download_old_shp(pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
-# split Nagasaki-shi
-old_42201 <- pop_by_old_boundary %>% dplyr::filter(X == 42201 & X.3 == 2000 & X.1 == 9, )
-old_42201 <- old_42201[, 7]
-old_42201 <- 1000 * pref_code + readr::parse_number(old_42201)
+#---------------- split and merge --------------
+# merge small
+if(is_null(split_codes_n)){
+  pref_n <- pref
+} else {
+  dem_pops <- download_pop_demographics(pref_code) #first download data
+  pref_n <- pref %>%
+    calc_kokumin(pref = ., dem_pops) %>%
+    merge_small(pref = .,
+                split_codes = split_codes_n,
+                intact_codes = intact_codes_n) %>%
+    estimate_2020_pop(pref_n, census2020)
+}
 
-# split Sasebo-shi
-old_42202 <- pop_by_old_boundary %>% dplyr::filter(X == 42202 & X.3 == 2000 & X.1 == 9, )
-old_42202 <- old_42202[, 7]
-old_42202 <- 1000 * pref_code + readr::parse_number(old_42202)
+# merge gun
+if(is_null(merge_gun_exception)){
+  pref_n <- merge_gun(pref = pref_n)
+} else {
+  pref_n <- merge_gun(pref = pref_n,
+            exception = merge_gun_exception)
+}
 
-
-# -------- Zero-Split ------------#
-
-pref_0 <- pref
-
-# merge guns, exception of 北松浦郡
-pref_0 <- merge_gun(pref_0, exception = 42383)
-
-row.names(pref_0) <- NULL
-
+#------------- set up map ----------------
 # simulation parameters
-prefadj_0 <- redist::redist.adjacency(shp = pref_0) # Adjacency list
+prefadj_n <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
 # add ferries
-ferries_0 <- add_ferries(pref_0)
-prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0[, 1], ferries_0[, 2], zero = TRUE)
-
+# ignore errors if there is no ferry
+ferries_n <- add_ferries(pref_n)
+prefadj_n <- geomander::add_edge(prefadj_n, ferries_n[, 1], ferries_n[, 2], zero = TRUE)
 # check contiguity
-suggest_0 <- geomander::suggest_component_connection(shp = pref_0, adj = prefadj_0)
+suggest_n <-  geomander::suggest_component_connection(shp = pref_n, adj = prefadj_n)
+prefadj_n <- geomander::add_edge(prefadj_n,
+                                 suggest_n$x,
+                                 suggest_n$y,
+                                 zero = TRUE)
 
-prefadj_0 <- geomander::add_edge(prefadj_0, suggest_0$x,
-                               suggest_0$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
+# define map
+pref_map_n <- redist::redist_map(pref_n,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_n)
 
-pref_map_0 <- redist::redist_map(pref_0,
-                               ndists = ndists_new,
-                               pop_tol= 0.20,
-                               total_pop = pop,
-                               adj = prefadj_0)
+############# simulation with enumeration ############
 
+# mechanical set up
 makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
 makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
 writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
 
-# small map -- enumerate, don't sample!
-
+# set inital path
 if(TRUE){ # change to TRUE if you need to init
   redist::redist.init.enumpart()
 }
 
-enum_plans_0 <- redist::redist.enumpart(adj = prefadj_0,
-                             unordered_path = here::here('simulation/unord_nagasaki_0'),
-                             ordered_path = here::here('simulation/ord_nagasaki_0'),
-                             out_path = here::here('simulation/enum_nagasaki_0'),
-                             ndists = ndists_new, all = TRUE,
-                             total_pop = pref_map_0[[attr(pref_map_0, 'pop_col')]])
+enum_plans_n <- redist::redist.enumpart(adj = prefadj_n,
+                             unordered_path = here::here('data/unord'),
+                             ordered_path = here::here('data/ord'),
+                             out_path = here::here('data/enum'),
+                             ndists = ndists_new,
+                             all = TRUE,
+                             total_pop = pref_map_n[[attr(pref_map_n, 'pop_col')]])
 
 good_plans_0 <- enum_plans_0[[1]][, enum_plans_0[[2]] < redist::get_pop_tol(pref_map_0)]
 
