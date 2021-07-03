@@ -22,6 +22,8 @@ split_pref <- function(
   old_code,
   merge_gun_exception
 ){
+
+ ######### Download and Clean Census ############
   # download census shp
   pref_raw <- download_shp(pref_code)
   dem_pops <- download_pop_demographics(pref_code) #first download data
@@ -38,52 +40,63 @@ split_pref <- function(
 
   pref <- cleaned_census_shp %>%
     dplyr::rename(pop = JINKO)
+
+  ######### wrangle data into for the municipality split#########
   # merge small
   if(nsplit == 0){
+    # no split
     pref_n <- pref %>%
       dplyr::group_by(code, CITY_NAME) %>%
       dplyr::summarise(geometry = sf::st_union(geometry)) %>%
       dplyr::left_join(census2020, by = c('code')) %>%
       dplyr::select(code, pop, geometry)
+
   } else {
+
+    # n_split
     pref_n <- pref %>%
       merge_small(pref = .,
                   split_codes = split_codes,
                   intact_codes = intact_codes)
-
     # download historical boundary data
     old_boundary <- download_old_shp(pref_code)
     # populations based on historical boundaries
     pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
-    # reflect old boundaries
-    pref_n <- reflect_old_boundaries(pref_n,
-                                     old_boundary = old_boundary,
-                                     pop_by_old_boundary = pop_by_old_boundary,
-                                     old_code = old_code,
-                                     new_code = split_codes)
+
 
     # estimation of old-boundary level national populations
+    nat_2020_split_codes <- NA
+    pop_2015_split_codes <- NA
+
     for(k in 1:nsplit){
+      # reflect old boundaries
+      pref_n <- reflect_old_boundaries(pref_n,
+                                       old_boundary = old_boundary,
+                                       pop_by_old_boundary = pop_by_old_boundary,
+                                       old_code = old_code[, k],
+                                       new_code = split_codes)
 
       nat_2020_split_codes <- census2020$pop_national[census2020$code == split_codes[k]]
       pop_2015_split_codes <- sum(pref_n$pop[pref_n$code == old_code[, k]])
+      old_code_slice <- old_code[, k]
 
-      for (i in 1:length(old_code[, k])) {
-        old_code_slice <- old_code[, k]
-        pref_n$pop[pref_n$code == old_code_slice[i]] <- round(
-          pref_n$pop[pref_n$code == old_code_slice[i]] / pop_2015_split_codes * nat_2020_split_codes
+      for (i in 1:length(!is.na(old_code_slice))){
+        pref_n[which(pref_n$code == old_code_slice[i]), ]$pop <- round(
+          pref_n[which(pref_n$code == old_code_slice[i]), ]$pop / pop_2015_split_codes * nat_2020_split_codes
         )
       }
     }
-  }
 
-  # merge gun
-  if(is_null(merge_gun_exception)){
-    pref_n <- merge_gun(pref = pref_n)
-  } else {
-    pref_n <- merge_gun(pref = pref_n,
-                        exception = merge_gun_exception)
+    # merge gun
+    ifelse(is.null(merge_gun_exception),
+           pref_n <- merge_gun(pref = pref_n),
+           pref_n <- merge_gun(pref = pref_n,
+                               exception = merge_gun_exception))
+    # make geometry valid
+    pref_n <- sf::st_make_valid(pref_n)
+
+    row.names(pref_n) <- NULL
   }
 
   return(pref_n)

@@ -31,12 +31,12 @@ nsplit <- 1
 # the code of split municipaliti
 split_codes <- c(25201)
 intact_codes <- c()
-old_code <- dplyr::tibble(
+old_code <- data.frame(
   a = c(25201, 25301),
-  b = c(0),
-  c = c(0),
-  d = c(0),
-  e = c(0)
+  b = NA,
+  c = NA,
+  d = NA,
+  e = NA
 )
 merge_gun_exception <- c()  # enter `c()` if not applicable
 
@@ -55,10 +55,10 @@ prefadj <- redist::redist.adjacency(shp = pref_1) # Adjacency list
 
 # add ferries
 # ignore errors if there is no ferry
-ferries <- add_ferries(pref_n)
+ferries <- add_ferries(pref_1)
 prefadj <- geomander::add_edge(prefadj, ferries[, 1], ferries[, 2], zero = TRUE)
 # check contiguity
-suggest <-  geomander::suggest_component_connection(shp = pref_n, adj = prefadj)
+suggest <-  geomander::suggest_component_connection(shp = pref_1, adj = prefadj)
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
