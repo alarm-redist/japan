@@ -15,8 +15,8 @@
 merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
   pref <- pref %>%
     select(code, pop, geometry)
-  if(missing(split_codes)) {
-     if(missing(intact_codes)){
+  if(is.null(split_codes)) {
+     if(is.null(intact_codes)){
       #######No municipality split +  no wards to keep#########
        bound <- pref %>%
          group_by(code) %>%
@@ -40,7 +40,7 @@ merge_small <- function(pref, split_codes = NULL, intact_codes = NULL){
     }
 
   } else {
-    if(missing(intact_codes)){
+    if(is.null(intact_codes)){
     ########One or more municipality split + no wards to keep intact########
     #(as in the case of Nagasaki)
         #municipalities to keep intact
