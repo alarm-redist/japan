@@ -74,7 +74,7 @@ simulation_maxmin_LH_table <- function(redist_simulation_output){
                (1 / nrow(simulation)))) / 2
     }
     LH[k] <- lh_total
-
+  }
   # Integrate those n_sims of vectors to table
   simulation_weight_disparity_table <- dplyr::tibble(
     `max_to_min` = max_to_min,
@@ -89,5 +89,5 @@ simulation_maxmin_LH_table <- function(redist_simulation_output){
 
   # n_sims x 4 table
   return(return)
-  }
+
 }
