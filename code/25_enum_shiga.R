@@ -37,7 +37,9 @@ lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
 ndists_new <- 3
 ndists_old <- 4
 
-#------- Specify municipality splits -------------#
+########### Split one municipality ###############
+
+#------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
 nsplit <- 1
@@ -53,7 +55,7 @@ old_code <- dplyr::tibble(
 )
 merge_gun_exception <- c()  # enter `c()` if not applicable
 
-
+# estimate population
 pref_1 <- split_pref(cleaned_census_shp = cleaned_census_shp,
                      census2020 = census2020,
                      nsplit = nsplit,
@@ -84,7 +86,7 @@ pref_map <- redist::redist_map(pref_1,
                                total_pop = pop,
                                adj = prefadj)
 
-
+# ---------------- simulation with enumuration ---------------------
 # mechanical set up
 makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
 makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
