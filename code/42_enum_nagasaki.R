@@ -121,6 +121,7 @@ plans_0 <- redist::redist_plans(enum_plans_0$plans, pref_map_0, algorithm = 'enu
 # get disparity data
 wgt_enum_0 <- simulation_weight_disparity_table(plans_0)
 
+
 # --------- One-Split ----------------#
 
 sim_type_1 <- "smc"
