@@ -63,7 +63,7 @@ setwd("..")
 # download census shp
 pref_raw <- download_shp(pref_code)
 # clean shp
-pref <- clean_jcdf(pref_raw = pref_raw)
+census2015 <- clean_jcdf(pref_raw = pref_raw)
 
 # download 2020 census data
 total <- download_2020_census(type = "total")
@@ -72,7 +72,7 @@ foreigner <- download_2020_census(type = "foreigner")
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
 # combining those two data
-pref <- pref %>%
+pref <- census2015 %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020, by = c('code')) %>%
@@ -160,6 +160,18 @@ enum_plans_n <- redist::redist.enumpart(adj = prefadj_n,
                              ndists = ndists_new,
                              all = TRUE,
                              total_pop = pref_map_n[[attr(pref_map_n, 'pop_col')]])
+
+# save it
+saveRDS(enum_plans_n, paste("simulation/",
+                             as.character(pref_code),
+                             "_",
+                             as.character(pref_name),
+                             "_",
+                             as.character(sim_type),
+                             "_",
+                             as.character(nsplit),
+                             "split.Rds",
+                             sep = ""))
 
 good_plans_n <- enum_plans_n[[1]][, enum_plans_n[[2]] < redist::get_pop_tol(pref_map_n)]
 
