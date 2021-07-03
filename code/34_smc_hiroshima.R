@@ -200,24 +200,6 @@ redist::redist.plot.plans(sim_smc_pref01,
                           geom = pref0_map) +
   labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
 
-
-# -------- enumeration ------------#
-# simulation
-sim_enumerate_pref0 <- redist::redist.enumerate(pref0adj,
-                                                ndists = ndists_new,
-                                                popvec = pref$pop_national,
-                                                nconstraintlow = NULL,
-                                                nconstrainthigh = NULL,
-                                                popcons = NULL,
-                                                contiguitymap = "rooks")
-# test with map
-redist::redist.plot.plans(sim_enumerate_pref0,
-                          draws = 1:6,
-                          geom = pref0_map) +
-  labs(caption = "Enumeration")
-
-
-
 ##########Another Attempt to remove all 飛び地###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 prefT <- pref %>%
@@ -303,26 +285,6 @@ optimal_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/0split
 sample_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/samplemap.png")
 merged_map <- c(optimal_map, sample_map)
 merged <- image_flatten(merged_map, "Add")
-
-# -------- enumeration ------------#
-# simulation
-sim_enumerate_pref0 <- redist::redist.enumerate(pref0adj,
-                                                ndists = ndists_new,
-                                                popvec = pref$pop_national,
-                                                nconstraintlow = NULL,
-                                                nconstrainthigh = NULL,
-                                                popcons = NULL,
-                                                contiguitymap = "rooks")
-# test with map
-redist::redist.plot.plans(sim_enumerate_pref0,
-                          draws = 1:6,
-                          geom = pref0_map) +
-  labs(caption = "Enumeration")
-
-
-
-
-
 
 ###############Workflow for 1 split##################
 # -------- Choose which city to split ------------#
