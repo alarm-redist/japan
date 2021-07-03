@@ -40,38 +40,40 @@ old_code <- data.frame(
 )
 merge_gun_exception <- c()  # enter `c()` if not applicable
 
-######## Get data #################
+############## Prepare data #################
 # clean and get data for simulation
-pref_1 <- split_pref(pref_code = pref_code,
+pref_n <- split_pref(pref_code = pref_code,
                      nsplit = nsplit,
                      split_codes = split_codes,
                      intact_codes = intact_codes,
                      old_code = old_code,
                      merge_gun_exception = merge_gun_exception)
 
+################ Simulation with enumuration################
 #------------- set up map ----------------
 # simulation parameters
-prefadj <- redist::redist.adjacency(shp = pref_1) # Adjacency list
+prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
 # add ferries
 # ignore errors if there is no ferry
-ferries <- add_ferries(pref_1)
+ferries <- add_ferries(pref_n)
 prefadj <- geomander::add_edge(prefadj, ferries[, 1], ferries[, 2], zero = TRUE)
 # check contiguity
-suggest <-  geomander::suggest_component_connection(shp = pref_1, adj = prefadj)
+suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                    adj = prefadj)
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
                                zero = TRUE)
 
 # define map
-pref_map <- redist::redist_map(pref_1,
+pref_map <- redist::redist_map(pref_n,
                                ndists = ndists_new,
                                pop_tol= 0.20,
                                total_pop = pop,
                                adj = prefadj)
 
-# ---------------- simulation with enumuration ---------------------
+# ---------------- enumuration ---------------------
 # mechanical set up
 makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
 makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
