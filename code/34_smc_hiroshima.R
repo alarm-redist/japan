@@ -1,3 +1,4 @@
+set.seed(12345)
 ##############load packages###################
 library(tidyverse)
 library(sf)
@@ -183,68 +184,6 @@ saveRDS(sim_smc_pref01, paste("simulation/",
                              ".Rds",
                              sep = ""))
 
-##########Another Attempt to remove all 飛び地###################
-#-------- Use 2020 census data at the municipality level (0 splits)-----------#
-prefT <- pref %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code')) %>%
-  dplyr::rename(pop = pop_national) %>%
-  dplyr::select(code, geometry, pop)
-
-#Merge gun (No exceptions in this case; all the gun will be merged together)
-prefT <- merge_gun(prefT)
-
-#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
-prefT <- avoid_enclave(prefT, c(34107, 34300))
-
-#Ferries
-edgeT <- add_ferries(prefT) %>%
-  filter(V1 != 3)
-
-####will remove the ferry route departing from 広島市南区(34103)
-####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
-
-# -------- set up for simulation ------------#
-# simulation parameters
-prefTadj <- redist::redist.adjacency(prefT) # Adjacency list
-#add edge
-prefTadj <- geomander::add_edge(prefTadj, edgeT$V1, edgeT$V2)
-
-prefT_map <- redist::redist_map(prefT,
-                                 ndists = ndists_new,
-                                 pop_tol= 0.08,
-                                 total_pop = pop,
-                                 adj = prefTadj)
-
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
-
-# --------- SMC simulation ----------------#
-# simulation
-sim_smc_prefT <- redist::redist_smc(prefT_map,
-                                     nsims = 10)
-
-# save it
-saveRDS(sim_smc_pref01, paste("simulation/",
-                              as.character(pref_num),
-                              "_",
-                              as.character(pref_name),
-                              "_",
-                              as.character(sim_type),
-                              "_",
-                              as.character(nsims),
-                              "0 split (exclude Minami-ku)",
-                              ".Rds",
-                              sep = ""))
-
-
-
-
-
-
-
-
-
 ###############Further analysis (0 splits without Minami-ku)#############
 # -------- Evaluating Redistricting Plan (0 split)------------#
 # get disparity data
@@ -276,6 +215,112 @@ redist::redist.plot.plans(sim_enumerate_pref0,
                           draws = 1:6,
                           geom = pref0_map) +
   labs(caption = "Enumeration")
+
+
+
+##########Another Attempt to remove all 飛び地###################
+#-------- Use 2020 census data at the municipality level (0 splits)-----------#
+prefT <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+#Merge gun (No exceptions in this case; all the gun will be merged together)
+prefT <- merge_gun(prefT)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+prefT <- avoid_enclave(prefT, c(34107, 34300))
+
+#Ferries
+edgeT <- add_ferries(prefT) %>%
+  filter(V1 != 3) %>%
+  filter(V1 != 8 | V2 != 22)
+####will remove the ferry route departing from 広島市南区(34103)
+####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
+###will also remove ferry route between 呉 and 大崎上崎町 to avoid 飛び地
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefTadj <- redist::redist.adjacency(prefT) # Adjacency list
+#add edge
+prefTadj <- geomander::add_edge(prefTadj, edgeT$V1, edgeT$V2)
+
+prefT_map <- redist::redist_map(prefT,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.18,
+                                 total_pop = pop,
+                                 adj = prefTadj)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data3.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_prefT <- redist::redist_smc(prefT_map,
+                                     nsims = nsims)
+
+# save it
+saveRDS(sim_smc_prefT, paste("simulation/",
+                              as.character(pref_num),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "0 split (avoid TOBISHI)",
+                              ".Rds",
+                              sep = ""))
+
+###############Further analysis (avoid TOBICHI)#############
+# -------- Evaluating Redistricting Plan (0 split)------------#
+# get disparity data
+wgt_tblT <- simulation_weight_disparity_table(sim_smc_prefT)
+n <- c(1:25000)
+n <- as.data.frame(n)
+wgt_tblT <- cbind(n, wgt_tblT)
+
+wgt_tblT$n[which(wgt_tblT$max_to_min == min(wgt_tblT$max_to_min))]
+#Min 1.165095
+# 865  1936  4517  5641  9972 12059 12667 15112 15606 19453 20081 20461 21253 24320
+
+#print optimal plan
+redist::redist.plot.plans(sim_smc_prefT,
+                          draws = 865,
+                          geom = prefT_map) +
+  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan;\nAvoided enclaves")
+
+
+#sample map without any municipality merges
+prefmap <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
+
+#merge sample map with optimal plan
+library(magick)
+optimal_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/0split0tobichi543405.png")
+sample_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/samplemap.png")
+merged_map <- c(optimal_map, sample_map)
+merged <- image_flatten(merged_map, "Add")
+
+# -------- enumeration ------------#
+# simulation
+sim_enumerate_pref0 <- redist::redist.enumerate(pref0adj,
+                                                ndists = ndists_new,
+                                                popvec = pref$pop_national,
+                                                nconstraintlow = NULL,
+                                                nconstrainthigh = NULL,
+                                                popcons = NULL,
+                                                contiguitymap = "rooks")
+# test with map
+redist::redist.plot.plans(sim_enumerate_pref0,
+                          draws = 1:6,
+                          geom = pref0_map) +
+  labs(caption = "Enumeration")
+
+
+
 
 
 
