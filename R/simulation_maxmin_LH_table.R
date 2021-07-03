@@ -9,17 +9,6 @@
 #' @export
 #'
 
-#' Calculate Ippyo-no-kakusa of simulation output(maximum weight disparity in voter power)
-#'
-#' @param redist_simulation_output a data table of the `redist` simulation function output (`redist_smc` etc.)
-#'
-#' @return a table (n_sims x 4) with the ippyo no kakusa parameters for the simulated plan
-#'
-#' @concept calculate
-#'
-#' @export
-#'
-
 simulation_maxmin_LH_table <- function(redist_simulation_output){
 
   # set number of district
@@ -85,13 +74,8 @@ simulation_maxmin_LH_table <- function(redist_simulation_output){
                (1 /n_dist))) / 2
     }
     LH[k] <- lh_total
-<<<<<<< HEAD
-  }
-=======
-
   }
 
->>>>>>> 7b5a2efa9bdea8ff5b90a829b53200d98be90b76
   # Integrate those n_sims of vectors to table
   simulation_weight_disparity_table <- dplyr::tibble(
     `max_to_min` = max_to_min,
