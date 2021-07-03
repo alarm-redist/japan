@@ -16,7 +16,7 @@ setwd("..")
 # shapefile
 pref_code <- 42
 pref_name <- "nagasaki"
-sim_type_0 <- "smc"
+sim_type_0 <- "enum"
 nsims_0 <- 5000
 nsplits_0 <- 0
 
@@ -96,29 +96,32 @@ pref_map_0 <- redist::redist_map(pref_0,
                                total_pop = pop,
                                adj = prefadj_0)
 
-# simulation
-sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
-                                   nsims = nsims_0,
-                                   pop_temper = 0.05)
+makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
+makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
+writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
+
+# small map -- enumerate, don't sample!
+
+if(TRUE){ # change to TRUE if you need to init
+  redist::redist.init.enumpart()
+}
+
+enum_plans_0 <- redist::redist.enumpart(adj = prefadj_0,
+                             unordered_path = here::here('simulation/unord_nagasaki_0'),
+                             ordered_path = here::here('simulation/ord_nagasaki_0'),
+                             out_path = here::here('simulation/enum_nagasaki_0'),
+                             ndists = ndists_new, all = TRUE,
+                             total_pop = pref_map_0[[attr(pref_map_0, 'pop_col')]])
+
+good_plans_0 <- enum_plans_0[[1]][, enum_plans_0[[2]] < redist::get_pop_tol(pref_map_0)]
+
+plans_0 <- redist::redist_plans(good_plans_0, pref_map_0, algorithm = 'enumpart')
 
 # get disparity data
-wgt_tbl_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+wgt_enum_0 <- simulation_weight_disparity_table(plans_0)
 
 # get plans
-pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
-
-saveRDS(sim_smc_pref_0, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type_0),
-                            "_",
-                            as.character(nsims_0),
-                            "_",
-                            as.character(nsplits_0),
-                            ".Rds",
-                            sep = ""))
+pref_enum_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 # --------- One-Split ----------------#
 
@@ -164,34 +167,35 @@ suggest_1 <- geomander::suggest_component_connection(shp = pref_1, adj = prefadj
 prefadj_1 <- geomander::add_edge(prefadj_1, suggest_1$x,
                                suggest_1$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_1 <- lapply(prefadj_1, unique)
+
 pref_map_1 <- redist::redist_map(pref_1,
                                ndists = ndists_new,
                                pop_tol = 0.15,
                                total_pop = pop,
                                adj = prefadj_1)
 
-sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
-                                   nsims = nsims_1,
-                                   pop_temper = 0.05)
+makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
+makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
+writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
+
+if(TRUE){ # change to TRUE if you need to init
+  redist::redist.init.enumpart()
+}
+
+enum_plans_1 <- redist::redist.enumpart(adj = prefadj_1,
+                                        unordered_path = here::here('simulation/unord_nagasaki_1'),
+                                        ordered_path = here::here('simulation/ord_nagasaki_1'),
+                                        out_path = here::here('simulation/enum_nagasaki_1'),
+                                        ndists = ndists_new, all = TRUE,
+                                        total_pop = pref_map_1[[attr(pref_map_1, 'pop_col')]])
+
+good_plans_1 <- enum_plans_1[[1]][, enum_plans_1[[2]] < redist::get_pop_tol(pref_map_1)]
+
+plans_1 <- redist::redist_plans(good_plans_1, pref_map_1, algorithm = 'enumpart')
 
 # get disparity data
-wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-
-# get plans
-pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
-
-saveRDS(sim_smc_pref_1, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type_1),
-                            "_",
-                            as.character(nsims_1),
-                            "_",
-                            as.character(nsplits_1),
-                            ".Rds",
-                            sep = ""))
+wgt_enum_1 <- simulation_weight_disparity_table(plans_1)
 
 # --------- Two-Split ----------------#
 
@@ -253,39 +257,35 @@ pref_map_2 <- redist::redist_map(pref_2,
                                  total_pop = pop,
                                  adj = prefadj_2)
 
-sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
-                                     nsims = nsims_2,
-                                     pop_temper = 0.05)
+makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
+makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
+writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
 
-# get disparity data
-wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
+if(TRUE){ # change to TRUE if you need to init
+  redist::redist.init.enumpart()
+}
 
-# get plans
-pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+enum_plans_2 <- redist::redist.enumpart(adj = prefadj_2,
+                                        unordered_path = here::here('simulation/unord_nagasaki_2'),
+                                        ordered_path = here::here('simulation/ord_nagasaki_2'),
+                                        out_path = here::here('simulation/enum_nagasaki_2'),
+                                        ndists = ndists_new, all = TRUE,
+                                        total_pop = pref_map_2[[attr(pref_map_2, 'pop_col')]])
 
-saveRDS(sim_smc_pref_2, paste("simulation/",
-                              as.character(pref_code),
-                              "_",
-                              as.character(pref_name),
-                              "_",
-                              as.character(sim_type_2),
-                              "_",
-                              as.character(nsims_2),
-                              "_",
-                              as.character(nsplits_2),
-                              ".Rds",
-                              sep = ""))
+good_plans_2 <- enum_plans_2[[1]][, enum_plans_2[[2]] < redist::get_pop_tol(pref_map_2)]
+
+plans_2 <- redist::redist_plans(good_plans_2, pref_map_2, algorithm = 'enumpart')
 
 # ------ Analysis ------ -#
 
 sim_smc_pref_0 <- readRDS("simulation/42_nagasaki_smc_5000_0.Rds")
-pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_ms_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 sim_smc_pref_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
-pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+pref_ms_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 
 sim_smc_pref_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
-pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+pref_ms_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
 
 wgt_tbl <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
@@ -298,7 +298,7 @@ status_quo <- status_quo_match(pref_2)
 overlap_2 <- vector(length = nsims_2)
 
 for (i in 1:nsims_2){
-  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
+  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_ms_plans_2[, i], pref_2$pop,
                                                   weighting = "s", index_only = TRUE)
 }
 
