@@ -1,34 +1,3 @@
-############# manual entry ###############
-#-------- Set-up -----------#
-# prefectural information
-sim_type <- "enum"
-pref_code <- 25
-pref_name <- "shiga"
-lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
-# set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
-
-#------- Specify municipality splits -------------#
-# enter `c()` if not applicable
-# number of splits
-
-nsplit <- 1
-# the code of split municipaliti
-split_codes <- c(25201)
-intact_codes <- c()
-old_code <- dplyr::tibble(
-  a = c(25201, 25301),
-  b = c(0),
-  c = c(0),
-  d = c(0),
-  e = c(0)
-)
-merge_gun_exception <- c()  # enter `c()` if not applicable
-
-################ automated process ##################
-# the following is the uniformed process to automate
-
 ############# set up ###############
 #-------------- functions set up ---------------
 library(tidyverse)
@@ -58,6 +27,33 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
+#-------- information set-up -----------#
+# prefectural information
+sim_type <- "enum"
+pref_code <- 25
+pref_name <- "shiga"
+lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
+# set number of district (check external information)
+ndists_new <- 3
+ndists_old <- 4
+
+#------- Specify municipality splits -------------#
+# enter `c()` if not applicable
+# number of splits
+nsplit <- 1
+# the code of split municipaliti
+split_codes <- c(25201)
+intact_codes <- c()
+old_code <- dplyr::tibble(
+  a = c(25201, 25301),
+  b = c(0),
+  c = c(0),
+  d = c(0),
+  e = c(0)
+)
+merge_gun_exception <- c()  # enter `c()` if not applicable
+
+
 pref_1 <- split_pref(cleaned_census_shp = cleaned_census_shp,
                      census2020 = census2020,
                      nsplit = nsplit,
@@ -66,26 +62,20 @@ pref_1 <- split_pref(cleaned_census_shp = cleaned_census_shp,
                      old_code = old_code,
                      merge_gun_exception = merge_gun_exception)
 
-
-
-
-
-
-
 #------------- set up map ----------------
 # simulation parameters
 prefadj <- redist::redist.adjacency(shp = pref_1) # Adjacency list
 
 # add ferries
 # ignore errors if there is no ferry
-#ferries <- add_ferries(pref_n)
-#prefadj <- geomander::add_edge(prefadj, ferries[, 1], ferries[, 2], zero = TRUE)
+ferries <- add_ferries(pref_n)
+prefadj <- geomander::add_edge(prefadj, ferries[, 1], ferries[, 2], zero = TRUE)
 # check contiguity
-#suggest <-  geomander::suggest_component_connection(shp = pref_n, adj = prefadj)
-#prefadj <- geomander::add_edge(prefadj,
-#                               suggest$x,
-#                               suggest$y,
-#                              zero = TRUE)
+suggest <-  geomander::suggest_component_connection(shp = pref_n, adj = prefadj)
+prefadj <- geomander::add_edge(prefadj,
+                               suggest$x,
+                               suggest$y,
+                               zero = TRUE)
 
 # define map
 pref_map <- redist::redist_map(pref_1,
