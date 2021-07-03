@@ -167,6 +167,8 @@ suggest_1 <- geomander::suggest_component_connection(shp = pref_1, adj = prefadj
 prefadj_1 <- geomander::add_edge(prefadj_1, suggest_1$x,
                                suggest_1$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_1 <- lapply(prefadj_1, unique)
+
 pref_map_1 <- redist::redist_map(pref_1,
                                ndists = ndists_new,
                                pop_tol = 0.15,
@@ -193,11 +195,7 @@ good_plans_1 <- enum_plans_1[[1]][, enum_plans_1[[2]] < redist::get_pop_tol(pref
 plans_1 <- redist::redist_plans(good_plans_1, pref_map_1, algorithm = 'enumpart')
 
 # get disparity data
-wgt_enum_0 <- simulation_weight_disparity_table(plans_0)
-
-# get plans
-pref_enum_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
-
+wgt_enum_1 <- simulation_weight_disparity_table(plans_1)
 
 # --------- Two-Split ----------------#
 
