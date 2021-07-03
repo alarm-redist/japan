@@ -105,7 +105,7 @@ sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
 wgt_tbl_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 
 # get plans
-pref_ms_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 saveRDS(sim_smc_pref_0, paste("simulation/",
                             as.character(pref_code),
@@ -178,7 +178,7 @@ sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
 wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 
 # get plans
-pref_ms_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 
 saveRDS(sim_smc_pref_1, paste("simulation/",
                             as.character(pref_code),
@@ -261,7 +261,7 @@ sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
 wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 
 # get plans
-pref_ms_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
 
 saveRDS(sim_smc_pref_2, paste("simulation/",
                               as.character(pref_code),
@@ -279,13 +279,13 @@ saveRDS(sim_smc_pref_2, paste("simulation/",
 # ------ Analysis ------ -#
 
 sim_smc_pref_0 <- readRDS("simulation/42_nagasaki_smc_5000_0.Rds")
-pref_ms_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 sim_smc_pref_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
-pref_ms_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 
 sim_smc_pref_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
-pref_ms_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
 
 wgt_tbl <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
@@ -298,7 +298,7 @@ status_quo <- status_quo_match(pref_2)
 overlap_2 <- vector(length = nsims_2)
 
 for (i in 1:nsims_2){
-  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_ms_plans_2[, i], pref_2$pop,
+  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
                                                   weighting = "s", index_only = TRUE)
 }
 
