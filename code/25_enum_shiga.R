@@ -12,21 +12,6 @@ sapply(files.sources, source)
 # set working directory back to `jcdf`
 setwd("..")
 
-#------------- get and clean census data --------
-# download census shp
-pref_raw <- download_shp(pref_code)
-dem_pops <- download_pop_demographics(pref_code) #first download data
-# clean shp
-cleaned_census_shp <- pref_raw %>%
-  clean_jcdf() %>%
-  calc_kokumin(age_pops = dem_pops)
-
-# download 2020 census data
-total <- download_2020_census(type = "total")
-foreigner <- download_2020_census(type = "foreigner")
-# Clean 2020 census
-census2020 <- clean_2020_census(total = total, foreigner = foreigner)
-
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "enum"
@@ -55,9 +40,9 @@ old_code <- dplyr::tibble(
 )
 merge_gun_exception <- c()  # enter `c()` if not applicable
 
-# estimate population
-pref_1 <- split_pref(cleaned_census_shp = cleaned_census_shp,
-                     census2020 = census2020,
+######## Get data #################
+# clean and get data for simulation
+pref_1 <- split_pref(pref_code = pref_code,
                      nsplit = nsplit,
                      split_codes = split_codes,
                      intact_codes = intact_codes,

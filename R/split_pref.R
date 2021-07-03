@@ -1,8 +1,7 @@
 #' Split prefectures with restrictions
 #'
-#' @param cleaned_census_shp shp object cleaned by `clean_jcdf` and added population data by `calc_kokumin`
-#' @param census2020 data frame of 2020 census cleaned by `clean_2020_census`
-#' @param nsplit numerical value of number of splits
+#' @param pref_code administrative code for prefecture of choice (eg. Hokkaido: 01, Okinawa: 47)
+#' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
 #' @param old_code a vector of the numeric code of the old code of the split municipalities. To be used with `merge_small`
@@ -16,14 +15,27 @@
 #'
 #'
 split_pref <- function(
-  cleaned_census_shp,
-  census2020,
+  pref_code,
   nsplit,
   split_codes,
   intact_codes,
   old_code,
   merge_gun_exception
 ){
+  # download census shp
+  pref_raw <- download_shp(pref_code)
+  dem_pops <- download_pop_demographics(pref_code) #first download data
+  # clean shp
+  cleaned_census_shp <- pref_raw %>%
+    clean_jcdf() %>%
+    calc_kokumin(age_pops = dem_pops)
+
+  # download 2020 census data
+  total <- download_2020_census(type = "total")
+  foreigner <- download_2020_census(type = "foreigner")
+  # Clean 2020 census
+  census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
   pref <- cleaned_census_shp %>%
     dplyr::rename(pop = JINKO)
   # merge small
