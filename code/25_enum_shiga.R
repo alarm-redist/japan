@@ -108,7 +108,7 @@ if(is_null(split_codes_n)){
     merge_small(pref = .,
                 split_codes = split_codes_n,
                 intact_codes = intact_codes_n) %>%
-    estimate_2020_pop(pref_n, census2020)
+    estimate_2020_pop(., census2020)
 }
 
 # merge gun
@@ -161,15 +161,17 @@ enum_plans_n <- redist::redist.enumpart(adj = prefadj_n,
                              all = TRUE,
                              total_pop = pref_map_n[[attr(pref_map_n, 'pop_col')]])
 
-good_plans_0 <- enum_plans_0[[1]][, enum_plans_0[[2]] < redist::get_pop_tol(pref_map_0)]
+good_plans_n <- enum_plans_n[[1]][, enum_plans_n[[2]] < redist::get_pop_tol(pref_map_n)]
 
-plans_0 <- redist::redist_plans(good_plans_0, pref_map_0, algorithm = 'enumpart')
+plans_n <- redist::redist_plans(good_plans_n,
+                                pref_map_n,
+                                algorithm = 'enumpart')
 
 # get disparity data
-wgt_enum_0 <- simulation_weight_disparity_table(plans_0)
+wgt_enum_n <- simulation_maxmin_LH_table(plans_n)
 
 # get plans
-pref_enum_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_enum_plans_n <- redist::get_plans_matrix(sim_smc_pref_n)
 
 # --------- One-Split ----------------#
 
