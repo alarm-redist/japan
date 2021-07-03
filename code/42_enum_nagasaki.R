@@ -1,5 +1,8 @@
 # ----------- set up -------------#
 library(tidyverse)
+library(ggExtra)
+library(ggplot2)
+
 set.seed(12345)
 
 remotes::install_github("alarm-redist/redist@dev")
@@ -113,15 +116,10 @@ enum_plans_0 <- redist::redist.enumpart(adj = prefadj_0,
                              ndists = ndists_new, all = TRUE,
                              total_pop = pref_map_0[[attr(pref_map_0, 'pop_col')]])
 
-good_plans_0 <- enum_plans_0[[1]][, enum_plans_0[[2]] < redist::get_pop_tol(pref_map_0)]
-
-plans_0 <- redist::redist_plans(good_plans_0, pref_map_0, algorithm = 'enumpart')
+plans_0 <- redist::redist_plans(enum_plans_0$plans, pref_map_0, algorithm = 'enumpart')
 
 # get disparity data
 wgt_enum_0 <- simulation_weight_disparity_table(plans_0)
-
-# get plans
-pref_enum_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 # --------- One-Split ----------------#
 
@@ -190,9 +188,7 @@ enum_plans_1 <- redist::redist.enumpart(adj = prefadj_1,
                                         ndists = ndists_new, all = TRUE,
                                         total_pop = pref_map_1[[attr(pref_map_1, 'pop_col')]])
 
-good_plans_1 <- enum_plans_1[[1]][, enum_plans_1[[2]] < redist::get_pop_tol(pref_map_1)]
-
-plans_1 <- redist::redist_plans(good_plans_1, pref_map_1, algorithm = 'enumpart')
+plans_1 <- redist::redist_plans(enum_plans_1$plans, pref_map_1, algorithm = 'enumpart')
 
 # get disparity data
 wgt_enum_1 <- simulation_weight_disparity_table(plans_1)
@@ -251,6 +247,8 @@ suggest_2 <- geomander::suggest_component_connection(shp = pref_2, adj = prefadj
 prefadj_2 <- geomander::add_edge(prefadj_2, suggest_2$x,
                                  suggest_2$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_2 <- lapply(prefadj_2, unique)
+
 pref_map_2 <- redist::redist_map(pref_2,
                                  ndists = ndists_new,
                                  pop_tol = 0.20,
@@ -272,40 +270,82 @@ enum_plans_2 <- redist::redist.enumpart(adj = prefadj_2,
                                         ndists = ndists_new, all = TRUE,
                                         total_pop = pref_map_2[[attr(pref_map_2, 'pop_col')]])
 
-good_plans_2 <- enum_plans_2[[1]][, enum_plans_2[[2]] < redist::get_pop_tol(pref_map_2)]
+plans_2 <- redist::redist_plans(enum_plans_2$plans, pref_map_2, algorithm = 'enumpart')
 
-plans_2 <- redist::redist_plans(good_plans_2, pref_map_2, algorithm = 'enumpart')
+wgt_enum_2 <- simulation_weight_disparity_table(plans_2)
 
-# ------ Analysis ------ -#
-
-sim_smc_pref_0 <- readRDS("simulation/42_nagasaki_smc_5000_0.Rds")
-pref_ms_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
-
-sim_smc_pref_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
-pref_ms_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
-
-sim_smc_pref_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
-pref_ms_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
-
-wgt_tbl <- simulation_weight_disparity_table(sim_smc_pref_0)
-wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
+# ------ Analysis ------- #
 
 # Cooccurence analysis
 
 status_quo <- status_quo_match(pref_2)
 
-overlap_2 <- vector(length = nsims_2)
+# establish keys to map 0-split, 1-split plans to 2-split plans
+key <- vector(length = length(pref_2$code))
 
-for (i in 1:nsims_2){
-  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_ms_plans_2[, i], pref_2$pop,
+for (i in 1:length(pref_2$code)) {
+  if (pref_2$code[i] %in% old_42201) {key[i] <- 42201}
+  else if (pref_2$code[i] %in% old_42202) {key[i] <- 42202}
+  else {key[i] <- pref_2$code[i]}
+}
+
+# map 0-split plans to 2-split plans
+modified_enum_0 <- matrix(0, nrow = dim(enum_plans_2$plans)[1], ncol = dim(enum_plans_0$plans)[2])
+
+for (i in 1:dim(enum_plans_2$plans)[1]) {
+  if (pref_2$code[i] %in% pref_0$code) {modified_enum_0[i, ] <-
+    enum_plans_0$plans[which(pref_0$code == pref_2$code[i]), ]}
+  else {modified_enum_0[i, ] <- enum_plans_0$plans[which(pref_0$code == key[i]), ]}
+}
+
+# map 1-split plans to 2-split plans
+modified_enum_1 <- matrix(0, nrow = dim(enum_plans_2$plans)[1], ncol = dim(enum_plans_1$plans)[2])
+
+for (i in 1:dim(enum_plans_2$plans)[1]) {
+  if (pref_2$code[i] %in% pref_1$code) {modified_enum_1[i, ] <-
+    enum_plans_1$plans[which(pref_1$code == pref_2$code[i]), ]}
+  else {modified_enum_1[i, ] <- enum_plans_1$plans[which(pref_1$code == key[i]), ]}
+}
+
+overlap_enum_0 <- vector(length = dim(enum_plans_0$plans)[2])
+overlap_enum_1 <- vector(length = dim(enum_plans_1$plans)[2])
+overlap_enum_2 <- vector(length = dim(enum_plans_2$plans)[2])
+
+for (i in 1:length(overlap_enum_0)){
+  overlap_enum_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_enum_0[, i], pref_2$pop,
+                                                       weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_enum_1)){
+  overlap_enum_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_enum_1[, i], pref_2$pop,
+                                                       weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_enum_2)){
+  overlap_enum_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, enum_plans_2$plans[, i], pref_2$pop,
                                                   weighting = "s", index_only = TRUE)
 }
 
-plot(overlap_2, wgt_tbl_2$LH, xlab = "Dissimilarity", ylab = "Loosemore-Hanby", pch=18)
+wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_2, algorithm = "smc"))
 
-good_plans <- which(overlap_2 < 0.009 & wgt_tbl_2$max_to_min < 1.03, )
+# set parameters
+improved_plans <- as.data.frame(
+  cbind(rbind(wgt_enum_1 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_enum_0 %>% dplyr::filter(LH < wgt_orig$LH)
+            ),
 
-redist::redist.plot.plans(sim_smc_pref_2,
-                          draws = good_plans,
-                          geom = pref_map_2)
+      c(overlap_enum_1[which(wgt_enum_1$LH < wgt_orig$LH)],
+        overlap_enum_0[which(wgt_enum_0$LH < wgt_orig$LH)]
+            ),
+
+      c(rep("1", length(overlap_enum_1[which(wgt_enum_1$LH < wgt_orig$LH)])),
+            rep("0", length(overlap_enum_0[which(wgt_enum_0$LH < wgt_orig$LH)]))
+        )))
+
+
+names(improved_plans) <- c(names(wgt_enum_0), "Dissimilarity", "Splits")
+
+plot_enum <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
+  geom_point(size = 1) +
+  scale_alpha_manual(guide = 'none', values = list(a = 0.2, point = 1))
+
+ggMarginal(plot_enum, groupColour = TRUE, groupFill = TRUE)
+
