@@ -282,14 +282,27 @@ n <- as.data.frame(n)
 wgt_tblT <- cbind(n, wgt_tblT)
 
 wgt_tblT$n[which(wgt_tblT$max_to_min == min(wgt_tblT$max_to_min))]
-#Min:1.114395; over 20,000 fit this criteria
+#Min 1.165095
+# 865  1936  4517  5641  9972 12059 12667 15112 15606 19453 20081 20461 21253 24320
 
 #print optimal plan
 redist::redist.plot.plans(sim_smc_prefT,
-                          draws = 1,
+                          draws = 865,
                           geom = prefT_map) +
   labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan;\nAvoided enclaves")
 
+
+#sample map without any municipality merges
+prefmap <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
+
+#merge sample map with optimal plan
+library(magick)
+optimal_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/0split0tobichi543405.png")
+sample_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/samplemap.png")
+merged_map <- c(optimal_map, sample_map)
+merged <- image_flatten(merged_map, "Add")
 
 # -------- enumeration ------------#
 # simulation
