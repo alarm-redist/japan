@@ -58,12 +58,17 @@ split_pref <- function(
       merge_small(pref = .,
                   split_codes = split_codes,
                   intact_codes = intact_codes)
+
+    # merge gun
+    ifelse(is.null(merge_gun_exception),
+           pref_n <- merge_gun(pref = pref_n),
+           pref_n <- merge_gun(pref = pref_n,
+                               exception = merge_gun_exception))
+
     # download historical boundary data
     old_boundary <- download_old_shp(pref_code)
     # populations based on historical boundaries
     pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
-
-
 
     # estimation of old-boundary level national populations
     nat_2020_split_codes <- NA
@@ -88,11 +93,6 @@ split_pref <- function(
       }
     }
 
-    # merge gun
-    ifelse(is.null(merge_gun_exception),
-           pref_n <- merge_gun(pref = pref_n),
-           pref_n <- merge_gun(pref = pref_n,
-                               exception = merge_gun_exception))
     # make geometry valid
     pref_n <- sf::st_make_valid(pref_n)
 
