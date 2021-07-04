@@ -14,7 +14,8 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-sim_type <- "enum"
+sim_type <- "smc"
+nsims <- 25000
 pref_code <- 25
 pref_name <- "shiga"
 lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
