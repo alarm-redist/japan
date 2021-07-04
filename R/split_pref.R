@@ -54,10 +54,7 @@ split_pref <- function(
   if(nsplit == 0){
     # no split
     pref_n <- pref %>%
-      dplyr::group_by(code, CITY_NAME) %>%
-      dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-      dplyr::left_join(census2020, by = c('code')) %>%
-      dplyr::select(code, pop, geometry)
+      merge_small()
 
   } else {
 
