@@ -42,9 +42,17 @@ merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ############## Prepare data #################
 # clean and get data for simulation
-pref_n <- split_pref(pref_code = pref_code,
+pref_0 <- split_pref(pref_code = pref_code,
                      lakes_removed = lakes_removed,
-                     nsplit = nsplit,
+                     nsplit = 0,
+                     split_codes = split_codes,
+                     intact_codes = intact_codes,
+                     old_code = old_code,
+                     merge_gun_exception = merge_gun_exception)
+
+pref_1 <- split_pref(pref_code = pref_code,
+                     lakes_removed = lakes_removed,
+                     nsplit = 1,
                      split_codes = split_codes,
                      intact_codes = intact_codes,
                      old_code = old_code,
@@ -53,7 +61,7 @@ pref_n <- split_pref(pref_code = pref_code,
 ################ Simulation with enumuration################
 #------------- set up map ----------------
 # simulation parameters
-prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
+prefadj <- redist::redist.adjacency(shp = pref_0) # Adjacency list
 
 # add ferries
 # ignore errors if there is no ferry
