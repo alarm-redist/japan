@@ -10,7 +10,7 @@ sapply(files.sources, source)
 setwd("..")
 
 # ---------- Set Up Prefectures ----------#
-pref_num <- 25
+pref_code <- 25
 pref_name <- as.character("shiga")
 ndists_new <- 3
 ndists_old <- 4
@@ -22,7 +22,7 @@ nsplit <- 0
 
 #-------- Clean data (2015 Census)-----------#
 # Clean data
-pref_raw <- download_shp(pref_num)
+pref_raw <- download_shp(pref_code)
 pref <- clean_jcdf(pref_raw = pref_raw)
 # remove lake
 pref <- remove_lake(pref, lakes_removed)
@@ -75,7 +75,7 @@ sim_smc_pref0 <- redist::redist_smc(pref0_map,
 
 # save it
 saveRDS(sim_smc_pref0, paste("simulation/",
-                             as.character(pref_num),
+                             as.character(pref_code),
                              "_",
                              as.character(pref_name),
                              "_",
@@ -134,7 +134,7 @@ optimal_map
 
 # save it
 ggsave(filename = paste("plots/",
-                        as.character(pref_num),
+                        as.character(pref_code),
                         "_",
                         as.character(pref_name),
                         "_",
@@ -148,7 +148,7 @@ ggsave(filename = paste("plots/",
        plot = optimal_map)
 
 saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_num),
+                           as.character(pref_code),
                            "_",
                            as.character(pref_name),
                            "_",
@@ -171,8 +171,8 @@ old_code <- c(25201, 25301)
 # rank without seirei shitei (government designated) city
 # choose the city to split
 split_codes <- census2020 %>%
-  dplyr::filter(code > pref_num*1000 &
-                  code < (pref_num + 1)*1000 &
+  dplyr::filter(code > pref_code*1000 &
+                  code < (pref_code + 1)*1000 &
                   code != seirei_shitei) %>%
   dplyr::arrange(desc(pop_national)) %>%
   dplyr::select(code) %>%
@@ -183,7 +183,7 @@ split_codes <- census2020 %>%
 #First have to obtain the number of Japanese nationals per each 小地域 as of 2015
 #JINKO in pref includes foreigners too -> calculate Japanese population
 pref1 <- pref
-dem_pops <- download_pop_demographics(pref_num) #first download data
+dem_pops <- download_pop_demographics(pref_code) #first download data
 pref1 <- calc_kokumin(pref1, dem_pops)
 
 # -------- Estimate 2020 小地域 data ------------#
@@ -209,8 +209,8 @@ pref1 <- merge_gun(pref = pref1,
 
 # -------- Old boundary ------------#
 #first download data
-old_boundary <- download_old_shp(pref_code = pref_num)
-pop_by_old_boundary <- download_2015pop_old(pref_code = pref_num)
+old_boundary <- download_old_shp(pref_code = pref_code)
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 pref1 <- reflect_old_boundaries(pref1,
                                 old_boundary = old_boundary,
@@ -241,7 +241,7 @@ sim_smc_pref1 <- redist::redist_smc(pref1_map,
 
 # save it
 saveRDS(sim_smc_pref1, paste("simulation/",
-                             as.character(pref_num),
+                             as.character(pref_code),
                              "_",
                              as.character(pref_name),
                              "_",
@@ -296,7 +296,7 @@ optimal_map
 
 # save it
 ggsave(filename = paste("plots/",
-                        as.character(pref_num),
+                        as.character(pref_code),
                         "_",
                         as.character(pref_name),
                         "_",
@@ -310,7 +310,7 @@ ggsave(filename = paste("plots/",
        plot = optimal_map)
 
 saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_num),
+                           as.character(pref_code),
                            "_",
                            as.character(pref_name),
                            "_",

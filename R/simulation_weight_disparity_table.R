@@ -12,14 +12,13 @@
 simulation_weight_disparity_table <- function(redist_simulation_output){
 
   # set number of district
-  n_dist <- max(as.numeric(redist_simulation_output$district))
+  n_dist <- nrow(redist_simulation_output %>% dplyr::filter(draw == 1))
 
   ### initial draw for `redist_mergesplit` ###
   if(redist_simulation_output$draw[1] == "<init>"){
     # subset to initial draw
     init <- redist_simulation_output %>%
       dplyr::filter(draw == "<init>") %>%
-      dplyr::summarise(total_pop = as.numeric(total_pop)) %>%
       tibble::deframe()
 
     # Max to Min ratio
@@ -56,44 +55,44 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
   simulation <- redist_simulation_output %>%
     dplyr::filter(draw != "<init>")
 
-  # reset the data frame
-  max_to_min <- NA
-  Gini <- NA
-  LH <- NA
-  HH <- NA
-  simulation_weight_disparity_table <- NA
-
   # Number of iterations for the simulation
   n_sims <- nrow(simulation)/n_dist
 
+  # reset the data frame
+  max_to_min <- vector(length = n_sims)
+  Gini <- vector(length = n_sims)
+  LH <- vector(length = n_sims)
+  HH <- vector(length = n_sims)
+  simulation_weight_disparity_table <- NA
+
   # Calculate statistics for each iterations
-  for(k in 1:n_sims){
+  for(k in 1 : n_sims){
 
     # filter to simulation level
-    simulation <- redist_simulation_output %>%
-      dplyr::filter(draw == k) %>%
-      # make it numeric
-      dplyr::summarise(total_pop = as.numeric(total_pop))
+    simulation <- redist_simulation_output[(n_dist*(k-1) + 1):(n_dist*k), ]
+
+    total_pop <- simulation$total_pop
 
     # save statistics in the k_th vector
     # Max to Min ratio
-    max_to_min[k] <- max(simulation)/min(simulation)
+    max_to_min[k] <- max(total_pop)/min(total_pop)
 
     # Gini Coefficient
-    Gini[k] <- reldist::gini(x = simulation$total_pop,
-                             weights = rep(1, nrow(simulation)))
+    Gini[k] <- reldist::gini(x = total_pop,
+                             weights = rep(1, n_dist))
 
     # Loosemore Hanby index
     lh_total <- 0
-    for (i in 1:nrow(simulation)){
+    for (i in 1:n_dist){
       lh_total <- lh_total +
-        (abs((simulation$total_pop[i] / sum(simulation$total_pop)) -
-               (1 / nrow(simulation)))) / 2
+        (abs((total_pop[i] / sum(total_pop)) -
+               (1 /n_dist))) / 2
     }
     LH[k] <- lh_total
 
     # Hirshman Herfindahl index
-    HH[k] <- sum(simulation$total_pop^2)/sum(simulation$total_pop)^2
+    HH[k] <- sum(total_pop^2)/sum(total_pop)^2
+
   }
 
   # Integrate those n_sims of vectors to table
@@ -112,4 +111,5 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
 
   # n_sims x 4 table
   return(return)
+
 }

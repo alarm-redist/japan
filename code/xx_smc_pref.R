@@ -10,7 +10,7 @@ sapply(files.sources, source)
 setwd("..")
 
 # ---------- Set Up Prefectures ----------#
-pref_num <- 25
+pref_code <- 25
 pref_name <- as.character("shiga")
 ndists_new <- 3
 ndists_old <- 4
@@ -23,7 +23,7 @@ pop_tol <- 0.3
 
 #-------- Clean data (2015 Census)-----------#
 # Clean data
-pref_raw <- download_shp(pref_num)
+pref_raw <- download_shp(pref_code)
 pref <- clean_jcdf(pref_raw = pref_raw)
 # remove lake
 pref <- remove_lake(pref, lakes_removed)
@@ -76,7 +76,7 @@ sim_smc_pref0 <- redist::redist_smc(pref0_map,
 
 # save it
 saveRDS(sim_smc_pref0, paste("simulation/",
-                             as.character(pref_num),
+                             as.character(pref_code),
                              "_",
                              as.character(pref_name),
                              "_",
@@ -135,7 +135,7 @@ optimal_map
 
 # save it
 ggsave(filename = paste("plots/",
-                        as.character(pref_num),
+                        as.character(pref_code),
                         "_",
                         as.character(pref_name),
                         "_",
@@ -149,7 +149,7 @@ ggsave(filename = paste("plots/",
        plot = optimal_map)
 
 saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_num),
+                           as.character(pref_code),
                            "_",
                            as.character(pref_name),
                            "_",
