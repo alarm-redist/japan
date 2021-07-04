@@ -32,6 +32,8 @@ add_ferries <- function(pref){
   # find the ports located within prefecture of choice
   pref_ports <- port_data %>% dplyr::filter(substr(N09_001, 1, 2) == as.character(pref_num), )
 
+  stop("No ferries in prefecture.")
+
   # create "closest" column that finds the municipality/district in which the port is located
   pref_ports$closest <- flatten(nngeo:::st_nn(pref_ports, pref))
 
