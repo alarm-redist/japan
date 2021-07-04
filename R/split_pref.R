@@ -1,6 +1,7 @@
 #' Split prefectures with restrictions
 #'
 #' @param pref_code administrative code for prefecture of choice (eg. Hokkaido: 01, Okinawa: 47)
+#' @param lakes_removed character vector containing name of lakes. To be used in `remove_lake`
 #' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
@@ -16,6 +17,7 @@
 #'
 split_pref <- function(
   pref_code,
+  lakes_removed,
   nsplit,
   split_codes,
   intact_codes,
@@ -41,15 +43,18 @@ split_pref <- function(
   pref <- cleaned_census_shp %>%
     dplyr::rename(pop = JINKO)
 
+  # remove lake
+  ifelse(is.null(lakes_removed),
+         pref <- pref,
+         pref <- remove_lake(pref,lakes_removed))
+
+
   ######### wrangle data into for the municipality split#########
   # merge small
   if(nsplit == 0){
     # no split
     pref_n <- pref %>%
-      dplyr::group_by(code, CITY_NAME) %>%
-      dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-      dplyr::left_join(census2020, by = c('code')) %>%
-      dplyr::select(code, pop, geometry)
+      merge_small()
 
   } else {
 
@@ -58,12 +63,17 @@ split_pref <- function(
       merge_small(pref = .,
                   split_codes = split_codes,
                   intact_codes = intact_codes)
+
+    # merge gun
+    ifelse(is.null(merge_gun_exception),
+           pref_n <- merge_gun(pref = pref_n),
+           pref_n <- merge_gun(pref = pref_n,
+                               exception = merge_gun_exception))
+
     # download historical boundary data
     old_boundary <- download_old_shp(pref_code)
     # populations based on historical boundaries
     pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
-
-
 
     # estimation of old-boundary level national populations
     nat_2020_split_codes <- NA
@@ -88,11 +98,6 @@ split_pref <- function(
       }
     }
 
-    # merge gun
-    ifelse(is.null(merge_gun_exception),
-           pref_n <- merge_gun(pref = pref_n),
-           pref_n <- merge_gun(pref = pref_n,
-                               exception = merge_gun_exception))
     # make geometry valid
     pref_n <- sf::st_make_valid(pref_n)
 
