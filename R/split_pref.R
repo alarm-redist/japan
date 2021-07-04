@@ -1,6 +1,7 @@
 #' Split prefectures with restrictions
 #'
 #' @param pref_code administrative code for prefecture of choice (eg. Hokkaido: 01, Okinawa: 47)
+#' @param lakes_removed character vector containing name of lakes. To be used in `remove_lake`
 #' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
@@ -16,6 +17,7 @@
 #'
 split_pref <- function(
   pref_code,
+  lakes_removed,
   nsplit,
   split_codes,
   intact_codes,
@@ -40,6 +42,12 @@ split_pref <- function(
 
   pref <- cleaned_census_shp %>%
     dplyr::rename(pop = JINKO)
+
+  # remove lake
+  ifelse(is.null(lakes_removed),
+         pref <- pref,
+         pref <- remove_lake(pref,lakes_removed))
+
 
   ######### wrangle data into for the municipality split#########
   # merge small
