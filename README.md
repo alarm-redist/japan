@@ -19,9 +19,10 @@
 5. `get_municode`
 6. `merge_small`
 7. `merge_gun`
-8. Test if the maps make sense
-9. `status_quo_match`
-10. `add_ferries`
+8. `reflect_old_boundaries`
+9. Test if the maps make sense
+10. `status_quo_match`
+11. `add_ferries`
 
 ## Simulation
 1. `redist_smc` or `redist_enumration`
