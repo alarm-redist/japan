@@ -28,14 +28,16 @@ add_ferries <- function(pref){
   # filter out the routes that are intra-prefectural
   pref_internal <- route_data %>% dplyr::filter(substr(route_data$start, 1, 2) == as.character(pref_num)
                                                 & substr(route_data$stop, 1, 2) == as.character(pref_num), )
+  if(nrow(pref_internal) == 0) {stop("No ferries in prefecture.")}
 
   # find the ports located within prefecture of choice
   pref_ports <- port_data %>% dplyr::filter(substr(N09_001, 1, 2) == as.character(pref_num), )
+  if(nrow(pref_ports) == 0) {stop("No ferries in prefecture.")}
 
-  stop("No ferries in prefecture.")
+  pref_boundary <- sf::st_boundary(pref)
 
   # create "closest" column that finds the municipality/district in which the port is located
-  pref_ports$closest <- flatten(nngeo:::st_nn(pref_ports, pref))
+  pref_ports$closest <- flatten(nngeo:::st_nn(pref_ports, pref_boundary))
 
   # sort the ports in order
   for (x in 1:length(pref_internal$start)) {
