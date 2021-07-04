@@ -299,6 +299,7 @@ improved_plans <- as.data.frame(
 names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
 
 plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
-  geom_point(size = 1)
+  geom_point(size = 1, alpha = 0.3)
 ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
+
 
