@@ -43,6 +43,7 @@ merge_gun_exception <- c()  # enter `c()` if not applicable
 ############## Prepare data #################
 # clean and get data for simulation
 pref_n <- split_pref(pref_code = pref_code,
+                     lakes_removed = lakes_removed,
                      nsplit = nsplit,
                      split_codes = split_codes,
                      intact_codes = intact_codes,
