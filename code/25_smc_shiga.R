@@ -201,11 +201,6 @@ saveRDS(optimal_map, paste("plots/",
 ###############Workflow for 1 split##################
 
 # -------- Evaluating Redistricting Plan (1 split)------------#
-# get plans
-pref1_smc_plans <- redist::get_plans_matrix(sim_smc_pref1)
-
-# get disparity data
-wgt_tbl1 <- simulation_weight_disparity_table(sim_smc_pref1)
 
 #best ippyo no kakusa
 min(wgt_tbl1$max_to_min)

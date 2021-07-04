@@ -52,9 +52,13 @@ split_pref <- function(
   ######### wrangle data into for the municipality split#########
   # merge small
   if(nsplit == 0){
+
     # no split
     pref_n <- pref %>%
-      merge_small()
+      merge_small() %>%
+      dplyr::left_join(census2020, by = c('code')) %>%
+      dplyr::select(code, geometry, pop_national) %>%
+      dplyr::rename(pop = pop_national)
 
     ifelse(is.null(merge_gun_exception),
            pref_n <- merge_gun(pref = pref_n),
