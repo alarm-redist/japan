@@ -16,8 +16,8 @@ setwd("..")
 # shapefile
 pref_code <- 42
 pref_name <- "nagasaki"
-sim_type_0 <- "smc"
-nsims_0 <- 5000
+sim_type <- "smc"
+nsims <- 25000
 nsplits_0 <- 0
 
 # set number of district (check external information)
@@ -27,6 +27,13 @@ ndists_old <- 4
 pref_raw <- download_shp(pref_code)
 
 pref <- clean_jcdf(pref_raw = pref_raw)
+
+# 2020 census
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+
+# clean it
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
 # combining two data
 pref <- pref %>%
@@ -43,13 +50,6 @@ pref <- pref %>%
 pref %>%
   ggplot() +
   geom_sf(fill = "red")
-
-# 2020 census
-total <- download_2020_census(type = "total")
-foreigner <- download_2020_census(type = "foreigner")
-
-# clean it
-census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
 # download historical boundary data
 old_pref <- download_old_shp(pref_code)
@@ -90,6 +90,8 @@ suggest_0 <- geomander::suggest_component_connection(shp = pref_0, adj = prefadj
 prefadj_0 <- geomander::add_edge(prefadj_0, suggest_0$x,
                                suggest_0$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_0 <- lapply(prefadj_0, unique)
+
 pref_map_0 <- redist::redist_map(pref_0,
                                ndists = ndists_new,
                                pop_tol= 0.20,
@@ -98,23 +100,17 @@ pref_map_0 <- redist::redist_map(pref_0,
 
 # simulation
 sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
-                                   nsims = nsims_0,
+                                   nsims = nsims,
                                    pop_temper = 0.05)
-
-# get disparity data
-wgt_tbl_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
-
-# get plans
-pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 
 saveRDS(sim_smc_pref_0, paste("simulation/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),
                             "_",
-                            as.character(sim_type_0),
+                            as.character(sim_type),
                             "_",
-                            as.character(nsims_0),
+                            as.character(nsims),
                             "_",
                             as.character(nsplits_0),
                             ".Rds",
@@ -122,9 +118,7 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 
 # --------- One-Split ----------------#
 
-sim_type_1 <- "smc"
 nsplits_1 <- 1
-nsims_1 <- 25000
 
 # initialize pref_1 object
 pref_1 <- pref
@@ -164,6 +158,8 @@ suggest_1 <- geomander::suggest_component_connection(shp = pref_1, adj = prefadj
 prefadj_1 <- geomander::add_edge(prefadj_1, suggest_1$x,
                                suggest_1$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_1 <- lapply(prefadj_1, unique)
+
 pref_map_1 <- redist::redist_map(pref_1,
                                ndists = ndists_new,
                                pop_tol = 0.15,
@@ -171,23 +167,17 @@ pref_map_1 <- redist::redist_map(pref_1,
                                adj = prefadj_1)
 
 sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
-                                   nsims = nsims_1,
+                                   nsims = nsims,
                                    pop_temper = 0.05)
-
-# get disparity data
-wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-
-# get plans
-pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 
 saveRDS(sim_smc_pref_1, paste("simulation/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),
                             "_",
-                            as.character(sim_type_1),
+                            as.character(sim_type),
                             "_",
-                            as.character(nsims_1),
+                            as.character(nsims),
                             "_",
                             as.character(nsplits_1),
                             ".Rds",
@@ -195,9 +185,7 @@ saveRDS(sim_smc_pref_1, paste("simulation/",
 
 # --------- Two-Split ----------------#
 
-sim_type_2 <- "smc"
 nsplits_2 <- 2
-nsims_2 <- 25000
 
 # initialize pref_2 object
 pref_2 <- pref
@@ -247,6 +235,8 @@ suggest_2 <- geomander::suggest_component_connection(shp = pref_2, adj = prefadj
 prefadj_2 <- geomander::add_edge(prefadj_2, suggest_2$x,
                                  suggest_2$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
 
+prefadj_2 <- lapply(prefadj_2, unique)
+
 pref_map_2 <- redist::redist_map(pref_2,
                                  ndists = ndists_new,
                                  pop_tol = 0.20,
@@ -254,23 +244,18 @@ pref_map_2 <- redist::redist_map(pref_2,
                                  adj = prefadj_2)
 
 sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
-                                     nsims = nsims_2,
+                                     nsims = nsims,
                                      pop_temper = 0.05)
 
-# get disparity data
-wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
-
-# get plans
-pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
 
 saveRDS(sim_smc_pref_2, paste("simulation/",
                               as.character(pref_code),
                               "_",
                               as.character(pref_name),
                               "_",
-                              as.character(sim_type_2),
+                              as.character(sim_type),
                               "_",
-                              as.character(nsims_2),
+                              as.character(nsims),
                               "_",
                               as.character(nsplits_2),
                               ".Rds",
@@ -287,25 +272,82 @@ pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 sim_smc_pref_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
 pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
 
-wgt_tbl <- simulation_weight_disparity_table(sim_smc_pref_0)
-wgt_tbl_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-wgt_tbl_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
+# get disparity table data
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 
 # Cooccurence analysis
-
 status_quo <- status_quo_match(pref_2)
 
-overlap_2 <- vector(length = nsims_2)
+# establish keys to map 0-split, 1-split plans to 2-split plans
+key <- vector(length = length(pref_2$code))
 
-for (i in 1:nsims_2){
-  overlap_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
-                                                  weighting = "s", index_only = TRUE)
+for (i in 1:length(pref_2$code)) {
+  if (pref_2$code[i] %in% old_42201) {key[i] <- 42201}
+  else if (pref_2$code[i] %in% old_42202) {key[i] <- 42202}
+  else {key[i] <- pref_2$code[i]}
 }
 
-plot(overlap_2, wgt_tbl_2$LH, xlab = "Dissimilarity", ylab = "Loosemore-Hanby", pch=18)
+# map 0-split plans to 2-split plans
+modified_smc_0 <- matrix(0, nrow = dim(pref_smc_plans_2)[1],
+                         ncol = dim(pref_smc_plans_0)[2])
 
-good_plans <- which(overlap_2 < 0.009 & wgt_tbl_2$max_to_min < 1.03, )
+for (i in 1:dim(pref_smc_plans_2)[1]) {
+  if (pref_2$code[i] %in% pref_0$code) {modified_smc_0[i, ] <-
+    pref_smc_plans_0[which(pref_0$code == pref_2$code[i]), ]}
+  else {modified_smc_0[i, ] <- pref_smc_plans_0[which(pref_0$code == key[i]), ]}
+}
 
-redist::redist.plot.plans(sim_smc_pref_2,
-                          draws = good_plans,
-                          geom = pref_map_2)
+# map 1-split plans to 2-split plans
+modified_smc_1 <- matrix(0, nrow = dim(pref_smc_plans_2)[1],
+                         ncol = dim(pref_smc_plans_1)[2])
+
+for (i in 1:dim(pref_smc_plans_2)[1]) {
+  if (pref_2$code[i] %in% pref_1$code) {modified_smc_1[i, ] <-
+    pref_smc_plans_1[which(pref_1$code == pref_2$code[i]), ]}
+  else {modified_smc_1[i, ] <- pref_smc_plans_1[which(pref_1$code == key[i]), ]}
+}
+
+overlap_smc_0 <- vector(length = dim(pref_smc_plans_0)[2])
+overlap_smc_1 <- vector(length = dim(pref_smc_plans_1)[2])
+overlap_smc_2 <- vector(length = dim(pref_smc_plans_2)[2])
+
+for (i in 1:length(overlap_smc_0)){
+  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_2$pop,
+                                                       weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_smc_1)){
+  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_2$pop,
+                                                       weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_smc_2)){
+  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
+                                                       weighting = "s", index_only = TRUE)
+}
+
+wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_2, algorithm = "smc"))
+
+# set parameters
+improved_plans <- as.data.frame(
+  cbind(rbind(wgt_smc_1 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_smc_0 %>% dplyr::filter(LH < wgt_orig$LH)
+  ),
+
+  c(overlap_smc_1[which(wgt_smc_1$LH < wgt_orig$LH)],
+    overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)]
+  ),
+
+  c(rep("1", length(overlap_smc_1[which(wgt_smc_1$LH < wgt_orig$LH)])),
+    rep("0", length(overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)]))
+  )))
+
+
+names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
+
+plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
+  geom_point(size = 1) +
+  scale_alpha_manual(guide = 'none', values = list(a = 0.2, point = 1))
+
+ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
+
