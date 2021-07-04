@@ -56,6 +56,11 @@ split_pref <- function(
     pref_n <- pref %>%
       merge_small()
 
+    ifelse(is.null(merge_gun_exception),
+           pref_n <- merge_gun(pref = pref_n),
+           pref_n <- merge_gun(pref = pref_n,
+                               exception = merge_gun_exception))
+
   } else {
 
     # n_split
