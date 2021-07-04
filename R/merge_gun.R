@@ -50,13 +50,14 @@ merge_gun <- function(pref, exception = NULL){
         for(i in 1:20){
           pref$code[pref$code == i] <- pref_code + 300 + 20*(i-1)
         }
-        #delete the unncessary column
+        #delete the unnecessary column
         pref = subset(pref, select = - gun_code)
         #group together the gun and treat them as if they were municipalities
         bound <- pref %>%
           group_by(code) %>%
           summarise(geometry = sf::st_union(geometry), pop = sum(pop))
         bound <- sf::st_as_sf(bound)
+        row.names(bound) <- NULL
         return(bound)################
       }
       else{
@@ -113,6 +114,7 @@ merge_gun <- function(pref, exception = NULL){
         ######Same as Scenario 1###############
         bound <- dplyr::bind_rows(pref_grouped, pref_separate)
         bound <- sf::st_as_sf(bound)
+        row.names(bound) <- NULL
         return(bound)
       }
     }
