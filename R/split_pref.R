@@ -5,7 +5,6 @@
 #' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
-#' @param old_code a vector of the numeric code of the old code of the split municipalities. To be used with `merge_small`
 #' @param merge_gun_exception a vector of the numeric code of the municipalities which are included in the exception list for `merge_gun`.
 #'
 #' @return a shape file object with the expected population of the split municipalities.
@@ -21,7 +20,6 @@ split_pref <- function(
   nsplit,
   split_codes,
   intact_codes,
-  old_code,
   merge_gun_exception
 ){
 
@@ -89,16 +87,18 @@ split_pref <- function(
     pop_2015_split_codes <- NA
 
     for(k in 1:nsplit){
+      old_code <- find_old_codes(new_code = split_codes[k],
+                                 pop_by_old_boundary = pop_by_old_boundary)
       # reflect old boundaries
       pref_n <- reflect_old_boundaries(pref_n,
                                        old_boundary = old_boundary,
                                        pop_by_old_boundary = pop_by_old_boundary,
-                                       old_code = old_code[, k],
+                                       old_code = old_code,
                                        new_code = split_codes)
 
       nat_2020_split_codes <- census2020$pop_national[census2020$code == split_codes[k]]
-      pop_2015_split_codes <- sum(pref_n$pop[pref_n$code == old_code[, k]])
-      old_code_slice <- old_code[, k]
+      pop_2015_split_codes <- sum(pref_n$pop[pref_n$code == old_code[k]])
+      old_code_slice <- old_code[k]
 
       for (i in 1:length(!is.na(old_code_slice))){
         pref_n[which(pref_n$code == old_code_slice[i]), ]$pop <- round(

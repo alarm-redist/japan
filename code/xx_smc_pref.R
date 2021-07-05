@@ -16,9 +16,9 @@ setwd("..")
 # prefectural information
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 25
-pref_name <- "shiga"
-lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
+pref_code <- 42
+pref_name <- "nagasaki"
+lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
@@ -28,18 +28,11 @@ ndists_old <- 4
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-nsplit <- 1
+nsplit <- 2
 # the code of split municipaliti
-split_codes <- c(25201)
+split_codes <- c(42201, 42202)
 intact_codes <- c()
-old_code <- data.frame(
-  a = c(25201, 25301),
-  b = NA,
-  c = NA,
-  d = NA,
-  e = NA
-)
-merge_gun_exception <- c()  # enter `c()` if not applicable
+merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
 ############## Prepare data #################
 # clean and get data for simulation
@@ -50,27 +43,28 @@ for(i in 0:nsplit){
                        nsplit = i,
                        split_codes = split_codes,
                        intact_codes = intact_codes,
-                       old_code = old_code,
                        merge_gun_exception = merge_gun_exception)
 
   #------------- set up map ----------------
   # simulation parameters
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
-  # add ferries
-  # ignore errors if there is no ferry
-  #ferries <- add_ferries(pref_n)
-  #prefadj <- geomander::add_edge(prefadj,
-  #                               ferries[, 1],
-  #                               ferries[, 2],
-  #                               zero = TRUE)
-  # check contiguity
-  #suggest <-  geomander::suggest_component_connection(shp = pref_n,
-  #                                                    adj = prefadj)
-  #prefadj <- geomander::add_edge(prefadj,
-  #                               suggest$x,
-  #                               suggest$y,
-  #                               zero = TRUE)
+  # add ferry if applicable
+  if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries <- add_ferries(pref_n)
+    prefadj <- geomander::add_edge(prefadj,
+                                   ferries[, 1],
+                                   ferries[, 2],
+                                   zero = TRUE)
+    # check contiguity
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adj = prefadj)
+    prefadj <- geomander::add_edge(prefadj,
+                                   suggest$x,
+                                   suggest$y,
+                                   zero = TRUE)
+  }
 
   # define map
   pref_map <- redist::redist_map(pref_n,
