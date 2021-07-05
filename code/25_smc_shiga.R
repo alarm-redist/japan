@@ -231,31 +231,3 @@ optimal_map <- redist::redist.plot.plans(sim_smc_pref1,
                        optimal[1],
                        sep = ""))
 optimal_map
-
-# save it
-ggsave(filename = paste("plots/",
-                        as.character(pref_code),
-                        "_",
-                        as.character(pref_name),
-                        "_",
-                        as.character(sim_type),
-                        "_",
-                        as.character(nsims),
-                        "_",
-                        as.character(nsplit),
-                        "split.png",
-                        sep = ""),
-       plot = optimal_map)
-
-saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(sim_type),
-                           "_",
-                           as.character(nsims),
-                           "_",
-                           as.character(nsplit),
-                           "split.Rds",
-                           sep = ""))
