@@ -231,3 +231,5 @@ optimal_map <- redist::redist.plot.plans(sim_smc_pref1,
                        optimal[1],
                        sep = ""))
 optimal_map
+
+#memo
