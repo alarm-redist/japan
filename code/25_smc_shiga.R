@@ -232,3 +232,4 @@ optimal_map <- redist::redist.plot.plans(sim_smc_pref1,
                        sep = ""))
 optimal_map
 
+#sssf
