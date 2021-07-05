@@ -292,14 +292,12 @@ improved_plans <- as.data.frame(
     overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)]
   ),
 
-  as.character(c(redist::redist.splits(modified_smc_1[, which(wgt_smc_1$LH < wgt_orig$LH)], key),
-    redist::redist.splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key)
-  ))))
+  as.character(count_splits(modified_smc_1[, which(wgt_smc_1$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key)
+  )))
 
 names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
 
 plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
   geom_point(size = 1, alpha = 0.3)
 ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
-
-
