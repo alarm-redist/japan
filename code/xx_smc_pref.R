@@ -16,23 +16,20 @@ setwd("..")
 # prefectural information
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 42
-pref_name <- "nagasaki"
-lakes_removed <- c() # enter `c()` if not applicable
+pref_code <- 25
+pref_name <- "shiga"
+lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
-
-########### Split one municipality ###############
-
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-nsplit <- 2
+nsplit <- 1
 # the code of split municipaliti
-split_codes <- c(42201, 42202)
+split_codes <- c(25201)
 intact_codes <- c()
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -57,12 +54,18 @@ ifelse(is.null(lakes_removed),
        pref <- pref,
        pref <- remove_lake(pref,lakes_removed))
 
+# download historical boundary data
+old_boundary <- download_old_shp(pref_code = pref_code)
+# populations based on historical boundaries
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 ####### Simulation by number of splits#######
 
 for(i in 0:nsplit){
   pref_n <- split_pref(pref = pref,
                        census2020 = census2020,
+                       old_boundary = old_boundary,
+                       pop_by_old_boundary = pop_by_old_boundary,
                        nsplit = i,
                        split_codes = split_codes,
                        intact_codes = intact_codes,
@@ -120,17 +123,17 @@ for(i in 0:nsplit){
   smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
 
   # rename elements to be used
-  assign(paste(pref_code, pref_name, i, sep = "_"),
+  assign(paste(pref_name, pref_code, i, sep = "_"),
          pref_n)
-  assign(paste(pref_code, pref_name, "adj", i, sep = "_"),
+  assign(paste(pref_name, pref_code, "adj", i, sep = "_"),
          prefadj)
-  assign(paste(pref_code, pref_name, "map", i, sep = "_"),
+  assign(paste(pref_name, pref_code, "map", i, sep = "_"),
          pref_map)
-  assign(paste(pref_code, pref_name, "sim_smc", i, sep = "_"),
+  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
          sim_smc_pref)
-  assign(paste(pref_code, pref_name, "smc_plans", i, sep = "_"),
+  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
          smc_plans_pref)
-  assign(paste(pref_code, pref_name,"smc_weight", i, sep = "_"),
+  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
          smc_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
@@ -146,3 +149,9 @@ for(i in 0:nsplit){
   )])
 
 }
+
+maxmin_LH <- ggplot(data = shiga_25_smc_weight_0,
+                    mapping = aes(x = LH,
+                                  y = max_to_min))+
+  geom_point()
+maxmin_LH

@@ -2,6 +2,8 @@
 #'
 #' @param pref a cleaned shapefile object of jcdf
 #' @param census2020 a cleaned data frame of 2020 census
+#' @param old_boundary an old jcdf
+#' @param pop_by_old_boundary a data frame of 2015 census
 #' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
@@ -17,6 +19,8 @@
 split_pref <- function(
   pref,
   census2020,
+  old_boundary,
+  pop_by_old_boundary,
   nsplit,
   split_codes,
   intact_codes,
@@ -52,11 +56,6 @@ split_pref <- function(
            pref_n <- merge_gun(pref = pref_n),
            pref_n <- merge_gun(pref = pref_n,
                                exception = merge_gun_exception))
-
-    # download historical boundary data
-    old_boundary <- download_old_shp(pref_code)
-    # populations based on historical boundaries
-    pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
     # estimation of old-boundary level national populations
     for(k in 1:nsplit){
