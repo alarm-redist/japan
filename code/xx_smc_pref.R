@@ -34,12 +34,35 @@ split_codes <- c(42201, 42202)
 intact_codes <- c()
 merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
-############## Prepare data #################
-# clean and get data for simulation
+######### Download and Clean Census ############
+# download census shp
+pref_raw <- download_shp(pref_code)
+dem_pops <- download_pop_demographics(pref_code) #first download data
+# clean shp
+cleaned_census_shp <- pref_raw %>%
+  clean_jcdf() %>%
+  calc_kokumin(age_pops = dem_pops)
+
+# download 2020 census data
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+# Clean 2020 census
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
+pref <- cleaned_census_shp %>%
+  dplyr::rename(pop = JINKO)
+
+# remove lake
+ifelse(is.null(lakes_removed),
+       pref <- pref,
+       pref <- remove_lake(pref,lakes_removed))
+
+
+####### Simulation by number of splits#######
 
 for(i in 0:nsplit){
-  pref_n <- split_pref(pref_code = pref_code,
-                       lakes_removed = lakes_removed,
+  pref_n <- split_pref(pref = pref,
+                       census2020 = census2020,
                        nsplit = i,
                        split_codes = split_codes,
                        intact_codes = intact_codes,
@@ -97,17 +120,17 @@ for(i in 0:nsplit){
   smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
 
   # rename elements to be used
-  assign(paste("pref_", i, sep = ""),
+  assign(paste(pref_code, pref_name, i, sep = "_"),
          pref_n)
-  assign(paste("prefadj_", i, sep = ""),
+  assign(paste(pref_code, pref_name, "adj", i, sep = "_"),
          prefadj)
-  assign(paste("pref_map_", i, sep = ""),
+  assign(paste(pref_code, pref_name, "map", i, sep = "_"),
          pref_map)
-  assign(paste("sim_smc_pref_", i, sep = ""),
+  assign(paste(pref_code, pref_name, "sim_smc", i, sep = "_"),
          sim_smc_pref)
-  assign(paste("smc_plans_pref_", i, sep = ""),
+  assign(paste(pref_code, pref_name, "smc_plans", i, sep = "_"),
          smc_plans_pref)
-  assign(paste("smc_weight_pref_", i, sep = ""),
+  assign(paste(pref_code, pref_name,"smc_weight", i, sep = "_"),
          smc_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
@@ -115,7 +138,11 @@ for(i in 0:nsplit){
                              "pref_map",
                              "sim_smc_pref",
                              "smc_plans_pref",
-                             "smc_weight_pref")
+                             "smc_weight_pref",
+                             "ferries",
+                             "suggest",
+                             "port_data",
+                             "route_data")
   )])
 
 }
