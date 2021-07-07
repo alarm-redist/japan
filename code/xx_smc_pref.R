@@ -16,29 +16,22 @@ setwd("..")
 # prefectural information
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 25
-pref_name <- "shiga"
-lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
+pref_code <- 42
+pref_name <- "nagasaki"
+lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-nsplit <- 1
-# the code of split municipaliti
-split_codes <- c(25201)
-intact_codes <- c()
-merge_gun_exception <- c()  # enter `c()` if not applicable
+nsplit <- 2
+merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
 pref_raw <- download_shp(pref_code)
 dem_pops <- download_pop_demographics(pref_code) #first download data
-# clean shp
-cleaned_census_shp <- pref_raw %>%
-  clean_jcdf() %>%
-  calc_kokumin(age_pops = dem_pops)
 
 # download 2020 census data
 total <- download_2020_census(type = "total")
@@ -46,18 +39,27 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-pref <- cleaned_census_shp %>%
-  dplyr::rename(pop = JINKO)
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
 
 # remove lake
 ifelse(is.null(lakes_removed),
        pref <- pref,
-       pref <- remove_lake(pref,lakes_removed))
+       pref <- remove_lake(pref, lakes_removed))
 
 # download historical boundary data
 old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+
+# the code of split municipalities
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+intact_codes <- c()
 
 ####### Simulation by number of splits#######
 
@@ -113,7 +115,7 @@ for(i in 0:nsplit){
                               as.character(nsims),
                               "_",
                               as.character(i),
-                              "split.Rds",
+                              ".Rds",
                               sep = ""))
 
   # get plans
