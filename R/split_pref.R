@@ -80,6 +80,7 @@ split_pref <- function(
     pref_n <- sf::st_make_valid(pref_n)
 
     row.names(pref_n) <- NULL
+
   }
 
   return(pref_n)

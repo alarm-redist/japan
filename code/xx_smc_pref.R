@@ -58,7 +58,7 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+split_codes <- pref[order(-pref$pop), ]$code[0:nsplit]
 intact_codes <- c()
 
 ####### Simulation by number of splits#######
@@ -78,20 +78,26 @@ for(i in 0:nsplit){
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
   # add ferry if applicable
+  # add ferry if applicable
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
-    prefadj <- geomander::add_edge(prefadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
-                                   zero = TRUE)
-    # check contiguity
+
+    if(nrow(ferries) > 0) {
+      prefadj <- geomander::add_edge(prefadj,
+                                     ferries[, 1],
+                                     ferries[, 2],
+                                     zero = TRUE)
+    }
+
     suggest <-  geomander::suggest_component_connection(shp = pref_n,
                                                         adj = prefadj)
     prefadj <- geomander::add_edge(prefadj,
                                    suggest$x,
                                    suggest$y,
                                    zero = TRUE)
+
+
   }
 
   # define map
@@ -106,7 +112,7 @@ for(i in 0:nsplit){
                                      nsims = nsims)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
-                              as.character(pref_code),
+                              sprintf("%02d", pref_code),
                               "_",
                               as.character(pref_name),
                               "_",

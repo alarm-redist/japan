@@ -16,17 +16,18 @@ setwd("..")
 # prefectural information
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 42
-pref_name <- "nagasaki"
+pref_code <- 30
+pref_name <- "wakayama"
 lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
+ndists_new <- 2
+ndists_old <- 3
+
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-nsplit <- 2
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+nsplit <- 0
+merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -81,25 +82,29 @@ for(i in 0:nsplit){
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
+  }
+
+  if(nrow(ferries) > 0) {
     prefadj <- geomander::add_edge(prefadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
+                                 ferries[, 1],
+                                 ferries[, 2],
+                                 zero = TRUE)
+
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adj = prefadj)
+    prefadj <- geomander::add_edge(prefadj,
+                                   suggest$x,
+                                   suggest$y,
                                    zero = TRUE)
 
   }
 
-  # check contiguity
-  suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                      adj = prefadj)
-  prefadj <- geomander::add_edge(prefadj,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)
+
 
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.20,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -153,3 +158,5 @@ for(i in 0:nsplit){
   )])
 
 }
+
+
