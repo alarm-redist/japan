@@ -78,14 +78,18 @@ for(i in 0:nsplit){
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
   # add ferry if applicable
+  # add ferry if applicable
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
+  }
+
+  if(nrow(ferries) > 0) {
     prefadj <- geomander::add_edge(prefadj,
                                    ferries[, 1],
                                    ferries[, 2],
                                    zero = TRUE)
-    # check contiguity
+
     suggest <-  geomander::suggest_component_connection(shp = pref_n,
                                                         adj = prefadj)
     prefadj <- geomander::add_edge(prefadj,
@@ -93,6 +97,14 @@ for(i in 0:nsplit){
                                    suggest$y,
                                    zero = TRUE)
   }
+
+  # check contiguity
+  suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                      adj = prefadj)
+  prefadj <- geomander::add_edge(prefadj,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)
 
   # define map
   pref_map <- redist::redist_map(pref_n,
