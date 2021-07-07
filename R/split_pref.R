@@ -33,7 +33,7 @@ split_pref <- function(
 
     # no split
     pref_n <- pref %>%
-      merge_small() %>%
+      merge_small(pref = ., intact_codes = intact_codes) %>%
       dplyr::left_join(census2020, by = c('code')) %>%
       dplyr::select(code, geometry, pop_national) %>%
       dplyr::rename(pop = pop_national)
@@ -68,6 +68,12 @@ split_pref <- function(
                                        pop_by_old_boundary = pop_by_old_boundary,
                                        old_code = old_code,
                                        new_code = split_codes[k])
+
+      pref_n <- estimate_old_boundary_pop(old_codes = old_code,
+                                          new_code = split_codes[k],
+                                          pref = pref_n,
+                                          census2020 = census2020)
+
     }
 
     # make geometry valid
