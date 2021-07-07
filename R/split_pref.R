@@ -59,6 +59,7 @@ split_pref <- function(
 
     # estimation of old-boundary level national populations
     for(k in 1:nsplit){
+
       old_code <- find_old_codes(new_code = split_codes[k],
                                  pop_by_old_boundary = pop_by_old_boundary)
       # reflect old boundaries
@@ -66,7 +67,7 @@ split_pref <- function(
                                        old_boundary = old_boundary,
                                        pop_by_old_boundary = pop_by_old_boundary,
                                        old_code = old_code,
-                                       new_code = split_codes)
+                                       new_code = split_codes[k])
     }
 
     # make geometry valid
