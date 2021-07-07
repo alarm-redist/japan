@@ -47,6 +47,10 @@ clean_2020_census <- function(total, foreigner) {
     # calculate the population of nationals
     dplyr::mutate(pop_national = pop_total - pop_foreigner)
 
+  # 双葉町, the location of the 2011 Japan Triple Disaster has a population of 0,
+  # as a result of the evacuation. We wish them well.
+  combined[is.na(combined)] <- 0
+
   # return final
   return(combined)
 }

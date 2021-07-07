@@ -16,17 +16,18 @@ setwd("..")
 # prefectural information
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 42
-pref_name <- "nagasaki"
+pref_code <- 07
+pref_name <- "fukushima"
 lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
+ndists_new <- 4
+ndists_old <- 5
+
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-nsplit <- 2
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+nsplit <- 0
+merge_gun_exception <- c(7461)  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -58,7 +59,7 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[0:nsplit]
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
 intact_codes <- c()
 
 ####### Simulation by number of splits#######
@@ -78,7 +79,6 @@ for(i in 0:nsplit){
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
   # add ferry if applicable
-  # add ferry if applicable
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
@@ -91,25 +91,29 @@ for(i in 0:nsplit){
     }
 
     suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                        adj = prefadj)
+                                                          adj = prefadj)
     prefadj <- geomander::add_edge(prefadj,
-                                   suggest$x,
-                                   suggest$y,
-                                   zero = TRUE)
+                                     suggest$x,
+                                     suggest$y,
+                                     zero = TRUE)
 
 
   }
 
+
+
+
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.30,
                                  total_pop = pop,
                                  adj = prefadj)
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims)
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
                               sprintf("%02d", pref_code),
@@ -157,4 +161,5 @@ for(i in 0:nsplit){
   )])
 
 }
+
 
