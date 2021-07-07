@@ -91,7 +91,7 @@ for(i in 0:nsplit){
     }
 
     suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                        adj = prefadj)
+                                                        adjacency = prefadj)
     prefadj <- geomander::add_edge(prefadj,
                                    suggest$x,
                                    suggest$y,
