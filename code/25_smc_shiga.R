@@ -22,9 +22,6 @@ lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
-
-########### Split one municipality ###############
-
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -32,45 +29,68 @@ nsplit <- 1
 # the code of split municipaliti
 split_codes <- c(25201)
 intact_codes <- c()
-old_code <- data.frame(
-  a = c(25201, 25301),
-  b = NA,
-  c = NA,
-  d = NA,
-  e = NA
-)
 merge_gun_exception <- c()  # enter `c()` if not applicable
 
-############## Prepare data #################
-# clean and get data for simulation
+######### Download and Clean Census ############
+# download census shp
+pref_raw <- download_shp(pref_code)
+dem_pops <- download_pop_demographics(pref_code) #first download data
+# clean shp
+cleaned_census_shp <- pref_raw %>%
+  clean_jcdf() %>%
+  calc_kokumin(age_pops = dem_pops)
+
+# download 2020 census data
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+# Clean 2020 census
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
+pref <- cleaned_census_shp %>%
+  dplyr::rename(pop = JINKO)
+
+# remove lake
+ifelse(is.null(lakes_removed),
+       pref <- pref,
+       pref <- remove_lake(pref,lakes_removed))
+
+# download historical boundary data
+old_boundary <- download_old_shp(pref_code = pref_code)
+# populations based on historical boundaries
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+
+####### Simulation by number of splits#######
 
 for(i in 0:nsplit){
-  pref_n <- split_pref(pref_code = pref_code,
-                       lakes_removed = lakes_removed,
+  pref_n <- split_pref(pref = pref,
+                       census2020 = census2020,
+                       old_boundary = old_boundary,
+                       pop_by_old_boundary = pop_by_old_boundary,
                        nsplit = i,
                        split_codes = split_codes,
                        intact_codes = intact_codes,
-                       old_code = old_code,
                        merge_gun_exception = merge_gun_exception)
 
   #------------- set up map ----------------
   # simulation parameters
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
-  # add ferries
-  # ignore errors if there is no ferry
-  #ferries <- add_ferries(pref_n)
-  #prefadj <- geomander::add_edge(prefadj,
-  #                               ferries[, 1],
-  #                               ferries[, 2],
-  #                               zero = TRUE)
-  # check contiguity
-  #suggest <-  geomander::suggest_component_connection(shp = pref_n,
-  #                                                    adj = prefadj)
-  #prefadj <- geomander::add_edge(prefadj,
-  #                               suggest$x,
-  #                               suggest$y,
-  #                               zero = TRUE)
+  # add ferry if applicable
+  if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries <- add_ferries(pref_n)
+    prefadj <- geomander::add_edge(prefadj,
+                                   ferries[, 1],
+                                   ferries[, 2],
+                                   zero = TRUE)
+    # check contiguity
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adj = prefadj)
+    prefadj <- geomander::add_edge(prefadj,
+                                   suggest$x,
+                                   suggest$y,
+                                   zero = TRUE)
+  }
 
   # define map
   pref_map <- redist::redist_map(pref_n,
@@ -103,17 +123,17 @@ for(i in 0:nsplit){
   smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
 
   # rename elements to be used
-  assign(paste("pref_", i, sep = ""),
+  assign(paste(pref_name, pref_code, i, sep = "_"),
          pref_n)
-  assign(paste("prefadj_", i, sep = ""),
+  assign(paste(pref_name, pref_code, "adj", i, sep = "_"),
          prefadj)
-  assign(paste("pref_map_", i, sep = ""),
+  assign(paste(pref_name, pref_code, "map", i, sep = "_"),
          pref_map)
-  assign(paste("sim_smc_pref_", i, sep = ""),
+  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
          sim_smc_pref)
-  assign(paste("smc_plans_pref_", i, sep = ""),
+  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
          smc_plans_pref)
-  assign(paste("smc_weight_pref_", i, sep = ""),
+  assign(paste(pref_name, pref_code, "smc_weight", i, sep = "_"),
          smc_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
@@ -121,56 +141,23 @@ for(i in 0:nsplit){
                              "pref_map",
                              "sim_smc_pref",
                              "smc_plans_pref",
-                             "smc_weight_pref")
-                 )])
+                             "smc_weight_pref",
+                             "ferries",
+                             "suggest",
+                             "port_data",
+                             "route_data")
+  )])
 
 }
 
+maxmin_LH <- ggplot(data = shiga_25_smc_weight_0,
+                    mapping = aes(x = LH,
+                                  y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
 
+maxmin_LH
 
-
-
-
-# -------- Evaluating Redistricting Plan (0 split)------------#
-# get plans
-pref0_smc_plans <- redist::get_plans_matrix(sim_smc_pref0)
-
-# get disparity data
-wgt_tbl0 <- simulation_weight_disparity_table(sim_smc_pref0)
-
-#best ippyo no kakusa
-min(wgt_tbl0$max_to_min)
-
-# find optimal
-n <- c(1:nsims)
-wgt_tbl0 <- cbind(as.data.frame(n), wgt_tbl0)
-
-optimal <- wgt_tbl0$n[which(wgt_tbl0$max_to_min == min(wgt_tbl0$max_to_min))]
-
-#print optimal plan
-optimal_map <- redist::redist.plot.plans(sim_smc_pref0,
-                                         draws = optimal[1],
-                                         geom = pref0_map) +
-  labs(title = paste(pref_name,
-                     "_",
-                     sim_type,
-                     "_",
-                     nsims,
-                     "_",
-                     nsplit,
-                     "split_optimal plan",
-                     sep = ""),
-       subtitle = paste("Max to Min Ratio =",
-                        round(min(wgt_tbl0$max_to_min), 4),
-                        "\n Loosemore-Hanby index =",
-                        round(min(wgt_tbl0$LH), 4),
-                        sep = " "),
-       caption = paste("#",
-                       optimal[1],
-                       sep = ""))
-optimal_map
-
-# save it
 ggsave(filename = paste("plots/",
                         as.character(pref_code),
                         "_",
@@ -181,81 +168,6 @@ ggsave(filename = paste("plots/",
                         as.character(nsims),
                         "_",
                         as.character(nsplit),
-                        "split.png",
+                        "maxmin_LH_split.png",
                         sep = ""),
-       plot = optimal_map)
-
-saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(sim_type),
-                           "_",
-                           as.character(nsims),
-                           "_",
-                           as.character(nsplit),
-                           "split.Rds",
-                           sep = ""))
-
-###############Workflow for 1 split##################
-
-# -------- Evaluating Redistricting Plan (1 split)------------#
-
-#best ippyo no kakusa
-min(wgt_tbl1$max_to_min)
-
-# find optimal
-n <- c(1:nsims)
-wgt_tbl1 <- cbind(as.data.frame(n), wgt_tbl1)
-
-optimal <- wgt_tbl1$n[which(wgt_tbl1$max_to_min == min(wgt_tbl1$max_to_min))]
-
-#print optimal plan
-optimal_map <- redist::redist.plot.plans(sim_smc_pref1,
-                                         draws = optimal[1],
-                                         geom = pref1_map) +
-  labs(title = paste(pref_name,
-                     "_",
-                     sim_type,
-                     "_",
-                     nsims,
-                     "_",
-                     nsplit,
-                     "split_optimal plan",
-                     sep = ""),
-       subtitle = paste("Max to Min Ratio",
-                        round(min(wgt_tbl1$max_to_min), 4),
-                        sep = "="),
-       caption = paste("#",
-                       optimal[1],
-                       sep = ""))
-optimal_map
-
-# save it
-ggsave(filename = paste("plots/",
-                        as.character(pref_code),
-                        "_",
-                        as.character(pref_name),
-                        "_",
-                        as.character(sim_type),
-                        "_",
-                        as.character(nsims),
-                        "_",
-                        as.character(nsplit),
-                        "split.png",
-                        sep = ""),
-       plot = optimal_map)
-
-saveRDS(optimal_map, paste("plots/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(sim_type),
-                           "_",
-                           as.character(nsims),
-                           "_",
-                           as.character(nsplit),
-                           "split.Rds",
-                           sep = ""))
+       plot = maxmin_LH)

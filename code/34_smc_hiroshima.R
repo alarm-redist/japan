@@ -26,7 +26,7 @@ sapply(files.sources, source)
 setwd("..")
 
 # ---------- Set Up Prefectures ----------#
-pref_num <- 34
+pref_code <- 34
 pref_name <- as.character("hiroshima")
 ndists_new <- 6
 ndists_old <- 7
@@ -38,171 +38,40 @@ sim_type <- as.character("smc")
 pref_raw <- download_shp(pref_num) #34:Hiroshima
 pref <- clean_jcdf(pref_raw = pref_raw)
 
-
 #-------- Download 2020 census-----------#
 total <- download_2020_census(type = "total")
 foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
+# -------- Choose which city to split ------------#
+census2020 %>%
+  filter(code > 34200 & code < 35000) %>% #excluding 34100 Hiroshima City
+  arrange(desc(pop_national))
+#Excluding Hiroshima City, Top 4 Muns
+#34207: 福山 (currently NOT split; pre-gappei: 207 福山 481 内海 482沼隈 501神辺 524新市)
+#34202: 呉 (currently NOT split; pre-gappei: 202呉 311音戸 312倉橋 313下蒲刈 314蒲刈 423安浦 424川尻 425豊浜 426豊)
+#34212: 東広島 (currently split; pre-gappei: 212東広島 402黒瀬 405福富 406豊栄 408河内 422安芸津)
+#34205: 尾道(currently split; pre-gappei: 205尾道 206因島 430瀬戸田 441御調 444向島)
+#Since 4 municipalities (excluding Hiroshima City, a seireishiteitoshi) are currently split,
+#the 1st ~ 4th largest municipalities will be split.
+#江田島市 and 三原市, which are currently split, will no longer be split.
 
-##############First try with 0 splits#######################
-#-------- Use 2020 census data at the municipality level (0 splits this time)-----------#
-pref0 <- pref %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code')) %>%
-  dplyr::rename(pop = pop_national) %>%
-  dplyr::select(code, geometry, pop)
+# -------- Old boundary ------------#
+old_pref <- download_old_shp(pref_code = pref_num)
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_num)
+old_34207 <- find_old_codes(34207, pop_by_old_boundary)
+#福山市: 34207 34481 34482 34501 34524
+old_34202 <- find_old_codes(34202, pop_by_old_boundary)
+#呉市: 34202 34311 34312 34313 34314 34423 34424 34425 34426
+old_34212 <- find_old_codes(34212, pop_by_old_boundary)
+#東広島市: 34212 34402 34405 34406 34408 34422
+old_34205 <- find_old_codes(34205, pop_by_old_boundary)
+#尾道市: 34205 34206 34430 34441 34444
 
-#Merge gun (No exceptions in this case; all the gun will be merged together)
-pref0 <- merge_gun(pref0)
-
-#Ferries
-edge0 <- add_ferries(pref0)
-
-# -------- set up for simulation ------------#
-# simulation parameters
-pref0adj <- redist::redist.adjacency(pref0) # Adjacency list
-#add edge
-pref0adj <- geomander::add_edge(pref0adj, edge0$V1, edge0$V2)
-
-pref0_map <- redist::redist_map(pref0,
-                               ndists = ndists_new,
-                               pop_tol= 0.08,
-                               total_pop = pop,
-                               adj = pref0adj)
-
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
-
-# --------- SMC simulation ----------------#
-# simulation
-sim_smc_pref0 <- redist::redist_smc(pref0_map,
-                                   nsims = nsims)
-
-# save it
-saveRDS(sim_smc_pref0, paste("simulation/",
-                            as.character(pref_num),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
-
-# test with map
-test_map_pref0 <- redist::redist.plot.plans(sim_smc_pref0,
-                          draws = 1:6,
-                          geom = pref0_map) +
-  labs(caption = "SMC")
-
-###############Further analysis (0 splits)#############
-# -------- Evaluating Original Plan ------------#
-#Not sure about original plan; re-check
-#pref_original_district <- status_quo_match(pref)
-#pref0_original_district %>%
-  #dplyr::rename(cd = ku) %>%
-  #original_weight_disparity_table()
-
-# -------- Evaluating Redistricting Plan (0 split)------------#
-# get plans
-pref0_smc_plans <- redist::get_plans_matrix(sim_smc_pref0)
-
-#best ippyo no kakusa
-pref0_pops <- matrix(sim_smc_pref0$total_pop, ncol = 6, byrow = TRUE)
-pref0_ippyo_kakusa <- c()
-for (x in 1:dim(pref0_pops)[1]){
-  pref0_ippyo_kakusa <- append(pref0_ippyo_kakusa, max(pref0_pops[x, ])/min(pref0_pops[x, ]))
-}
-min(pref0_ippyo_kakusa) #was 1.029566
-
-# get disparity data
-wgt_tbl0 <- simulation_weight_disparity_table(sim_smc_pref0)
-n <- c(1:25000)
-n <- as.data.frame(n)
-wgt_tbl0 <- cbind(n, wgt_tbl0)
-
-wgt_tbl0$n[which(wgt_tbl0$max_to_min == min(wgt_tbl0$max_to_min))]
-#Results were 96, 2375, 4296, 4946, 5474, 6010, 6885,7110, 7408, 7761, 9612, 9703, 14788, 15974, 18680, 19821, 24020
-#-> n. 96 is optimal plan
-
-#print optimal plan
-redist::redist.plot.plans(sim_smc_pref0,
-                          draws = 96,
-                          geom = pref0_map) +
-  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
-
-##########Realized that optimal plan includes 飛び地-> will attempt to remove 飛び地###################
-#-------- Use 2020 census data at the municipality level (0 splits this time)-----------#
-pref01 <- pref %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code')) %>%
-  dplyr::rename(pop = pop_national) %>%
-  dplyr::select(code, geometry, pop)
-
-#Merge gun (No exceptions in this case; all the gun will be merged together)
-pref01 <- merge_gun(pref01)
-
-#Ferries
-edge01 <- add_ferries(pref01) %>%
-  filter(V1 != 3)
-####will remove the ferry route departing from 広島市南区(34103)
-####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
-
-# -------- set up for simulation ------------#
-# simulation parameters
-pref01adj <- redist::redist.adjacency(pref01) # Adjacency list
-#add edge
-pref01adj <- geomander::add_edge(pref01adj, edge01$V1, edge01$V2)
-
-pref01_map <- redist::redist_map(pref01,
-                                ndists = ndists_new,
-                                pop_tol= 0.08,
-                                total_pop = pop,
-                                adj = pref01adj)
-
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
-
-# --------- SMC simulation ----------------#
-# simulation
-sim_smc_pref01 <- redist::redist_smc(pref01_map,
-                                    nsims = nsims)
-
-# save it
-saveRDS(sim_smc_pref01, paste("simulation/",
-                             as.character(pref_num),
-                             "_",
-                             as.character(pref_name),
-                             "_",
-                             as.character(sim_type),
-                             "_",
-                             as.character(nsims),
-                             "0 split (exclude Minami-ku)",
-                             ".Rds",
-                             sep = ""))
-
-###############Further analysis (0 splits without Minami-ku)#############
-# -------- Evaluating Redistricting Plan (0 split)------------#
-# get disparity data
-wgt_tbl01 <- simulation_weight_disparity_table(sim_smc_pref01)
-n <- c(1:25000)
-n <- as.data.frame(n)
-wgt_tbl01 <- cbind(n, wgt_tbl01)
-
-wgt_tbl01$n[which(wgt_tbl01$max_to_min == min(wgt_tbl01$max_to_min))]
-
-#print optimal plan
-redist::redist.plot.plans(sim_smc_pref01,
-                          draws = 310,
-                          geom = pref0_map) +
-  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan")
-
-##########Another Attempt to remove all 飛び地###################
+##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
-prefT <- pref %>%
+pref_0 <- pref %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020, by = c('code')) %>%
@@ -210,13 +79,13 @@ prefT <- pref %>%
   dplyr::select(code, geometry, pop)
 
 #Merge gun (No exceptions in this case; all the gun will be merged together)
-prefT <- merge_gun(prefT)
+pref_0 <- merge_gun(pref_0)
 
 #Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
-prefT <- avoid_enclave(prefT, c(34107, 34300))
+pref_0 <- avoid_enclave(pref_0, c(34107, 34300))
 
 #Ferries
-edgeT <- add_ferries(prefT) %>%
+ferries_0 <- add_ferries(pref_0) %>%
   filter(V1 != 3) %>%
   filter(V1 != 8 | V2 != 22)
 ####will remove the ferry route departing from 広島市南区(34103)
@@ -225,191 +94,521 @@ edgeT <- add_ferries(prefT) %>%
 
 # -------- set up for simulation ------------#
 # simulation parameters
-prefTadj <- redist::redist.adjacency(prefT) # Adjacency list
+prefadj_0 <- redist::redist.adjacency(pref_0) # Adjacency list
 #add edge
-prefTadj <- geomander::add_edge(prefTadj, edgeT$V1, edgeT$V2)
+prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0$V1, ferries_0$V2)
 
-prefT_map <- redist::redist_map(prefT,
+pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.18,
+                                 pop_tol= 0.20,
                                  total_pop = pop,
-                                 adj = prefTadj)
+                                 adj = prefadj_0)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data3.Rdata")
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0split.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_prefT <- redist::redist_smc(prefT_map,
-                                     nsims = nsims)
+sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
 
 # save it
-saveRDS(sim_smc_prefT, paste("simulation/",
-                              as.character(pref_num),
+saveRDS(sim_smc_pref_0, paste("simulation/",
+                              as.character(pref_code),
                               "_",
                               as.character(pref_name),
                               "_",
                               as.character(sim_type),
                               "_",
                               as.character(nsims),
-                              "0 split (avoid TOBISHI)",
+                              "_0",
                               ".Rds",
                               sep = ""))
 
-###############Further analysis (avoid TOBICHI)#############
-# -------- Evaluating Redistricting Plan (0 split)------------#
-# get disparity data
-wgt_tblT <- simulation_weight_disparity_table(sim_smc_prefT)
-n <- c(1:25000)
-n <- as.data.frame(n)
-wgt_tblT <- cbind(n, wgt_tblT)
-
-wgt_tblT$n[which(wgt_tblT$max_to_min == min(wgt_tblT$max_to_min))]
-#Min 1.165095
-# 865  1936  4517  5641  9972 12059 12667 15112 15606 19453 20081 20461 21253 24320
-
-#print optimal plan
-redist::redist.plot.plans(sim_smc_prefT,
-                          draws = 865,
-                          geom = prefT_map) +
-  labs(caption = "Hiroshima 0 split \nSMC (25,000 Iterations) Optimal Plan;\nAvoided enclaves")
-
-
-#sample map without any municipality merges
-prefmap <- pref %>%
+###############1 split##################
+pref_1 <- pref %>%
   dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry))
-
-#merge sample map with optimal plan
-library(magick)
-optimal_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/0split0tobichi543405.png")
-sample_map <- image_read("/Users/kentoyamada/Desktop/ALARM\ Project/jcdf/samplemap.png")
-merged_map <- c(optimal_map, sample_map)
-merged <- image_flatten(merged_map, "Add")
-
-###############Workflow for 1 split##################
-# -------- Choose which city to split ------------#
-census2020 %>%
-  filter(code > 34200 & code < 35000) %>% #excluding 34100 Hiroshima City
-  arrange(desc(pop_national))
-#Excluding Hiroshima City, Top 4 Muns
-#34207: 福山 (currently NOT split; pre-gappei: 207 福山 481 内海 482沼隈 501神辺 524新市)
-#34202: 呉 (currently NOT split; pre-gappei: 202呉 311音戸 312倉橋 313下蒲刈 324蒲刈 423安浦 424川尻 425豊浜 426豊)
-#34212: 東広島 (currently split; pre-gappei: 212東広島 402黒瀬 405福富 406豊栄 408河内 422安芸津)
-#34205: 尾道(currently split; pre-gappei: 205尾道 206因島 430瀬戸田 441御調 444向島)
-#Since 4 municipalities (excluding Hiroshima City, a seireishiteitoshi) are currently split,
-#the 1st ~ 4th largest municipalities will be split.
-#江田島市 and 三原市, which are currently split, will no longer be split.
-
-pref1 <- pref
-
-# -------- 2015 小地域 data ------------#
-#First have to obtain the number of Japanese nationals per each 小地域 as of 2015
-#JINKO in pref includes foreigners too -> calculate Japanese population
-dem_pops <- download_pop_demographics(pref_num) #first download data
-pref1 <- calc_kokumin(pref1, dem_pops)
-
-# -------- Estimate 2020 小地域 data ------------#
-#Estimate 2020 Pop at the 小地域-level (pref is currently based on 2015 Census)
-#*Note: when splitting the 4 municipalities based on the pre-gappei boundaries,
-#*the population data will be based on the 2015 Census
-#*this inconsistency will be resolved once we get access to the 2020 Census
-pref1 <- estimate_2020_pop(pref1, census2020)
-
-# -------- Make naming consistent ------------#
-pref1 <- pref1 %>%
-  dplyr::rename(pop = pop_estimate) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, geometry, pop)
 
-# -------- Merge municipalities (with exceptions) ------------#
-pref1 <- merge_small(pref1, split_codes = 34207, intact_codes = c(34101, 34102, 34103, 34104, 34105,
-                                           34106, 34107, 34108))
-#split Fukuyamashi (34207)
-#made sure to group together the 8 Wards of Hiroshima City together
-#wards are treated as single municipalities;
-#splitting Hiroshima City doesn't count as a municipality split
-
 # -------- Merge gun (0 exceptions) ------------#
-pref1 <- merge_gun(pref1, exception = 34207)
+pref_1 <- merge_gun(pref_1)
 #make sure to set Fukuyamashi as an exception; or else Fukuyamashi will be grouped together
 
 # -------- Old boundary ------------#
-#first download data
-old_boundary <- download_old_shp(pref_code = pref_num)
-pop_by_old_boundary <- download_2015pop_old(pref_code = pref_num)
-
-pref1 <- reflect_old_boundaries(pref1,
-                                old_boundary = old_boundary,
+pref_1 <- reflect_old_boundaries(pref_1,
+                                old_boundary = old_pref,
                                 pop_by_old_boundary = pop_by_old_boundary,
                                 old_code = c(34207, 34481, 34482, 34501, 34524),
                                 #codes of municipalities that now belong to Fukuyamashi
-                                 new_code = 34207) #code of merged municipality (Fukuyamashi)
+                                new_code = 34207) #code of merged municipality (Fukuyamashi)
 
-# -------- Ferries ------------#
-edge1 <- add_ferries(pref1) %>%
-  filter(V1 != 8)
+#Estimate 2020 pop based on old boundary
+pref_1 <- estimate_old_boundary_pop(old_34207, 34207, pref_1, census2020)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+pref_1 <- avoid_enclave(pref_1, c(34107, 34300))
+
+#Ferries
+ferries_1 <- add_ferries(pref_1) %>%
+  filter(V1 != 8) %>%
+  filter(V1 != 13 | V2 != 26)
 ####will remove the ferry route departing from 広島市南区(34103)
 ####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
+###will also remove ferry route between 呉 and 大崎上崎町 to avoid 飛び地
+
 
 # -------- set up for simulation ------------#
 # simulation parameters
-pref1adj <- redist::redist.adjacency(pref1) # Adjacency list
+prefadj_1 <- redist::redist.adjacency(pref_1) # Adjacency list
 #add edge
-pref1adj <- geomander::add_edge(pref1adj, edge1$V1, edge1$V2)
+prefadj_1 <- geomander::add_edge(prefadj_1, ferries_1$V1, ferries_1$V2)
 
-###For this case, I need to add one adjacency manually because there is an island (福山市内海町)
-###that is not connected by a ferry to mainland 福山市. 内海町 is connected to 福山市 by a bridge.
-###This would not a problem when 福山市 is not split, but now that
-###福山市 is divided based on the old administrative districts, 内海町 is treated as a single municipality
-###and thus needs to be connected to its neighboring municipality.
-pref1adj <- geomander::add_edge(pref1adj, 1, 2)
-#1 corresponds to 福山市 and 2 corresponds to 内海町
+#manually add adjacency
+prefadj_1 <- geomander::add_edge(prefadj_1, 2, 3)
+#connect 34481内海町 to 34482沼隈町
 
-pref1_map <- redist::redist_map(pref1,
+pref_map_1 <- redist::redist_map(pref_1,
                                 ndists = ndists_new,
-                                pop_tol= 0.08,
+                                pop_tol= 0.20,
                                 total_pop = pop,
-                                adj = pref1adj)
+                                adj = prefadj_1)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data1.Rdata")
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_1split.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
-sim_smc_pref1 <- redist::redist_smc(pref1_map,
-                                    nsims = nsims)
+sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
+                                    nsims = nsims,
+                                    pop_temper = 0.05)
 
 # save it
-saveRDS(sim_smc_pref1, paste("simulation/",
-                             as.character(pref_num),
-                             "_",
-                             as.character(pref_name),
-                             "_",
-                             as.character(sim_type),
-                             "_",
-                             as.character(nsims),
-                             "_",
-                             "one split (Fukuyama)",
-                             ".Rds",
-                             sep = ""))
+saveRDS(sim_smc_pref_1, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_1",
+                              ".Rds",
+                              sep = ""))
 
-# test with map
-test_map_pref1 <- redist::redist.plot.plans(sim_smc_pref1,
-                                            draws = 1,
-                                            geom = pref1_map) +
-  labs(caption = "SMC 25000 One split (Fukuyama)")
 
-###############Further analysis (1 split)#############
-# -------- Evaluating Redistricting Plan (0 split)------------#
-# get disparity data
-wgt_tbl1 <- simulation_weight_disparity_table(sim_smc_pref1)
-n <- c(1:25000)
-n <- as.data.frame(n)
-wgt_tbl1 <- cbind(n, wgt_tbl1)
+###############2 splits#############
+pref_2 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
 
-wgt_tbl1$n[which(wgt_tbl1$max_to_min == min(wgt_tbl1$max_to_min))]
+# -------- Merge gun (0 exceptions) ------------#
+pref_2 <- merge_gun(pref_2)
 
-#print optimal plan
-redist::redist.plot.plans(sim_smc_pref1,
-                          draws = 988,
-                          geom = pref1_map) +
-  labs(caption = "Hiroshima 1 split \nSMC (25,000 Iterations) Optimal Plan")
+# -------- Old boundary ------------#
+pref_2 <- reflect_old_boundaries(pref_2,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34207,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34207) #code of merged municipality (Fukuyamashi)
+pref_2 <- reflect_old_boundaries(pref_2,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34202,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34202)
+
+#Estimate 2020 pop based on old boundary
+pref_2 <- estimate_old_boundary_pop(old_34207, 34207, pref_2, census2020)
+pref_2 <- estimate_old_boundary_pop(old_34202, 34202, pref_2, census2020)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+pref_2 <- avoid_enclave(pref_2, c(34107, 34300))
+
+#Ferries
+ferries_2 <- add_ferries(pref_2) %>%
+  filter(V1 != 17) %>%
+  filter(V2 != 17)
+####will remove the ferry route departing from 広島市南区(34103)
+
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefadj_2 <- redist::redist.adjacency(pref_2) # Adjacency list
+#add edge
+prefadj_2 <- geomander::add_edge(prefadj_2, ferries_2$V1, ferries_2$V2)
+
+#Manually add adjacencies
+prefadj_2 <- geomander::add_edge(prefadj_2, 11, 12) #connect 34481内海町 to 34482沼隈町
+prefadj_2 <- geomander::add_edge(prefadj_2, 2, 1) #34311音戸町　→ 34202呉市
+#prefadj_2 <- geomander::add_edge(prefadj_2, 2, 32) #34311音戸町　→ 34215江田島市
+prefadj_2 <- geomander::add_edge(prefadj_2, 3, 1)  #34312 倉橋町 ->  34202呉市
+prefadj_2 <- geomander::add_edge(prefadj_2, 4, 1) #34313下蒲刈町 -> 34202呉市
+prefadj_2 <- geomander::add_edge(prefadj_2, 5, 4) #34314 蒲刈町 -> 34313 下蒲刈町
+prefadj_2 <- geomander::add_edge(prefadj_2, 8, 9) #34425 豊浜町 -> 34426 豊町
+
+pref_map_2 <- redist::redist_map(pref_2,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_2)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_2splits.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_2, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_2",
+                              ".Rds",
+                              sep = ""))
+
+
+###############3 splits#############
+pref_3 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+# -------- Merge gun (0 exceptions) ------------#
+pref_3 <- merge_gun(pref_3)
+
+# -------- Old boundary ------------#
+pref_3 <- reflect_old_boundaries(pref_3,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34207,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34207) #code of merged municipality (Fukuyamashi)
+pref_3 <- reflect_old_boundaries(pref_3,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34202,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34202)
+pref_3 <- reflect_old_boundaries(pref_3,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34212,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34212)
+
+
+#Estimate 2020 pop based on old boundary
+pref_3 <- estimate_old_boundary_pop(old_34207, 34207, pref_3, census2020)
+pref_3 <- estimate_old_boundary_pop(old_34202, 34202, pref_3, census2020)
+pref_3 <- estimate_old_boundary_pop(old_34212, 34212, pref_3, census2020)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+pref_3 <- avoid_enclave(pref_3, c(34107, 34300))
+
+#Ferries
+ferries_3 <- add_ferries(pref_3) %>%
+  filter(V1 != 23)
+####will remove the ferry route departing from 広島市南区(34103)
+
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefadj_3 <- redist::redist.adjacency(pref_3) # Adjacency list
+#add edge
+prefadj_3 <- geomander::add_edge(prefadj_3, ferries_3$V1, ferries_3$V2)
+
+#Manually add adjacencies
+prefadj_3 <- geomander::add_edge(prefadj_3, 17, 18) #connect 34481内海町 to 34482沼隈町
+prefadj_3 <- geomander::add_edge(prefadj_3, 8, 7) #34311音戸町　→ 34202呉市
+#prefadj_3 <- geomander::add_edge(prefadj_3, 8, 37) #34311音戸町　→ 34215江田島市
+prefadj_3 <- geomander::add_edge(prefadj_3, 9, 7)  #34312 倉橋町 ->  34202
+prefadj_3 <- geomander::add_edge(prefadj_3, 10, 7) #34313下蒲刈町 -> 34202呉市
+prefadj_3 <- geomander::add_edge(prefadj_3, 10, 11) #34314 蒲刈町 -> 34313 下蒲刈町
+prefadj_3 <- geomander::add_edge(prefadj_3, 14, 15) #34425  豊浜町 -> 34426 豊町
+
+pref_map_3 <- redist::redist_map(pref_3,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_3)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_3splits.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_3 <- redist::redist_smc(pref_map_3,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_3, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_3",
+                              ".Rds",
+                              sep = ""))
+
+
+
+###############4 splits#############
+pref_4 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+# -------- Merge gun (0 exceptions) ------------#
+pref_4 <- merge_gun(pref_4)
+
+# -------- Old boundary ------------#
+pref_4 <- reflect_old_boundaries(pref_4,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34207,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34207) #code of merged municipality (Fukuyamashi)
+pref_4 <- reflect_old_boundaries(pref_4,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34202,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34202)
+pref_4 <- reflect_old_boundaries(pref_4,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34212,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34212)
+pref_4 <- reflect_old_boundaries(pref_4,
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_34205,#codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34205)
+
+
+#Estimate 2020 pop based on old boundary
+pref_4 <- estimate_old_boundary_pop(old_34207, 34207, pref_4, census2020)
+pref_4 <- estimate_old_boundary_pop(old_34202, 34202, pref_4, census2020)
+pref_4 <- estimate_old_boundary_pop(old_34212, 34212, pref_4, census2020)
+pref_4 <- estimate_old_boundary_pop(old_34205, 34205, pref_4, census2020)
+
+#Merge 安芸区(34107) and 安芸郡(34300) to avoid 飛び地
+pref_4 <- avoid_enclave(pref_4, c(34107, 34300))
+
+#Ferries
+ferries_4 <- add_ferries(pref_4) %>%
+  filter(V2 != 28) %>%
+  filter(V1 != 28)
+####will remove the ferry route departing from 広島市南区(34103)
+
+# -------- set up for simulation ------------#
+# simulation parameters
+prefadj_4 <- redist::redist.adjacency(pref_4) # Adjacency list
+#add edge
+prefadj_4 <- geomander::add_edge(prefadj_4, ferries_4$V1, ferries_4$V2)
+
+#Manually add adjacencies
+prefadj_4 <- geomander::add_edge(prefadj_4, 22, 23) #connect 34481内海町 to 34482沼隈町
+prefadj_4 <- geomander::add_edge(prefadj_4, 12, 13) #34311音戸町　→ 34202呉市
+#prefadj_3 <- geomander::add_edge(prefadj_3, 8, 37) #34311音戸町　→ 34215江田島市
+prefadj_4 <- geomander::add_edge(prefadj_4, 14, 12)  #34312 倉橋町 ->  34202
+prefadj_4 <- geomander::add_edge(prefadj_4, 15, 12) #34313下蒲刈町 -> 34202呉市
+prefadj_4 <- geomander::add_edge(prefadj_4, 16, 15) #34314 蒲刈町 -> 34313 下蒲刈町
+prefadj_4 <- geomander::add_edge(prefadj_4, 19, 20) #34425  豊浜町 -> 34426 豊町
+prefadj_4 <- geomander::add_edge(prefadj_4, 2, 5)　#因島 -> 34444向島
+
+pref_map_4 <- redist::redist_map(pref_4,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_4)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_4splits.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_4 <- redist::redist_smc(pref_map_4,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_4, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_4",
+                              ".Rds",
+                              sep = ""))
+
+########Analysis#####################
+# extract plans
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+pref_smc_plans_3 <- redist::get_plans_matrix(sim_smc_pref_3)
+pref_smc_plans_4 <- redist::get_plans_matrix(sim_smc_pref_4)
+
+# get disparity table data
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+#n <- c(1:25000)
+#n <- as.data.frame(n)
+#wgt_smc_0 <- cbind(n, wgt_smc_0)
+#wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
+#Maxmin 1.165 #826
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+#wgt_smc_1 <- cbind(n, wgt_smc_1)
+#wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
+#Maxmin 1.144 #7182
+wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
+#wgt_smc_2 <- cbind(n, wgt_smc_2)
+#wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
+#Maxmin 1.156 #18751
+wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
+#wgt_smc_3 <- cbind(n, wgt_smc_3)
+#wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
+#Maxmin  1.138 #5800
+wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
+#wgt_smc_4 <- cbind(n, wgt_smc_4)
+#wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
+#Maxmin  1.131 #4450
+
+status_quo <- status_quo_match(pref_4)
+
+# establish keys
+key <- vector(length = length(pref_4$code))
+for (i in 1:length(pref_4$code)) {
+  if (pref_4$code[i] %in% old_34205) {key[i] <- 34205}
+  else if (pref_4$code[i] %in% old_34212) {key[i] <- 34212}
+  else if (pref_4$code[i] %in% old_34202) {key[i] <- 34202}
+  else if (pref_4$code[i] %in% old_34207) {key[i] <- 34207}
+  else {key[i] <- pref_4$code[i]}
+}
+
+# map 0-split plans to 4-split plans
+modified_smc_0 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
+                         ncol = dim(pref_smc_plans_0)[2])
+
+for (i in 1:dim(pref_smc_plans_4)[1]) {
+  if (pref_4$code[i] %in% pref_0$code) {modified_smc_0[i, ] <-
+    pref_smc_plans_0[which(pref_0$code == pref_4$code[i]), ]}
+  else {modified_smc_0[i, ] <- pref_smc_plans_0[which(pref_0$code == key[i]), ]}
+}
+
+# map 1-split plans to 4-split plans
+modified_smc_1 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
+                         ncol = dim(pref_smc_plans_1)[2])
+
+for (i in 1:dim(pref_smc_plans_4)[1]) {
+  if (pref_4$code[i] %in% pref_1$code) {modified_smc_1[i, ] <-
+    pref_smc_plans_1[which(pref_1$code == pref_4$code[i]), ]}
+  else {modified_smc_1[i, ] <- pref_smc_plans_1[which(pref_1$code == key[i]), ]}
+}
+
+# map 2-split plans to 4-split plans
+modified_smc_2 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
+                         ncol = dim(pref_smc_plans_2)[2])
+
+for (i in 1:dim(pref_smc_plans_4)[1]) {
+  if (pref_4$code[i] %in% pref_2$code) {modified_smc_2[i, ] <-
+    pref_smc_plans_2[which(pref_2$code == pref_4$code[i]), ]}
+  else {modified_smc_2[i, ] <- pref_smc_plans_2[which(pref_2$code == key[i]), ]}
+}
+
+# map 3-split plans to 3-split plans
+modified_smc_3 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
+                         ncol = dim(pref_smc_plans_3)[2])
+
+for (i in 1:dim(pref_smc_plans_4)[1]) {
+  if (pref_4$code[i] %in% pref_3$code) {modified_smc_3[i, ] <-
+    pref_smc_plans_3[which(pref_3$code == pref_4$code[i]), ]}
+  else {modified_smc_3[i, ] <- pref_smc_plans_3[which(pref_3$code == key[i]), ]}
+}
+
+overlap_smc_0 <- vector(length = dim(pref_smc_plans_0)[2])
+overlap_smc_1 <- vector(length = dim(pref_smc_plans_1)[2])
+overlap_smc_2 <- vector(length = dim(pref_smc_plans_2)[2])
+overlap_smc_3 <- vector(length = dim(pref_smc_plans_3)[2])
+overlap_smc_4 <- vector(length = dim(pref_smc_plans_4)[2])
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data.Rdata")
+
+
+for (i in 1:length(overlap_smc_0)){
+  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_2$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_smc_1)){
+  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_2$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+for (i in 1:length(overlap_smc_2)){
+  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+
+for (i in 1:length(overlap_smc_3)){
+  overlap_smc_3[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_3[, i], pref_3$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+
+for (i in 1:length(overlap_smc_4)){
+  overlap_smc_4[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_4[, i], pref_4$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+
+wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_4, algorithm = "smc"))
+
+# set parameters
+
+improved_plans <- as.data.frame(
+  cbind(rbind(wgt_smc_0 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_smc_1 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_smc_2 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_smc_3 %>% dplyr::filter(LH < wgt_orig$LH),
+              wgt_smc_4 %>% dplyr::filter(LH < wgt_orig$LH)
+  ),
+
+  c(overlap_smc_0[which(wgt_smc_1$LH < wgt_orig$LH)],
+    overlap_smc_1[which(wgt_smc_0$LH < wgt_orig$LH)],
+    overlap_smc_2[which(wgt_smc_1$LH < wgt_orig$LH)],
+    overlap_smc_3[which(wgt_smc_0$LH < wgt_orig$LH)],
+    overlap_smc_4[which(wgt_smc_0$LH < wgt_orig$LH)]
+  ),
+
+  as.character(count_splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_1[, which(wgt_smc_1$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_2[, which(wgt_smc_2$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_3[, which(wgt_smc_3$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_4[, which(wgt_smc_4$LH < wgt_orig$LH)], key)
+  )))
+
+names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
+
+plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
+  geom_point(size = 1, alpha = 0.3)
+ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
+
+
+############Fix map by overlaying original map###############
+#redist::redist.plot.plans(sim_smc_pref_2,draws = 18751, geom = pref_map_2)
+
+#redist.plot.map(shp = pref_0) + theme_map() + theme(legend.position = 'none')
+
 

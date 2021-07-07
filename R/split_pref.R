@@ -1,11 +1,12 @@
 #' Split prefectures with restrictions
 #'
-#' @param pref_code administrative code for prefecture of choice (eg. Hokkaido: 01, Okinawa: 47)
-#' @param lakes_removed character vector containing name of lakes. To be used in `remove_lake`
+#' @param pref a cleaned shapefile object of jcdf
+#' @param census2020 a cleaned data frame of 2020 census
+#' @param old_boundary an old jcdf
+#' @param pop_by_old_boundary a data frame of 2015 census
 #' @param nsplit a numerical value of number of splits
 #' @param split_codes a vector of the numeric code of the split municipalities (e.g., c(25201, 25203)). To be used with `merge_small`
 #' @param intact_codes a vector of the numeric code of the intact_codes for `merge_small`
-#' @param old_code a vector of the numeric code of the old code of the split municipalities. To be used with `merge_small`
 #' @param merge_gun_exception a vector of the numeric code of the municipalities which are included in the exception list for `merge_gun`.
 #'
 #' @return a shape file object with the expected population of the split municipalities.
@@ -16,38 +17,15 @@
 #'
 #'
 split_pref <- function(
-  pref_code,
-  lakes_removed,
+  pref,
+  census2020,
+  old_boundary,
+  pop_by_old_boundary,
   nsplit,
   split_codes,
   intact_codes,
-  old_code,
   merge_gun_exception
 ){
-
- ######### Download and Clean Census ############
-  # download census shp
-  pref_raw <- download_shp(pref_code)
-  dem_pops <- download_pop_demographics(pref_code) #first download data
-  # clean shp
-  cleaned_census_shp <- pref_raw %>%
-    clean_jcdf() %>%
-    calc_kokumin(age_pops = dem_pops)
-
-  # download 2020 census data
-  total <- download_2020_census(type = "total")
-  foreigner <- download_2020_census(type = "foreigner")
-  # Clean 2020 census
-  census2020 <- clean_2020_census(total = total, foreigner = foreigner)
-
-  pref <- cleaned_census_shp %>%
-    dplyr::rename(pop = JINKO)
-
-  # remove lake
-  ifelse(is.null(lakes_removed),
-         pref <- pref,
-         pref <- remove_lake(pref,lakes_removed))
-
 
   ######### wrangle data into for the municipality split#########
   # merge small
@@ -79,32 +57,16 @@ split_pref <- function(
            pref_n <- merge_gun(pref = pref_n,
                                exception = merge_gun_exception))
 
-    # download historical boundary data
-    old_boundary <- download_old_shp(pref_code)
-    # populations based on historical boundaries
-    pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
-
     # estimation of old-boundary level national populations
-    nat_2020_split_codes <- NA
-    pop_2015_split_codes <- NA
-
     for(k in 1:nsplit){
+      old_code <- find_old_codes(new_code = split_codes[k],
+                                 pop_by_old_boundary = pop_by_old_boundary)
       # reflect old boundaries
       pref_n <- reflect_old_boundaries(pref_n,
                                        old_boundary = old_boundary,
                                        pop_by_old_boundary = pop_by_old_boundary,
-                                       old_code = old_code[, k],
+                                       old_code = old_code,
                                        new_code = split_codes)
-
-      nat_2020_split_codes <- census2020$pop_national[census2020$code == split_codes[k]]
-      pop_2015_split_codes <- sum(pref_n$pop[pref_n$code == old_code[, k]])
-      old_code_slice <- old_code[, k]
-
-      for (i in 1:length(!is.na(old_code_slice))){
-        pref_n[which(pref_n$code == old_code_slice[i]), ]$pop <- round(
-          pref_n[which(pref_n$code == old_code_slice[i]), ]$pop / pop_2015_split_codes * nat_2020_split_codes
-        )
-      }
     }
 
     # make geometry valid
