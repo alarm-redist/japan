@@ -81,6 +81,13 @@ for(i in 0:nsplit){
   )])
 }
 
-ggplot(yamaguchi_35_2, fill = code)+
+
+split0 <- ggplot(yamaguchi_35_0, fill = code)+
   geom_sf()
-ggsave()
+split1 <- ggplot(yamaguchi_35_1, fill = code)+
+  geom_sf()
+split2 <- ggplot(yamaguchi_35_2, fill = code)+
+  geom_sf()
+
+cowplot::plot_grid(split0, split1, split2)
+
