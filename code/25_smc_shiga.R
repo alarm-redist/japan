@@ -171,3 +171,25 @@ ggsave(filename = paste("plots/",
                         "maxmin_LH_split.png",
                         sep = ""),
        plot = maxmin_LH)
+
+LH_HH <- ggplot(data = shiga_25_smc_weight_0,
+                    mapping = aes(x = LH,
+                                  y = HH))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+
+LH_HH
+
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "LH_HH_split.png",
+                        sep = ""),
+       plot = LH_HH)
