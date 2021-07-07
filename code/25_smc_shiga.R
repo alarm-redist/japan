@@ -35,10 +35,6 @@ merge_gun_exception <- c()  # enter `c()` if not applicable
 # download census shp
 pref_raw <- download_shp(pref_code)
 dem_pops <- download_pop_demographics(pref_code) #first download data
-# clean shp
-cleaned_census_shp <- pref_raw %>%
-  clean_jcdf() %>%
-  calc_kokumin(age_pops = dem_pops)
 
 # download 2020 census data
 total <- download_2020_census(type = "total")
@@ -46,18 +42,27 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-pref <- cleaned_census_shp %>%
-  dplyr::rename(pop = JINKO)
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
 
 # remove lake
 ifelse(is.null(lakes_removed),
        pref <- pref,
-       pref <- remove_lake(pref,lakes_removed))
+       pref <- remove_lake(pref, lakes_removed))
 
 # download historical boundary data
 old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+
+# the code of split municipalities
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+intact_codes <- c()
 
 ####### Simulation by number of splits#######
 
@@ -113,7 +118,7 @@ for(i in 0:nsplit){
                               as.character(nsims),
                               "_",
                               as.character(i),
-                              "split.Rds",
+                              ".Rds",
                               sep = ""))
 
   # get plans
@@ -133,7 +138,7 @@ for(i in 0:nsplit){
          sim_smc_pref)
   assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
          smc_plans_pref)
-  assign(paste(pref_name, pref_code, "smc_weight", i, sep = "_"),
+  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
          smc_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
@@ -147,7 +152,6 @@ for(i in 0:nsplit){
                              "port_data",
                              "route_data")
   )])
-
 }
 
 maxmin_LH <- ggplot(data = shiga_25_smc_weight_0,
@@ -193,3 +197,43 @@ ggsave(filename = paste("plots/",
                         "LH_HH_split.png",
                         sep = ""),
        plot = LH_HH)
+
+maxmin_HH <- ggplot(data = shiga_25_smc_weight_0,
+                mapping = aes(x = HH,
+                              y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "max_to_min_HH_split.png",
+                        sep = ""),
+       plot = maxmin_HH)
+
+maxmin_Gini <- ggplot(data = shiga_25_smc_weight_0,
+                    mapping = aes(x = Gini,
+                                  y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "max_to_min_Gini_split.png",
+                        sep = ""),
+       plot = maxmin_Gini)
