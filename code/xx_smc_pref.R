@@ -58,7 +58,7 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+split_codes <- pref[order(-pref$pop), ]$code[0:nsplit]
 intact_codes <- c()
 
 ####### Simulation by number of splits#######
