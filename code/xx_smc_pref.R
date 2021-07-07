@@ -150,8 +150,3 @@ for(i in 0:nsplit){
 
 }
 
-maxmin_LH <- ggplot(data = shiga_25_smc_weight_0,
-                    mapping = aes(x = LH,
-                                  y = max_to_min))+
-  geom_point()
-maxmin_LH
