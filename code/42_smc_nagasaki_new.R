@@ -26,9 +26,6 @@ ndists_old <- 4
 # enter `c()` if not applicable
 # number of splits
 nsplit <- 2
-# the code of split municipaliti
-split_codes <- c(42201, 42202)
-intact_codes <- c()
 merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
@@ -59,6 +56,10 @@ ifelse(is.null(lakes_removed),
 old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+
+# the code of split municipalities
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+intact_codes <- c()
 
 ####### Simulation by number of splits#######
 
