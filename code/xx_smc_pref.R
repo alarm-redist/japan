@@ -112,7 +112,7 @@ for(i in 0:nsplit){
                                      nsims = nsims)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
-                              as.character(pref_code),
+                              sprintf("%02d", pref_code),
                               "_",
                               as.character(pref_name),
                               "_",
