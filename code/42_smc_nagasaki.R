@@ -2,7 +2,7 @@
 #-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-#remotes::install_github("alarm-redist/redist@dev")
+remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -157,88 +157,137 @@ for(i in 0:nsplit){
 # ------ Analysis ------- #
 
 # import as files, if necessary
-sim_smc_pref_0 <- readRDS("simulation/42_nagasaki_smc_25000_0.Rds")
-sim_smc_pref_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
-sim_smc_pref_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
+nagasaki_42_sim_smc_0 <- readRDS("simulation/42_nagasaki_smc_25000_0.Rds")
+nagasaki_42_sim_smc_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
+nagasaki_42_sim_smc_2 <- readRDS("simulation/42_nagasaki_smc_25000_2.Rds")
 
 # extract plans
-pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
-pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
-pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+nagasaki_42_smc_plans_0 <- redist::get_plans_matrix(nagasaki_42_sim_smc_0)
+nagasaki_42_smc_plans_1 <- redist::get_plans_matrix(nagasaki_42_sim_smc_1)
+nagasaki_42_smc_plans_2 <- redist::get_plans_matrix(nagasaki_42_sim_smc_2)
 
 # get disparity table data
-wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
-wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
+nagasaki_42_smc_weight_0 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_0)
+nagasaki_42_smc_weight_1 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_1)
+nagasaki_42_smc_weight_2 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_2)
 
 # Cooccurence analysis
-status_quo <- status_quo_match(pref_2)
+status_quo <- status_quo_match(nagasaki_42_2)
 
 # establish keys to map 0-split, 1-split plans to 2-split plans
-key <- vector(length = length(pref_2$code))
+key <- vector(length = length(nagasaki_42_2$code))
 
-for (i in 1:length(pref_2$code)) {
-  if (pref_2$code[i] %in% old_42201) {key[i] <- 42201}
-  else if (pref_2$code[i] %in% old_42202) {key[i] <- 42202}
-  else {key[i] <- pref_2$code[i]}
+old_codes <-
+  list(find_old_codes(split_codes[1], pop_by_old_boundary),
+     find_old_codes(split_codes[2], pop_by_old_boundary))
+
+for (i in 1:length(nagasaki_42_2$code)) {
+  if (nagasaki_42_2$code[i] %in% old_codes[[1]]) {key[i] <- split_codes[1]}
+  else if (nagasaki_42_2$code[i] %in% old_codes[[2]]) {key[i] <- split_codes[2]}
+  else {key[i] <- nagasaki_42_2$code[i]}
 }
 
 # map 0-split plans to 2-split plans
-modified_smc_0 <- matrix(0, nrow = dim(pref_smc_plans_2)[1],
-                         ncol = dim(pref_smc_plans_0)[2])
+modified_smc_0 <- matrix(0, nrow = dim(nagasaki_42_smc_plans_2)[1],
+                         ncol = dim(nagasaki_42_smc_plans_0)[2])
 
-for (i in 1:dim(pref_smc_plans_2)[1]) {
-  if (pref_2$code[i] %in% pref_0$code) {modified_smc_0[i, ] <-
-    pref_smc_plans_0[which(pref_0$code == pref_2$code[i]), ]}
-  else {modified_smc_0[i, ] <- pref_smc_plans_0[which(pref_0$code == key[i]), ]}
+for (i in 1:dim(nagasaki_42_smc_plans_2)[1]) {
+  if (nagasaki_42_2$code[i] %in% nagasaki_42_0$code) {modified_smc_0[i, ] <-
+    nagasaki_42_smc_plans_0[which(nagasaki_42_0$code == nagasaki_42_2$code[i]), ]}
+  else {modified_smc_0[i, ] <- nagasaki_42_smc_plans_0[which(nagasaki_42_0$code == key[i]), ]}
 }
 
 # map 1-split plans to 2-split plans
-modified_smc_1 <- matrix(0, nrow = dim(pref_smc_plans_2)[1],
-                         ncol = dim(pref_smc_plans_1)[2])
+modified_smc_1 <- matrix(0, nrow = dim(nagasaki_42_smc_plans_2)[1],
+                         ncol = dim(nagasaki_42_smc_plans_1)[2])
 
-for (i in 1:dim(pref_smc_plans_2)[1]) {
-  if (pref_2$code[i] %in% pref_1$code) {modified_smc_1[i, ] <-
-    pref_smc_plans_1[which(pref_1$code == pref_2$code[i]), ]}
-  else {modified_smc_1[i, ] <- pref_smc_plans_1[which(pref_1$code == key[i]), ]}
+for (i in 1:dim(nagasaki_42_smc_plans_2)[1]) {
+  if (nagasaki_42_2$code[i] %in% nagasaki_42_1$code) {modified_smc_1[i, ] <-
+    nagasaki_42_smc_plans_1[which(nagasaki_42_1$code == nagasaki_42_2$code[i]), ]}
+  else {modified_smc_1[i, ] <- nagasaki_42_smc_plans_1[which(nagasaki_42_1$code == key[i]), ]}
 }
 
-overlap_smc_0 <- vector(length = dim(pref_smc_plans_0)[2])
-overlap_smc_1 <- vector(length = dim(pref_smc_plans_1)[2])
-overlap_smc_2 <- vector(length = dim(pref_smc_plans_2)[2])
+overlap_smc_0 <- vector(length = dim(nagasaki_42_smc_plans_0)[2])
+overlap_smc_1 <- vector(length = dim(nagasaki_42_smc_plans_1)[2])
+overlap_smc_2 <- vector(length = dim(nagasaki_42_smc_plans_2)[2])
 
 for (i in 1:length(overlap_smc_0)){
-  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_2$pop,
+  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], nagasaki_42_2$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_1)){
-  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_2$pop,
+  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], nagasaki_42_2$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_2)){
-  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
+  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, nagasaki_42_smc_plans_2[, i], nagasaki_42_2$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 
-wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_2, algorithm = "smc"))
+wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = nagasaki_42_map_2, algorithm = "smc"))
 
 # set parameters
 
 improved_plans <- as.data.frame(
-  cbind(rbind(wgt_smc_1 %>% dplyr::filter(LH < wgt_orig$LH),
-              wgt_smc_0 %>% dplyr::filter(LH < wgt_orig$LH)
+  cbind(rbind(nagasaki_42_smc_weight_1 %>% dplyr::filter(LH < wgt_orig$LH),
+              nagasaki_42_smc_weight_0 %>% dplyr::filter(LH < wgt_orig$LH)
   ),
 
-  c(overlap_smc_1[which(wgt_smc_1$LH < wgt_orig$LH)],
-    overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)]
+  c(overlap_smc_1[which(nagasaki_42_smc_weight_1$LH < wgt_orig$LH)],
+    overlap_smc_0[which(nagasaki_42_smc_weight_0$LH < wgt_orig$LH)]
   ),
 
-  as.character(count_splits(modified_smc_1[, which(wgt_smc_1$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key)
-  )))
+  as.character(c(count_splits(modified_smc_1[, which(nagasaki_42_smc_weight_1$LH < wgt_orig$LH)], key),
+               count_splits(modified_smc_0[, which(nagasaki_42_smc_weight_0$LH < wgt_orig$LH)], key)
+  ))))
 
-names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
+names(improved_plans) <- c(names(nagasaki_42_smc_weight_0), "Dissimilarity", "Splits")
 
 plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
   geom_point(size = 1, alpha = 0.3)
-ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
+ggExtra::ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
+
+pal <- c("#CC79A7", "#E69F00", "#56B4E9", "#20B073", "#0072B2", "#D55E00", "#999999")
+plot_comparison <- function(stat, stat_ref, geom = "density", lbls, ...){
+  ymax = max(density(stat)$y)
+  if (geom=="histogram")  ymax = max(hist(stat, plot=F)$counts)
+  xlims = range(c(stat, stat_ref)) * c(0.97, 1.03)
+  ylims = c(0, ymax*1.02)
+  qplot(stat, geom=geom, ..., fill=I("#888888"), color=I(NA)) +
+    geom_vline(aes(xintercept=stat_ref, lty=lbls, color=lbls)) +
+    ggrepel::geom_label_repel(aes(x=stat_ref, label=lbls, fill=lbls),
+                     y=ymax*runif(length(lbls), 0.7, 0.95), fontface="bold",
+                     size=4, label.r=0, label.padding=0.15, force=2,
+                     family="Times New Roman") +
+    scale_color_manual(values=pal) +
+    scale_fill_manual(values=pal) +
+    guides(lty=F, fill=F, color=F) +
+    coord_cartesian(xlim=xlims, ylim=ylims, expand=F) +
+    theme_bw(base_family="Times New Roman", base_size=11) +
+    theme(panel.grid=element_blank())
+}
+
+mu <- plyr::ddply(improved_plans, "Splits", summarise, grp.mean=mean(LH))
+
+p <- ggplot(improved_plans, aes(x=LH, fill = Splits)) +
+  geom_density(alpha = 0.4)
+
+p + geom_vline(data = mu, aes(xintercept=grp.mean, color= Splits),
+             linetype="dashed", size = 1)
+
+pc_0 <- RSpectra::eigs_sym(redist::prec_cooccurrence(nagasaki_42_sim_smc_0), k = 4)
+
+redist::redist.plot.map(nagasaki_42_0, fill = pc_0$vectors[, 1]) + scale_fill_brewer(palette = "Dark2")
+
+comp <- ggplot(improved_plans, aes(x=LH, y=max_to_min)) +
+  geom_point(size = 0.5)
+
+dis <- ggplot(improved_plans, aes(x=Dissimilarity, fill = Splits)) +
+  geom_density(alpha = 0.4)
+
+mu2 <- plyr::ddply(improved_plans, "Splits", summarise, grp.mean=mean(Dissimilarity))
+
+dis + geom_vline(data = mu2, aes(xintercept=grp.mean, color= Splits),
+               linetype="dashed", size = 1)
+
+
