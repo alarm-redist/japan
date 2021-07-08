@@ -14,19 +14,20 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-sim_type <- "smc"
+sim_type <- "smc_ms"
 nsims <- 25000
-pref_code <- 42
-pref_name <- "nagasaki"
+pref_code <- 15
+pref_name <- "niigata"
 lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
+ndists_new <- 5
+ndists_old <- 6
+
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
 nsplit <- 2
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -81,34 +82,52 @@ for(i in 0:nsplit){
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
+
+    if(nrow(ferries) > 0) {
+      prefadj <- geomander::add_edge(prefadj,
+                                     ferries[, 1],
+                                     ferries[, 2],
+                                     zero = TRUE)
+    }
+
+  }
+
+  if(length(unique((geomander::check_contiguity(prefadj))$component)) > 1) {
+
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adj = prefadj)
     prefadj <- geomander::add_edge(prefadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
+                                   suggest$x,
+                                   suggest$y,
                                    zero = TRUE)
 
   }
 
-  # check contiguity
-  suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                      adj = prefadj)
-  prefadj <- geomander::add_edge(prefadj,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)
-
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.20,
                                  total_pop = pop,
                                  adj = prefadj)
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims)
+                                     nsims = 2500,
+                                     pop_temper = 0.05)
+
+  parities <- redist::redist.parity(redist::get_plans_matrix(sim_smc_pref),
+                                    total_pop = pref_n$pop)
+
+  init_plan_vec <- redist::get_plans_matrix(sim_smc_pref)[, which(parities == min(parities))[1]]
+
+  sim_ms_pref <- redist::redist_mergesplit(map = pref_map,
+                                   nsims = nsims,
+                                   warmup = 0,
+                                   init_plan = init_plan_vec)
+
   # save it
-  saveRDS(sim_smc_pref, paste("simulation/",
-                              as.character(pref_code),
+  saveRDS(sim_ms_pref, paste("simulation/",
+                              sprintf("%02d", pref_code),
                               "_",
                               as.character(pref_name),
                               "_",
@@ -121,10 +140,10 @@ for(i in 0:nsplit){
                               sep = ""))
 
   # get plans
-  smc_plans_pref <- redist::get_plans_matrix(sim_smc_pref)
+  ms_plans_pref <- redist::get_plans_matrix(sim_ms_pref)
 
   # get disparity data
-  smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
+  ms_weight_pref <- simulation_weight_disparity_table(sim_ms_pref)
 
   # rename elements to be used
   assign(paste(pref_name, pref_code, i, sep = "_"),
@@ -133,12 +152,12 @@ for(i in 0:nsplit){
          prefadj)
   assign(paste(pref_name, pref_code, "map", i, sep = "_"),
          pref_map)
-  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
-         sim_smc_pref)
-  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
-         smc_plans_pref)
-  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
-         smc_weight_pref)
+  assign(paste(pref_name, pref_code, "ms_smc", i, sep = "_"),
+         sim_ms_pref)
+  assign(paste(pref_name, pref_code, "ms_plans", i, sep = "_"),
+         ms_plans_pref)
+  assign(paste(pref_name, pref_code,"ms_weight", i, sep = "_"),
+        ms_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
                              "prefadj",
@@ -153,3 +172,5 @@ for(i in 0:nsplit){
   )])
 
 }
+
+

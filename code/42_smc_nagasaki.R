@@ -1,8 +1,8 @@
-# ----------- set up -------------#
+############# set up ###############
+#-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-
-remotes::install_github("alarm-redist/redist@dev")
+#remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -12,195 +12,102 @@ sapply(files.sources, source)
 # set working directory back to `jcdf`
 setwd("..")
 
-#-------- Set-up -----------#
-# shapefile
-pref_code <- 42
-pref_name <- "nagasaki"
+#-------- information set-up -----------#
+# prefectural information
 sim_type <- "smc"
 nsims <- 25000
-
-nsplits_0 <- 0
-
+pref_code <- 42
+pref_name <- "nagasaki"
+lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
+#------- Specify municipality splits -------------
+# enter `c()` if not applicable
+# number of splits
+nsplit <- 2
+merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
+######### Download and Clean Census ############
+# download census shp
 pref_raw <- download_shp(pref_code)
+dem_pops <- download_pop_demographics(pref_code) #first download data
 
-pref <- clean_jcdf(pref_raw = pref_raw)
-
-# 2020 census
+# download 2020 census data
 total <- download_2020_census(type = "total")
 foreigner <- download_2020_census(type = "foreigner")
-
-# clean it
+# Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-# combining two data
-pref <- pref %>%
+pref <- pref_raw %>%
+  clean_jcdf() %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020, by = c('code')) %>%
   dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, pop, geometry)
 
-# remove lake, not necessarily for Nagasaki
-# pref <- remove_lake(pref, [insert lake string])
-
-# check map
-pref %>%
-  ggplot() +
-  geom_sf(fill = "red")
+# remove lake
+ifelse(is.null(lakes_removed),
+       pref <- pref,
+       pref <- remove_lake(pref, lakes_removed))
 
 # download historical boundary data
-old_pref <- download_old_shp(pref_code)
-
+old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
-# split Nagasaki-shi and Sasebo-shi
-old_42201 <- find_old_codes(42201, pop_by_old_boundary)
-old_42202 <- find_old_codes(42202, pop_by_old_boundary)
+# the code of split municipalities
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+intact_codes <- c()
 
-# -------- Zero-Split ------------#
+####### Simulation by number of splits#######
 
-# initialize the zero-split shp
-pref_0 <- pref
+for(i in 0:nsplit){
+  pref_n <- split_pref(pref = pref,
+                       census2020 = census2020,
+                       old_boundary = old_boundary,
+                       pop_by_old_boundary = pop_by_old_boundary,
+                       nsplit = i,
+                       split_codes = split_codes,
+                       intact_codes = intact_codes,
+                       merge_gun_exception = merge_gun_exception)
 
-# merge guns, exception of 北松浦郡
-pref_0 <- merge_gun(pref_0, exception = 42383)
+  #------------- set up map ----------------
+  # simulation parameters
+  prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
-# simulation parameters
-prefadj_0 <- redist::redist.adjacency(shp = pref_0) # Adjacency list
+  # add ferry if applicable
+  if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries <- add_ferries(pref_n)
+    prefadj <- geomander::add_edge(prefadj,
+                                   ferries[, 1],
+                                   ferries[, 2],
+                                   zero = TRUE)
 
-# add ferries
-ferries_0 <- add_ferries(pref_0)
-prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0[, 1], ferries_0[, 2], zero = TRUE)
+  }
 
-# check contiguity
-suggest_0 <- geomander::suggest_component_connection(shp = pref_0, adj = prefadj_0)
-prefadj_0 <- geomander::add_edge(prefadj_0, suggest_0$x,
-                               suggest_0$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
-prefadj_0 <- lapply(prefadj_0, unique)
+  # check contiguity
+  suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                      adj = prefadj)
+  prefadj <- geomander::add_edge(prefadj,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)
 
-pref_map_0 <- redist::redist_map(pref_0,
-                               ndists = ndists_new,
-                               pop_tol= 0.20,
-                               total_pop = pop,
-                               adj = prefadj_0)
-
-# simulation
-sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
-                                   nsims = nsims,
-                                   pop_temper = 0.05)
-
-saveRDS(sim_smc_pref_0, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            "_",
-                            as.character(nsplits_0),
-                            ".Rds",
-                            sep = ""))
-
-# --------- One-Split ----------------#
-
-nsplits_1 <- 1
-
-# initialize pref_1 object
-pref_1 <- pref
-
-# merge guns, exception of 北松浦郡
-pref_1 <- merge_gun(pref_1, exception = 42383)
-
-# reflect old boundaries
-pref_1 <- reflect_old_boundaries(pref_1, old_pref, pop_by_old_boundary, old_42201, 42201)
-
-# estimation of old-boundary level national populations
-pref_1 <- estimate_old_boundary_pop(old_42201, 42201, pref_1, census2020)
-
-# simulation parameters
-prefadj_1 <- redist::redist.adjacency(shp = pref_1) # Adjacency list
-
-# add ferries
-ferries_1 <- add_ferries(pref_1)
-prefadj_1 <- geomander::add_edge(prefadj_1, ferries_1[, 1], ferries_1[, 2], zero = TRUE)
-
-# check contiguity
-suggest_1 <- geomander::suggest_component_connection(shp = pref_1, adj = prefadj_1)
-prefadj_1 <- geomander::add_edge(prefadj_1, suggest_1$x,
-                               suggest_1$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
-prefadj_1 <- lapply(prefadj_1, unique)
-
-pref_map_1 <- redist::redist_map(pref_1,
-                               ndists = ndists_new,
-                               pop_tol = 0.15,
-                               total_pop = pop,
-                               adj = prefadj_1)
-
-sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
-                                   nsims = nsims,
-                                   pop_temper = 0.05)
-
-saveRDS(sim_smc_pref_1, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            "_",
-                            as.character(nsplits_1),
-                            ".Rds",
-                            sep = ""))
-
-# --------- Two-Split ----------------#
-
-nsplits_2 <- 2
-
-# initialize pref_2 object
-pref_2 <- pref
-
-pref_2 <- merge_gun(pref_2, exception = 42383) # allowing 北松浦郡 split
-
-# reflect old boundaries
-pref_2 <- reflect_old_boundaries(pref_2, old_pref, pop_by_old_boundary, old_42201, 42201)
-pref_2 <- reflect_old_boundaries(pref_2, old_pref, pop_by_old_boundary, old_42202, 42202)
-
-# estimation of old-boundary level national populations
-pref_2 <- estimate_old_boundary_pop(old_42201, 42201, pref_2, census2020)
-pref_2 <- estimate_old_boundary_pop(old_42202, 42202, pref_2, census2020)
-
-# simulation parameters
-prefadj_2 <- redist::redist.adjacency(shp = pref_2) # Adjacency list
-
-# add ferries
-ferries_2 <- add_ferries(pref_2)
-prefadj_2 <- geomander::add_edge(prefadj_2, ferries_2[, 1], ferries_2[, 2], zero = TRUE)
-
-# check contiguity
-suggest_2 <- geomander::suggest_component_connection(shp = pref_2, adj = prefadj_2)
-prefadj_2 <- geomander::add_edge(prefadj_2, suggest_2$x,
-                                 suggest_2$y, zero = TRUE) # Fixing 壱岐市、対島市 isolation
-prefadj_2 <- lapply(prefadj_2, unique)
-
-pref_map_2 <- redist::redist_map(pref_2,
+  # define map
+  pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol = 0.20,
+                                 pop_tol= 0.40,
                                  total_pop = pop,
-                                 adj = prefadj_2)
+                                 adj = prefadj)
 
-sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
-                                     nsims = nsims,
-                                     pop_temper = 0.05)
-
-
-saveRDS(sim_smc_pref_2, paste("simulation/",
+  ###### simulation ######
+  sim_smc_pref <- redist::redist_smc(pref_map,
+                                     nsims = nsims)
+  # save it
+  saveRDS(sim_smc_pref, paste("simulation/",
                               as.character(pref_code),
                               "_",
                               as.character(pref_name),
@@ -209,11 +116,45 @@ saveRDS(sim_smc_pref_2, paste("simulation/",
                               "_",
                               as.character(nsims),
                               "_",
-                              as.character(nsplits_2),
+                              as.character(i),
                               ".Rds",
                               sep = ""))
 
-# ------ Analysis ------ -#
+  # get plans
+  smc_plans_pref <- redist::get_plans_matrix(sim_smc_pref)
+
+  # get disparity data
+  smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
+
+  # rename elements to be used
+  assign(paste(pref_name, pref_code, i, sep = "_"),
+         pref_n)
+  assign(paste(pref_name, pref_code, "adj", i, sep = "_"),
+         prefadj)
+  assign(paste(pref_name, pref_code, "map", i, sep = "_"),
+         pref_map)
+  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
+         sim_smc_pref)
+  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
+         smc_plans_pref)
+  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
+         smc_weight_pref)
+
+  rm(list= ls()[(ls() %in% c("pref_n",
+                             "prefadj",
+                             "pref_map",
+                             "sim_smc_pref",
+                             "smc_plans_pref",
+                             "smc_weight_pref",
+                             "ferries",
+                             "suggest",
+                             "port_data",
+                             "route_data")
+  )])
+
+}
+
+# ------ Analysis ------- #
 
 # import as files, if necessary
 sim_smc_pref_0 <- readRDS("simulation/42_nagasaki_smc_25000_0.Rds")
@@ -268,15 +209,15 @@ overlap_smc_2 <- vector(length = dim(pref_smc_plans_2)[2])
 
 for (i in 1:length(overlap_smc_0)){
   overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_2$pop,
-                                                       weighting = "s", index_only = TRUE)
+                                                      weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_1)){
   overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_2$pop,
-                                                       weighting = "s", index_only = TRUE)
+                                                      weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_2)){
   overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
-                                                       weighting = "s", index_only = TRUE)
+                                                      weighting = "s", index_only = TRUE)
 }
 
 wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_2, algorithm = "smc"))
@@ -301,5 +242,3 @@ names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
 plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
   geom_point(size = 1, alpha = 0.3)
 ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
-
-

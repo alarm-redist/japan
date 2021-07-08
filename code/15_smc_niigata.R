@@ -15,19 +15,19 @@ setwd("..")
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "smc"
-nsims <- 25000
-pref_code <- 42
-pref_name <- "nagasaki"
+nsims <- 200000
+pref_code <- 15
+pref_name <- "niigata"
 lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
-ndists_new <- 3
-ndists_old <- 4
+ndists_new <- 5
+ndists_old <- 6
 
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
 nsplit <- 2
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -59,7 +59,7 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[0:nsplit]
+split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
 intact_codes <- c()
 
 ####### Simulation by number of splits#######
@@ -78,7 +78,6 @@ for(i in 0:nsplit){
   # simulation parameters
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
-  # add ferry if applicable
   # add ferry if applicable
   if(check_ferries(pref_code) == TRUE){
     # add ferries
@@ -107,7 +106,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.30,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -156,9 +155,10 @@ for(i in 0:nsplit){
                              "smc_weight_pref",
                              "ferries",
                              "suggest",
-                             "port_data",
+                              "port_data",
                              "route_data")
   )])
 
 }
+
 

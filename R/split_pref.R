@@ -63,12 +63,16 @@ split_pref <- function(
 
       old_code <- find_old_codes(new_code = split_codes[k],
                                  pop_by_old_boundary = pop_by_old_boundary)
-      # reflect old boundaries
+
+      pref_n <- sf::st_make_valid(pref_n)
+
+       # reflect old boundaries
       pref_n <- reflect_old_boundaries(pref_n,
                                        old_boundary = old_boundary,
                                        pop_by_old_boundary = pop_by_old_boundary,
                                        old_code = old_code,
                                        new_code = split_codes[k])
+      pref_n <- sf::st_make_valid(pref_n)
 
       pref_n <- estimate_old_boundary_pop(old_codes = old_code,
                                           new_code = split_codes[k],
