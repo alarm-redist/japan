@@ -46,6 +46,9 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
     dplyr::filter(N03_007 %in% old_code) %>%
     dplyr::select(N03_004, N03_007, geometry)
   names(pre_gappei_geom) <- c("municipality", "code", "geometry")
+  pre_gappei_geom <- pre_gappei_geom %>%
+    dplyr::group_by(code) %>%
+    dplyr::summarise(geometry =  sf::st_union(geometry))
 
   #get rid of unnecessary rows and columns
   cleaned_pop_by_old_boundary <- pop_by_old_boundary %>%
@@ -87,8 +90,7 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   #merge with the data that excludes the designated city
   merged <- dplyr::bind_rows(old_joined_simp, post_gappei_except_for_designated_city)
 
-  #remove duplicated municipalities
-  merged <- merged[!duplicated(merged$code), ]
+
 
   return(merged)
 }
