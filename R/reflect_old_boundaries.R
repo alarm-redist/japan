@@ -46,6 +46,7 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
     dplyr::filter(N03_007 %in% old_code) %>%
     dplyr::select(N03_004, N03_007, geometry)
   names(pre_gappei_geom) <- c("municipality", "code", "geometry")
+  pre_gappei_geom <- sf::st_make_valid(pre_gappei_geom)
   pre_gappei_geom <- pre_gappei_geom %>%
     dplyr::group_by(code) %>%
     dplyr::summarise(geometry =  sf::st_union(geometry))
