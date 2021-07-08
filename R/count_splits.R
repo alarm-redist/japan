@@ -27,7 +27,7 @@ count_splits <- function(plans, counties){
     n_county <- 0.0
     for(i in 1:length(orig)){
 
-      n_county <- n_county + length(unique(plans[which(counties$code == orig[i]), n]))
+      n_county <- n_county + length(unique(plans[which(counties == orig[i]), n]))
 
     }
     splits_vec[n] <- n_county - length(orig)
