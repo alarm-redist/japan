@@ -73,14 +73,90 @@ for(i in 0:nsplit){
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
 
+  #------------- set up map ----------------
+  # simulation parameters
+  prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
+
+  # add ferry if applicable
+  # add ferry if applicable
+  if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries <- add_ferries(pref_n)
+
+    if(nrow(ferries) > 0) {
+      prefadj <- geomander::add_edge(prefadj,
+                                     ferries[, 1],
+                                     ferries[, 2],
+                                     zero = TRUE)
+    }
+
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adjacency = prefadj)
+    prefadj <- geomander::add_edge(prefadj,
+                                   suggest$x,
+                                   suggest$y,
+                                   zero = TRUE)
+
+
+  }
+
+  # define map
+  pref_map <- redist::redist_map(pref_n,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.40,
+                                 total_pop = pop,
+                                 adj = prefadj)
+
+  ###### simulation ######
+  sim_smc_pref <- redist::redist_smc(pref_map,
+                                     nsims = nsims)
+  # save it
+  saveRDS(sim_smc_pref, paste("simulation/",
+                              sprintf("%02d", pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_",
+                              as.character(i),
+                              ".Rds",
+                              sep = ""))
+
+  # get plans
+  smc_plans_pref <- redist::get_plans_matrix(sim_smc_pref)
+
+  # get disparity data
+  smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
+
   # rename elements to be used
   assign(paste(pref_name, pref_code, i, sep = "_"),
          pref_n)
+  assign(paste(pref_name, pref_code, "adj", i, sep = "_"),
+         prefadj)
+  assign(paste(pref_name, pref_code, "map", i, sep = "_"),
+         pref_map)
+  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
+         sim_smc_pref)
+  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
+         smc_plans_pref)
+  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
+         smc_weight_pref)
 
-  rm(list= ls()[(ls() %in% c("pref_n")
+  rm(list= ls()[(ls() %in% c("pref_n",
+                             "prefadj",
+                             "pref_map",
+                             "sim_smc_pref",
+                             "smc_plans_pref",
+                             "smc_weight_pref",
+                             "ferries",
+                             "suggest",
+                             "port_data",
+                             "route_data")
   )])
-}
 
+}
 
 split0 <- ggplot(yamaguchi_35_0, fill = code)+
   geom_sf()
