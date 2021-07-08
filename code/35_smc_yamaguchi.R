@@ -73,6 +73,9 @@ for(i in 0:nsplit){
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
 
+  assign(paste(pref_name, pref_code, i, sep = "_"),
+         pref_n)
+  }
   #------------- set up map ----------------
   # simulation parameters
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
@@ -90,20 +93,35 @@ for(i in 0:nsplit){
                                      zero = TRUE)
     }
 
-    suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                        adjacency = prefadj)
-    prefadj <- geomander::add_edge(prefadj,
-                                   suggest$x,
-                                   suggest$y,
-                                   zero = TRUE)
+    #suggest <-  geomander::suggest_component_connection(shp = pref_n,
+    #                                                    adjacency = prefadj)
+    #prefadj <- geomander::add_edge(prefadj,
+    #                               suggest$x,
+    #                               suggest$y,
+    #                               zero = TRUE)
 
+
+    # add bridge between Oshima-Gun and Yanai City
+    if(i == 0){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 10,
+                                     v2 = 14)
+    } else if(i == 1){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 14,
+                                     v2 = 18)
+    } else if(i == 2){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 19,
+                                     v2 = 23)
+    }
 
   }
 
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.50,
                                  total_pop = pop,
                                  adj = prefadj)
 
