@@ -91,13 +91,16 @@ for(i in 0:nsplit){
                                      zero = TRUE)
     }
 
+  }
+
+  if(length(unique((geomander::check_contiguity(prefadj))$component)) > 1) {
+
     suggest <-  geomander::suggest_component_connection(shp = pref_n,
                                                         adj = prefadj)
     prefadj <- geomander::add_edge(prefadj,
                                    suggest$x,
                                    suggest$y,
                                    zero = TRUE)
-
 
   }
 
