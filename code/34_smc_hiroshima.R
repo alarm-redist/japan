@@ -439,11 +439,17 @@ pref_map_4 <- redist::redist_map(pref_4,
 
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data_4splits.Rdata")
 
+##pref_map_4tol <- redist::redist_map(pref_4,ndists = ndists_new,pop_tol= 0.08,total_pop = pop, adj = prefadj_4)
+
 # --------- SMC simulation ----------------#
 # simulation
 sim_smc_pref_4 <- redist::redist_smc(pref_map_4,
                                      nsims = nsims,
                                      pop_temper = 0.05)
+
+
+##sim_smc_pref_4tol <- redist::redist_smc(pref_map_4tol,nsims = nsims,  pop_temper = 0.05)
+##saveRDS(sim_smc_pref_4tol, paste("simulation/", as.character(pref_code), "_", as.character(pref_name),  "_", as.character(sim_type), "_", as.character(nsims), "_4lowerpoptol",".Rds", sep = ""))
 
 # save it
 saveRDS(sim_smc_pref_4, paste("simulation/",
@@ -499,6 +505,13 @@ wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #Maxmin  1.131 #5584 7645
 #redist::redist.plot.plans(sim_smc_pref_4, draws = 5584, geom = pref_map_4)
 
+
+##wgt_smc_4tol <- simulation_weight_disparity_table(sim_smc_pref_4tol)
+##wgt_smc_4tol <- cbind(n, wgt_smc_4tol)
+##wgt_smc_4tol$n[which(wgt_smc_4tol$max_to_min == min(wgt_smc_4tol$max_to_min))]
+##Maxmin 1.064 #7156 13765 16160 16429
+##redist.plot.plans(sim_smc_pref_4tol, draws = 16160, geom = pref_map_4tol)
+
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0to4splits.Rdata")
 
 ############Boxplot########################
@@ -510,6 +523,10 @@ boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
         boxplot_data$"3_splits", boxplot_data$"4_splits",
         names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),
         ylab = "Max: min ratio")
+
+##boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,wgt_smc_3$max_to_min, wgt_smc_4tol$max_to_min)
+##names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
+##boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits", boxplot_data$"3_splits", boxplot_data$"4_splits",names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),ylab = "Max: min ratio")
 
 
 ##########Different Measures of Disparity######################
