@@ -87,6 +87,7 @@ pref_0 <- avoid_enclave(pref_0, c(34107, 34300))
 #Ferries
 ferries_0 <- add_ferries(pref_0) %>%
   filter(V1 != 3) %>%
+  filter(V2 != 3) %>%
   filter(V1 != 8 | V2 != 22)
 ####will remove the ferry route departing from 広島市南区(34103)
 ####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
@@ -135,7 +136,6 @@ pref_1 <- pref %>%
 
 # -------- Merge gun (0 exceptions) ------------#
 pref_1 <- merge_gun(pref_1)
-#make sure to set Fukuyamashi as an exception; or else Fukuyamashi will be grouped together
 
 # -------- Old boundary ------------#
 pref_1 <- reflect_old_boundaries(pref_1,
@@ -154,6 +154,7 @@ pref_1 <- avoid_enclave(pref_1, c(34107, 34300))
 #Ferries
 ferries_1 <- add_ferries(pref_1) %>%
   filter(V1 != 8) %>%
+  filter(V2 != 8) %>%
   filter(V1 != 13 | V2 != 26)
 ####will remove the ferry route departing from 広島市南区(34103)
 ####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
