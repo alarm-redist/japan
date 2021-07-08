@@ -22,6 +22,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
+
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
