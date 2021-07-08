@@ -177,7 +177,7 @@ pref_map_1 <- redist::redist_map(pref_1,
                                 total_pop = pop,
                                 adj = prefadj_1)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_1split.Rdata")
+###save(list=ls(all=TRUE), file="34_smc_hiroshima_data_1split.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -243,10 +243,10 @@ prefadj_2 <- redist::redist.adjacency(pref_2) # Adjacency list
 prefadj_2 <- geomander::add_edge(prefadj_2, ferries_2$V1, ferries_2$V2)
 
 #Manually add adjacencies
-prefadj_2 <- geomander::add_edge(prefadj_2, 11, 12) #connect 34481内海町 to 34482沼隈町
+prefadj_2 <- geomander::add_edge(prefadj_2, 11, 12) #connect 34481内海町 -> 34482沼隈町
 prefadj_2 <- geomander::add_edge(prefadj_2, 2, 1) #34311音戸町　→ 34202呉市
-#prefadj_2 <- geomander::add_edge(prefadj_2, 2, 32) #34311音戸町　→ 34215江田島市
-prefadj_2 <- geomander::add_edge(prefadj_2, 3, 1)  #34312 倉橋町 ->  34202呉市
+prefadj_2 <- geomander::add_edge(prefadj_2, 2, 32) #34311音戸町　→ 34215江田島市
+prefadj_2 <- geomander::add_edge(prefadj_2, 3, 2)  #34312 倉橋町 ->  34311音戸町
 prefadj_2 <- geomander::add_edge(prefadj_2, 4, 1) #34313下蒲刈町 -> 34202呉市
 prefadj_2 <- geomander::add_edge(prefadj_2, 5, 4) #34314 蒲刈町 -> 34313 下蒲刈町
 prefadj_2 <- geomander::add_edge(prefadj_2, 8, 9) #34425 豊浜町 -> 34426 豊町
@@ -257,7 +257,7 @@ pref_map_2 <- redist::redist_map(pref_2,
                                  total_pop = pop,
                                  adj = prefadj_2)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_2splits.Rdata")
+####save(list=ls(all=TRUE), file="34_smc_hiroshima_data_2splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -299,12 +299,12 @@ pref_3 <- reflect_old_boundaries(pref_3,
 pref_3 <- reflect_old_boundaries(pref_3,
                                  old_boundary = old_pref,
                                  pop_by_old_boundary = pop_by_old_boundary,
-                                 old_34202,#codes of municipalities that now belong to Fukuyamashi
+                                 old_34202,#codes of municipalities that now belong to Kureshi
                                  new_code = 34202)
 pref_3 <- reflect_old_boundaries(pref_3,
                                  old_boundary = old_pref,
                                  pop_by_old_boundary = pop_by_old_boundary,
-                                 old_34212,#codes of municipalities that now belong to Fukuyamashi
+                                 old_34212,#codes of municipalities that now belong to Higashihiroshima
                                  new_code = 34212)
 
 
@@ -318,9 +318,9 @@ pref_3 <- avoid_enclave(pref_3, c(34107, 34300))
 
 #Ferries
 ferries_3 <- add_ferries(pref_3) %>%
-  filter(V1 != 23)
+  filter(V1 != 23) %>%
+  filter(V2 != 23)
 ####will remove the ferry route departing from 広島市南区(34103)
-
 
 # -------- set up for simulation ------------#
 # simulation parameters
@@ -331,8 +331,8 @@ prefadj_3 <- geomander::add_edge(prefadj_3, ferries_3$V1, ferries_3$V2)
 #Manually add adjacencies
 prefadj_3 <- geomander::add_edge(prefadj_3, 17, 18) #connect 34481内海町 to 34482沼隈町
 prefadj_3 <- geomander::add_edge(prefadj_3, 8, 7) #34311音戸町　→ 34202呉市
-#prefadj_3 <- geomander::add_edge(prefadj_3, 8, 37) #34311音戸町　→ 34215江田島市
-prefadj_3 <- geomander::add_edge(prefadj_3, 9, 7)  #34312 倉橋町 ->  34202
+prefadj_3 <- geomander::add_edge(prefadj_3, 8, 37) #34311音戸町　→ 34215江田島市
+prefadj_3 <- geomander::add_edge(prefadj_3, 9, 8)  #34312 倉橋町 ->  34311音戸町
 prefadj_3 <- geomander::add_edge(prefadj_3, 10, 7) #34313下蒲刈町 -> 34202呉市
 prefadj_3 <- geomander::add_edge(prefadj_3, 10, 11) #34314 蒲刈町 -> 34313 下蒲刈町
 prefadj_3 <- geomander::add_edge(prefadj_3, 14, 15) #34425  豊浜町 -> 34426 豊町
@@ -343,7 +343,7 @@ pref_map_3 <- redist::redist_map(pref_3,
                                  total_pop = pop,
                                  adj = prefadj_3)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_3splits.Rdata")
+####save(list=ls(all=TRUE), file="34_smc_hiroshima_data_3splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -363,7 +363,6 @@ saveRDS(sim_smc_pref_3, paste("simulation/",
                               "_3",
                               ".Rds",
                               sep = ""))
-
 
 
 ###############4 splits#############
@@ -386,17 +385,17 @@ pref_4 <- reflect_old_boundaries(pref_4,
 pref_4 <- reflect_old_boundaries(pref_4,
                                  old_boundary = old_pref,
                                  pop_by_old_boundary = pop_by_old_boundary,
-                                 old_34202,#codes of municipalities that now belong to Fukuyamashi
+                                 old_34202,#codes of municipalities that now belong to Kureshi
                                  new_code = 34202)
 pref_4 <- reflect_old_boundaries(pref_4,
                                  old_boundary = old_pref,
                                  pop_by_old_boundary = pop_by_old_boundary,
-                                 old_34212,#codes of municipalities that now belong to Fukuyamashi
+                                 old_34212,#codes of municipalities that now belong to Higashihiroshima
                                  new_code = 34212)
 pref_4 <- reflect_old_boundaries(pref_4,
                                  old_boundary = old_pref,
                                  pop_by_old_boundary = pop_by_old_boundary,
-                                 old_34205,#codes of municipalities that now belong to Fukuyamashi
+                                 old_34205,#codes of municipalities that now belong to Onomichi
                                  new_code = 34205)
 
 
@@ -423,13 +422,14 @@ prefadj_4 <- geomander::add_edge(prefadj_4, ferries_4$V1, ferries_4$V2)
 
 #Manually add adjacencies
 prefadj_4 <- geomander::add_edge(prefadj_4, 22, 23) #connect 34481内海町 to 34482沼隈町
-prefadj_4 <- geomander::add_edge(prefadj_4, 12, 13) #34311音戸町　→ 34202呉市
-#prefadj_3 <- geomander::add_edge(prefadj_3, 8, 37) #34311音戸町　→ 34215江田島市
-prefadj_4 <- geomander::add_edge(prefadj_4, 14, 12)  #34312 倉橋町 ->  34202
+prefadj_4 <- geomander::add_edge(prefadj_4, 13, 12) #34311音戸町　→ 34202呉市
+prefadj_4 <- geomander::add_edge(prefadj_4, 13, 41) #34311音戸町　→ 34215江田島市
+prefadj_4 <- geomander::add_edge(prefadj_4, 14, 13)  #34312 倉橋町 ->  34311音戸町
 prefadj_4 <- geomander::add_edge(prefadj_4, 15, 12) #34313下蒲刈町 -> 34202呉市
 prefadj_4 <- geomander::add_edge(prefadj_4, 16, 15) #34314 蒲刈町 -> 34313 下蒲刈町
 prefadj_4 <- geomander::add_edge(prefadj_4, 19, 20) #34425  豊浜町 -> 34426 豊町
-prefadj_4 <- geomander::add_edge(prefadj_4, 2, 5)　#因島 -> 34444向島
+prefadj_4 <- geomander::add_edge(prefadj_4, 2, 5)　#34206因島 -> 34444向島
+
 
 pref_map_4 <- redist::redist_map(pref_4,
                                  ndists = ndists_new,
@@ -472,23 +472,34 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 #n <- as.data.frame(n)
 #wgt_smc_0 <- cbind(n, wgt_smc_0)
 #wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
-#Maxmin 1.165 #826
+#Maxmin 1.165 #4708 13939 18240 22240 24195
+#redist::redist.plot.plans(sim_smc_pref_0, draws = 4708, geom = pref_map_0)
+
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 #wgt_smc_1 <- cbind(n, wgt_smc_1)
 #wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
-#Maxmin 1.144 #7182
+#Maxmin 1.158 #1135  3733  4817 21074
+#redist::redist.plot.plans(sim_smc_pref_1, draws = 1135, geom = pref_map_1)
+
 wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 #wgt_smc_2 <- cbind(n, wgt_smc_2)
 #wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
-#Maxmin 1.156 #18751
+#Maxmin 1.152 #19065
+#redist::redist.plot.plans(sim_smc_pref_2, draws = 19065, geom = pref_map_2)
+
 wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
 #wgt_smc_3 <- cbind(n, wgt_smc_3)
 #wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
-#Maxmin  1.138 #5800
+#Maxmin  1.077 #20019
+#redist::redist.plot.plans(sim_smc_pref_3, draws = 20019, geom = pref_map_3)
+
 wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #wgt_smc_4 <- cbind(n, wgt_smc_4)
 #wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
-#Maxmin  1.131 #4450
+#Maxmin  1.131 #5584 7645
+#redist::redist.plot.plans(sim_smc_pref_4, draws = 5584, geom = pref_map_4)
+
+#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0to4splits.Rdata")
 
 status_quo <- status_quo_match(pref_4)
 
@@ -552,20 +563,20 @@ overlap_smc_4 <- vector(length = dim(pref_smc_plans_4)[2])
 
 
 for (i in 1:length(overlap_smc_0)){
-  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_2$pop,
+  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_4$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_1)){
-  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_2$pop,
+  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_4$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 for (i in 1:length(overlap_smc_2)){
-  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_2$pop,
+  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_4$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 
 for (i in 1:length(overlap_smc_3)){
-  overlap_smc_3[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_3[, i], pref_3$pop,
+  overlap_smc_3[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_3[, i], pref_4$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 
@@ -586,11 +597,11 @@ improved_plans <- as.data.frame(
               wgt_smc_4 %>% dplyr::filter(LH < wgt_orig$LH)
   ),
 
-  c(overlap_smc_0[which(wgt_smc_1$LH < wgt_orig$LH)],
-    overlap_smc_1[which(wgt_smc_0$LH < wgt_orig$LH)],
-    overlap_smc_2[which(wgt_smc_1$LH < wgt_orig$LH)],
-    overlap_smc_3[which(wgt_smc_0$LH < wgt_orig$LH)],
-    overlap_smc_4[which(wgt_smc_0$LH < wgt_orig$LH)]
+  c(overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)],
+    overlap_smc_1[which(wgt_smc_1$LH < wgt_orig$LH)],
+    overlap_smc_2[which(wgt_smc_2$LH < wgt_orig$LH)],
+    overlap_smc_3[which(wgt_smc_3$LH < wgt_orig$LH)],
+    overlap_smc_4[which(wgt_smc_4$LH < wgt_orig$LH)]
   ),
 
   as.character(count_splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key),
@@ -607,9 +618,8 @@ plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
 ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 
-############Fix map by overlaying original map###############
-#redist::redist.plot.plans(sim_smc_pref_2,draws = 18751, geom = pref_map_2)
 
-#redist.plot.map(shp = pref_0) + theme_map() + theme(legend.position = 'none')
+
+
 
 
