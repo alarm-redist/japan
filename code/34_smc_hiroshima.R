@@ -501,6 +501,45 @@ wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0to4splits.Rdata")
 
+############Boxplot########################
+boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,
+                     wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
+names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
+
+boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
+        boxplot_data$"3_splits", boxplot_data$"4_splits",
+        names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),
+        ylab = "Max: min ratio")
+
+
+##########Different Measures of Disparity######################
+maxmin_LH_0 <- ggplot(data = wgt_smc_0,
+                    mapping = aes(x = LH,
+                                  y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+maxmin_LH_1 <- ggplot(data = wgt_smc_1,
+                      mapping = aes(x = LH,
+                                    y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+maxmin_LH_2 <- ggplot(data = wgt_smc_2,
+                      mapping = aes(x = LH,
+                                    y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+maxmin_LH_3 <- ggplot(data = wgt_smc_3,
+                      mapping = aes(x = LH,
+                                    y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+maxmin_LH_4 <- ggplot(data = wgt_smc_4,
+                      mapping = aes(x = LH,
+                                    y = max_to_min))+
+  geom_point()+
+  geom_smooth(method='lm', formula= y~x)
+
+############Status quo (not successful yet)################
 status_quo <- status_quo_match(pref_4)
 
 # establish keys
