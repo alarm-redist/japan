@@ -90,20 +90,35 @@ for(i in 0:nsplit){
                                      zero = TRUE)
     }
 
-    suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                        adjacency = prefadj)
-    prefadj <- geomander::add_edge(prefadj,
-                                   suggest$x,
-                                   suggest$y,
-                                   zero = TRUE)
+    #suggest <-  geomander::suggest_component_connection(shp = pref_n,
+    #                                                    adjacency = prefadj)
+    #prefadj <- geomander::add_edge(prefadj,
+    #                               suggest$x,
+    #                               suggest$y,
+    #                               zero = TRUE)
 
+
+    # add bridge between Oshima-Gun and Yanai City
+    if(i == 0){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 10,
+                                     v2 = 14)
+    } else if(i == 1){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 14,
+                                     v2 = 18)
+    } else if(i == 2){
+      prefadj <- geomander::add_edge(adjacency = prefadj,
+                                     v1 = 19,
+                                     v2 = 23)
+    }
 
   }
 
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -130,6 +145,35 @@ for(i in 0:nsplit){
   # get disparity data
   smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
 
+  # make least max_min map
+
+  n <- c(1:nsims)
+  smc_weight_pref <- cbind(as.data.frame(n), smc_weight_pref)
+
+  optimal <- smc_weight_pref$n[which(smc_weight_pref$max_to_min == min(smc_weight_pref$max_to_min))]
+
+  #print optimal plan
+  optimal_map <- redist::redist.plot.plans(plans = sim_smc_pref,
+                                           draws = optimal[1],
+                                           geom = pref_map) +
+    labs(title = paste(pref_name,
+                       "_",
+                       sim_type,
+                       "_",
+                       nsims,
+                       "_",
+                       i,
+                       "split_least_max_to_min_plan",
+                       sep = ""),
+         subtitle = paste("Max to Min Ratio =",
+                          round(min(smc_weight_pref$max_to_min), 4),
+                          "\n Loosemore-Hanby index =",
+                          round(min(smc_weight_pref$LH), 4),
+                          sep = " "),
+         caption = paste("#",
+                         optimal[1],
+                         sep = ""))
+
   # rename elements to be used
   assign(paste(pref_name, pref_code, i, sep = "_"),
          pref_n)
@@ -143,6 +187,8 @@ for(i in 0:nsplit){
          smc_plans_pref)
   assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
          smc_weight_pref)
+  assign(paste(pref_name, pref_code,"least_max_min_plan", i, sep = "_"),
+         optimal_map)
 
   rm(list= ls()[(ls() %in% c("pref_n",
                              "prefadj",
@@ -153,7 +199,9 @@ for(i in 0:nsplit){
                              "ferries",
                              "suggest",
                              "port_data",
-                             "route_data")
+                             "route_data",
+                             "optimal",
+                             "optimal_map")
   )])
 
 }
@@ -167,3 +215,6 @@ split2 <- ggplot(yamaguchi_35_2, fill = code)+
 
 cowplot::plot_grid(split0, split1, split2)
 
+cowplot::plot_grid(yamaguchi_35_least_max_min_plan_0,
+                   yamaguchi_35_least_max_min_plan_1,
+                   yamaguchi_35_least_max_min_plan_2)
