@@ -579,6 +579,51 @@ wgt_smc_5 <- simulation_weight_disparity_table(sim_smc_pref_5)
 #redist::redist.plot.plans(sim_smc_pref_5, draws = 4034, geom = pref_map_5)
 
 
+##############Co-occcurrence###################
+good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.1)]
+sim_smc_pref_0_good <- sim_smc_pref_0 %>%
+  filter(draw %in% good_num_0)
+matrix <- prec_cooccurrence(sim_smc_pref_0_good)
+rownames(matrix) <- c("北区", "中区", "東区", "南区", "倉敷市", "津山市",
+                      "玉野市", "笠岡市", "井原市", "総社市", "高梁市",
+                      "新見市", "備前市", "瀬戸内市", "赤磐市", "真庭市",
+                      "美作市", "浅口市", "和気郡", "都窪郡", "浅口郡",
+                      "小田郡", "真庭郡", "苫田郡", "勝田郡", "英田郡",
+                      "久米郡", "加賀郡")
+names <- c("北区", "中区", "東区", "南区", "倉敷市", "津山市",
+                      "玉野市", "笠岡市", "井原市", "総社市", "高梁市",
+                      "新見市", "備前市", "瀬戸内市", "赤磐市", "真庭市",
+                      "美作市", "浅口市", "和気郡", "都窪郡", "浅口郡",
+                      "小田郡", "真庭郡", "苫田郡", "勝田郡", "英田郡",
+                      "久米郡", "加賀郡")
+
+#co_occurrence <- t(matrix) %*% matrix
+graph <- graph.adjacency(matrix,
+                         mode = "max")
+plot(graph,
+     vertex.size = 1,
+     vertex.label = names(data))
+
+plot.igraph(matrix, edge.arrow.size=.4, edge.curved=.1)
+
+library(quanteda)
+library(quanteda.textplots)
+set.seed(100)
+toks <- data_char_ukimmig2010 %>%
+  tokens(remove_punct = TRUE) %>%
+  tokens_tolower() %>%
+  tokens_remove(pattern = stopwords("english"), padding = FALSE)
+fcmat <- fcm(toks, context = "window", tri = FALSE)
+feat <- names(topfeatures(fcmat, 30))
+fcm_select(fcmat, pattern = feat) %>%
+  textplot_network(min_freq = 0.5)
+
+feat <- names(topfeatures(fcmat, 30))
+fcm_select(matrix, pattern = feat) %>%
+  textplot_network(min_freq = 0.5)
+
+
+
 ############Boxplot########################
 boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,
                           wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
@@ -587,9 +632,7 @@ names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits
 boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
         boxplot_data$"3_splits", boxplot_data$"4_splits",
         names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),
-        ylab = "Max: min ratio")
-
-##################
+        ylab = "Max: min ratio")##################
 redist.plot.map(shp = minus_added_municipalities_5) + theme_map()
 
 redist.plot.plans(sim_smc_pref_0, draws = 1,
