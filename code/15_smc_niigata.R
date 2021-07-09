@@ -15,7 +15,7 @@ setwd("..")
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "smc"
-nsims <- 200000
+nsims <- 25000
 pref_code <- 15
 pref_name <- "niigata"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -106,13 +106,15 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj)
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims)
+                                     nsims = nsims,
+                                     constraints = "population",
+                                     pop_temper = 0.05)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
                               sprintf("%02d", pref_code),
@@ -160,5 +162,6 @@ for(i in 0:nsplit){
   )])
 
 }
+
 
 
