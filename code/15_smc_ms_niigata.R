@@ -173,4 +173,47 @@ for(i in 0:nsplit){
 
 }
 
+niigata_15_orig_map <- status_quo_match(niigata_15_2)
+
+niigata_15_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(niigata_sq$ku, niigata_15_map_2, algorithm = "smc"))
+
+niigata_15_cooccurence_0 <- redist::prec_cooccurrence(niigata_15_sim_smc_0[which(niigata_15_smc_weight_0$max_to_min < 1.20), ])
+
+heatmap(niigata_15_cooccurence_0, scale = "column")
+
+niigata_15_significance_0 <-niigata_15_cooccurence_0
+niigata_15_significance_0[which(niigata_15_significance_0 < 0.5)] <- 0
+
+niigata_15_graph_0 <- igraph::graph.adjacency(niigata_15_significance_0,
+                         weighted=TRUE,
+                         mode="undirected",
+                         diag=FALSE)
+
+plot(graph,
+     vertex.label = substr(niigata_15_0$code, 3, 5),
+     vertex.size = (niigata_15_0$pop)/max((niigata_15_0$pop)) * 30,
+     edge.width=igraph::E(graph)$weight^4 * 5,
+     layout = igraph::layout_with_fr(graph))
+
+redist::redist.plot.map(niigata_15_0)
+
+niigata_15_components_0 <- igraph::components(niigata_15_graph_0)
+
+niigata_15_clusterindex_0 <- which(niigata_15_components_0$csize > 1)
+
+niigata_15_colorclusters_0 <- vector(length = nrow(niigata_15_0))
+
+for(i in 1:nrow(niigata_15_0)) {
+  ifelse(niigata_15_components_0$membership [i] %in% niigata_15_clusterindex_0,
+         niigata_15_colorclusters_0[i] <- which(niigata_15_clusterindex_0 == niigata_15_components_0$membership[i]),
+         niigata_15_colorclusters_0[i] <- length(niigata_15_clusterindex_0) + 1)
+}
+
+redist::redist.plot.map(shp = niigata_15_0,
+                plan = niigata_15_colorclusters_0
+) + scale_fill_manual(values = c("red", "green", "blue", "yellow", "gray"))
+
+
+
+
 
