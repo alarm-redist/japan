@@ -163,5 +163,32 @@ for(i in 0:nsplit){
 
 }
 
+niigata_sq <- status_quo_match(niigata_15_2)
 
+good_plans_0 <- niigata_15_smc_plans_0[, which(niigata_15_smc_weight_0$max_to_min < wgt_orig$max_to_min)]
+good_plans_1 <- niigata_15_smc_plans_1[, which(niigata_15_smc_weight_1$max_to_min < 1.2)]
+
+prec_cooccurence_0 <- redist::prec_cooccurrence(redist::redist_plans(plans = good_plans_0, map = niigata_15_map_0, algorithm = "smc"))
+prec_cooccurence_1 <- redist::prec_cooccurrence(redist::redist_plans(plans = good_plans_1, map = niigata_15_map_1, algorithm = "smc"))
+
+library(network)
+net = network::network(prec_cooccurence_0,
+                       directed = FALSE,
+                       ignore.eval = FALSE,
+                       names.eval = "weights")
+# vertex names
+network.vertex.names(net) = niigata_15_map_0$code
+# inspect object
+net
+
+library(GGally)
+
+ggnet2(net,
+       label = TRUE,
+       label.size = 3,
+       alpha = 0.2,
+       size.cut = 3,
+       edge.size = "weights",
+       edge.alpha=0.2) +
+  guides(color = FALSE, size = FALSE)
 
