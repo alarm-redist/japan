@@ -290,4 +290,17 @@ mu2 <- plyr::ddply(improved_plans, "Splits", summarise, grp.mean=mean(Dissimilar
 dis + geom_vline(data = mu2, aes(xintercept=grp.mean, color= Splits),
                linetype="dashed", size = 1)
 
+# ------ Cooccurence ------- #
+
+nagasaki_42_orig_map <- status_quo_match(nagasaki_42_2)
+
+nagasaki_42_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(nagasaki_42_orig_map$ku, nagasaki_42_map_2, algorithm = "smc"))
+
+nagasaki_42_cooccurence_0 <- redist::prec_cooccurrence(nagasaki_42_sim_smc_0[which(nagasaki_42_smc_weight_0$max_to_min < (nagasaki_42_orig_weights$max_to_min + 1)/2), ])
+
+heatmap(nagasaki_42_cooccurence_0)
+
+names(niigata_15_coocurence_0) <-  redist::prec_cooccurrence(niigata_15_sim_smc_0)
+
+hist(unlist(nagasaki_42_cooccurence_0))
 
