@@ -2,7 +2,6 @@
 #-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-#remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -48,8 +47,6 @@ pref <- pref_raw %>%
   dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, pop, geometry)
 
-
-
 # remove lake
 ifelse(is.null(lakes_removed),
        pref <- pref,
@@ -61,8 +58,10 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
+split_codes <- pref[order(-pref$pop), ]$code[0:nsplit]
 intact_codes <- c()
+
+###########################
 
 ####### Simulation by number of splits#######
 
@@ -81,6 +80,7 @@ for(i in 0:nsplit){
   prefadj <- redist::redist.adjacency(shp = pref_n) # Adjacency list
 
   # add ferry if applicable
+  # add ferry if applicable
   if(check_ferries(pref_code) == TRUE){
     # add ferries
     ferries <- add_ferries(pref_n)
@@ -92,30 +92,29 @@ for(i in 0:nsplit){
                                      zero = TRUE)
     }
 
-    if(length(unique((geomander::check_contiguity(prefadj))$component)) > 1) {
+  }
 
-      suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                          adj = prefadj)
-      prefadj <- geomander::add_edge(prefadj,
-                                     suggest$x,
-                                     suggest$y,
-                                     zero = TRUE)
+  if(length(unique((geomander::check_contiguity(prefadj))$component)) > 1) {
 
-    }
+    suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                        adj = prefadj)
+    prefadj <- geomander::add_edge(prefadj,
+                                   suggest$x,
+                                   suggest$y,
+                                   zero = TRUE)
 
   }
 
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 pop_tol= 0.40,
                                  total_pop = pop,
                                  adj = prefadj)
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims,
-                                     pop_temper = 0.05)
+                                     nsims = nsims)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
                               sprintf("%02d", pref_code),
@@ -150,18 +149,12 @@ for(i in 0:nsplit){
   assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
          smc_weight_pref)
 
-  rm(list= ls()[(ls() %in% c("pref_n",
-                             "prefadj",
-                             "pref_map",
-                             "sim_smc_pref",
-                             "smc_plans_pref",
-                             "smc_weight_pref",
-                             "ferries",
-                             "suggest",
-                             "port_data",
-                             "route_data")
-  )])
+  #rm(list= ls()[(ls() %in% c("pref_n", "prefadj", "pref_map","sim_smc_pref", "smc_plans_pref",  "smc_weight_pref", "ferries", "suggest", "port_data","route_data"))])
 
 }
 
+##################
+redist.plot.map(shp = minus_added_municipalities_5) + theme_map()
 
+redist.plot.plans(sim_smc_pref_0, draws = 1,
+                  geom = pref_map_0)
