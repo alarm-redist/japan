@@ -313,20 +313,16 @@ added_municipalities_3 <- old_boundary %>%
 names(added_municipalities_3) <- c("municipality", "code", "geometry")
 added_municipalities_3 <- sf::st_make_valid(added_municipalities_3)
 added_municipalities_3 <- added_municipalities_3 %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry =  sf::st_union(geometry))
+  dplyr::select(geometry, code)
 
 #"岡山市南区旧地域"
-sq_kita <- pref_3 %>%
+sq_minami <- pref_3 %>%
   dplyr::filter(code == 33104) %>%
-  dplyr::select(code, geometry)
-sq_kita <- sf::st_make_valid(sq_kita)
+  dplyr::select(code, geometry) #南区 under the current plan
+sq_minami <- sf::st_make_valid(sq_minami)
 old_okayama$code <- 33104
-old_okayama <- sf::st_make_valid(old_okayama)
-minus_added_municipalities_3 <- sf::st_intersection(sq_kita, old_okayama)
-minus_added_municipalities_3 %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry))
+old_okayama <- sf::st_make_valid(old_okayama) #岡山市 as of 2000
+minus_added_municipalities_3 <- sf::st_intersection(sq_minami, old_okayama)
 
 #Obtain 2015 pop data in 401 灘崎町
 pop_data_2015_3 <- pop_data_2015 %>%
@@ -345,22 +341,20 @@ pop_data_2015_3$pop[which(pop_data_2015_3$code == 33401)] <-
   round(as.numeric(pop_data_2015_3$pop[which(pop_data_2015_3$code == 33401)] )*  minami_nat_2020 / minami_total_2015)
 
 #merge pop data with geometry data
-added_municipalities_3$pop <- as.numeric(pop_data_2015_3$pop[1])
+added_municipalities_3$pop <- as.numeric(pop_data_2015_3$pop)
 added_municipalities_3$code <- as.numeric(added_municipalities_3$code)
-#estimated 2020 pop of Japanese nationals in 岡山市南区新地域
+#estimated 2020 pop of Japanese nationals in 岡山市南区旧地域
 minus_added_municipalities_3$pop <- as.numeric(minami_nat_2020 - sum(as.numeric(pop_data_2015_3$pop)))
-minus_added_municipalities_3 %>%
+minus_added_municipalities_3 <- minus_added_municipalities_3 %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry), pop = pop)
-minus_added_municipalities_3[!duplicated(minus_added_municipalities_3$code), ]
-
+minus_added_municipalities_3 <- minus_added_municipalities_3[!duplicated(minus_added_municipalities_3$code), ]
 
 #merge back together
 pref_3 <- dplyr::bind_rows(post_gappei_except_for_designated_city_3, added_municipalities_3, minus_added_municipalities_3) %>%
   dplyr::select(code, pop, geometry) %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry), pop = pop)
-pref_3 <- pref_3[!duplicated(pref_3$code), ]
 
 #No Ferries
 
@@ -422,7 +416,7 @@ pref_map_4 <- redist::redist_map(pref_4,
                                  total_pop = pop,
                                  adj = prefadj_4)
 
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_4splits.Rdata")
+###save(list=ls(all=TRUE), file="34_smc_hiroshima_data_4splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -460,23 +454,22 @@ added_municipalities_5 <- old_boundary %>%
 names(added_municipalities_5) <- c("municipality", "code", "geometry")
 added_municipalities_5 <- sf::st_make_valid(added_municipalities_5)
 added_municipalities_5 <- added_municipalities_5 %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry =  sf::st_union(geometry))
+  dplyr::select(code, geometry)
 
 #"岡山市東区旧地域"
 sq_higashi <- pref_5 %>%
   dplyr::filter(code == 33103) %>%
-  dplyr::select(geometry)
+  dplyr::select(geometry) #東区 status quo
 old_okayama <- old_boundary %>%
-  dplyr::filter(N03_007 == 33201) %>%   #old okayama
+  dplyr::filter(N03_007 == 33201) %>%   #旧岡山市
   dplyr::select(geometry)
-sq_kita <- sf::st_make_valid(sq_kita)
+sq_higashi <- sf::st_make_valid(sq_higashi)
 old_okayama <- sf::st_make_valid(old_okayama)
 minus_added_municipalities_5 <- sf::st_intersection(sq_higashi, old_okayama)
 
 #Obtain 2015 pop data in 321 瀬戸町
 pop_data_2015_5 <- pop_data_2015 %>%
-  dplyr::filter(code %in% c(33321)) %>%
+  dplyr::filter(code ==33321) %>%
   dplyr::select(code, pop)
 
 #estimate population of Japanese nationals in 321 瀬戸町  for 2020
@@ -494,7 +487,7 @@ pop_data_2015_5$pop[which(pop_data_2015_5$code %in% c(33321))] <-
 added_municipalities_5 <- merge(added_municipalities_5, pop_data_2015_5, by = "code")
 added_municipalities_5$code <- as.numeric(added_municipalities_5$code)
 added_municipalities_5$pop <- as.numeric(added_municipalities_5$pop)
-#estimated 2020 pop of Japanese nationals in 岡山市東区新地域
+#estimated 2020 pop of Japanese nationals in 岡山市東区旧地域
 minus_added_municipalities_5$pop <- higashi_nat_2020 - sum(as.numeric(pop_data_2015_5$pop))
 minus_added_municipalities_5$code <- 33103
 minus_added_municipalities_5 <- minus_added_municipalities_5 %>%
@@ -504,7 +497,6 @@ minus_added_municipalities_5 <- minus_added_municipalities_5[!duplicated(minus_a
 
 #merge back together
 pref_5 <- dplyr::bind_rows(post_gappei_except_for_designated_city_5, added_municipalities_5, minus_added_municipalities_5)
-
 
 # -------- set up for simulation ------------#
 # simulation parameters
@@ -516,7 +508,7 @@ pref_map_5 <- redist::redist_map(pref_5,
                                  total_pop = pop,
                                  adj = prefadj_5)
 
-#save(list=ls(all=TRUE), file="33_smc_okayama_data_5splits.Rdata")
+###save(list=ls(all=TRUE), file="33_smc_okayama_data_5splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -538,7 +530,6 @@ saveRDS(sim_smc_pref_5, paste("simulation/",
                               sep = ""))
 
 ########Analysis#####################
-
 # get disparity table data
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 #n <- c(1:25000)
@@ -563,76 +554,48 @@ wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
 #wgt_smc_3 <- cbind(n, wgt_smc_3)
 #wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
-#Maxmin  1.019 #9013
-#redist::redist.plot.plans(sim_smc_pref_3, draws = 9013, geom = pref_map_3)
+#Maxmin  1.019 #11424
+#redist::redist.plot.plans(sim_smc_pref_3, draws = 11424, geom = pref_map_3)
 
 wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #wgt_smc_4 <- cbind(n, wgt_smc_4)
 #wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
-#Maxmin  1.022 #13982 19256
-#redist::redist.plot.plans(sim_smc_pref_4, draws = 13982, geom = pref_map_4)
+#Maxmin  1.0198 #1358  7625 15285 19573
+#redist::redist.plot.plans(sim_smc_pref_4, draws = 1358, geom = pref_map_4)
 
 wgt_smc_5 <- simulation_weight_disparity_table(sim_smc_pref_5)
 #wgt_smc_5 <- cbind(n, wgt_smc_5)
 #wgt_smc_5$n[which(wgt_smc_5$max_to_min == min(wgt_smc_5$max_to_min))]
-#Maxmin  #1.007 4034 12534
-#redist::redist.plot.plans(sim_smc_pref_5, draws = 4034, geom = pref_map_5)
+#Maxmin  #1.010 #8212 20130
+#redist::redist.plot.plans(sim_smc_pref_5, draws = 8212, geom = pref_map_5)
 
 
 ##############Co-occcurrence###################
+library(igraph)
 good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.1)]
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
   filter(draw %in% good_num_0)
 matrix <- prec_cooccurrence(sim_smc_pref_0_good)
-rownames(matrix) <- c("北区", "中区", "東区", "南区", "倉敷市", "津山市",
-                      "玉野市", "笠岡市", "井原市", "総社市", "高梁市",
-                      "新見市", "備前市", "瀬戸内市", "赤磐市", "真庭市",
-                      "美作市", "浅口市", "和気郡", "都窪郡", "浅口郡",
-                      "小田郡", "真庭郡", "苫田郡", "勝田郡", "英田郡",
-                      "久米郡", "加賀郡")
-names <- c("北区", "中区", "東区", "南区", "倉敷市", "津山市",
-                      "玉野市", "笠岡市", "井原市", "総社市", "高梁市",
-                      "新見市", "備前市", "瀬戸内市", "赤磐市", "真庭市",
-                      "美作市", "浅口市", "和気郡", "都窪郡", "浅口郡",
-                      "小田郡", "真庭郡", "苫田郡", "勝田郡", "英田郡",
-                      "久米郡", "加賀郡")
+par(family= "HiraKakuProN-W3")
 
 #co_occurrence <- t(matrix) %*% matrix
-graph <- graph.adjacency(matrix,
-                         mode = "max")
+graph <- graph_from_adjacency_matrix(matrix, mode = "undirected", diag = FALSE)
 plot(graph,
      vertex.size = 1,
      vertex.label = names(data))
 
-plot.igraph(matrix, edge.arrow.size=.4, edge.curved=.1)
-
-library(quanteda)
-library(quanteda.textplots)
-set.seed(100)
-toks <- data_char_ukimmig2010 %>%
-  tokens(remove_punct = TRUE) %>%
-  tokens_tolower() %>%
-  tokens_remove(pattern = stopwords("english"), padding = FALSE)
-fcmat <- fcm(toks, context = "window", tri = FALSE)
-feat <- names(topfeatures(fcmat, 30))
-fcm_select(fcmat, pattern = feat) %>%
-  textplot_network(min_freq = 0.5)
-
-feat <- names(topfeatures(fcmat, 30))
-fcm_select(matrix, pattern = feat) %>%
-  textplot_network(min_freq = 0.5)
-
-
 
 ############Boxplot########################
-boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,
+boxplot_data <- bind_cols(wgt_smc_2$max_to_min,
                           wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
-names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
+names(boxplot_data) <- c("2_splits", "3_splits", "4_splits")
 
-boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
+boxplot(boxplot_data$"2_splits",
         boxplot_data$"3_splits", boxplot_data$"4_splits",
-        names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),
-        ylab = "Max: min ratio")##################
+        names = c("2 splits", "3 splits", "4 splits"),
+        ylab = "Max: min ratio")
+
+##################
 redist.plot.map(shp = minus_added_municipalities_5) + theme_map()
 
 redist.plot.plans(sim_smc_pref_0, draws = 1,
