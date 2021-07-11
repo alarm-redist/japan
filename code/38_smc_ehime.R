@@ -145,6 +145,37 @@ saveRDS(sim_smc_pref_1, paste("simulation/",
                               ".Rds",
                               sep = ""))
 
+########Analysis###############
+# extract plans
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+
+# get disparity table data
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+#n <- c(1:25000)
+#n <- as.data.frame(n)
+#wgt_smc_0 <- cbind(n, wgt_smc_0)
+#wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
+#Maxmin 1.412 #Every single plan
+#redist::redist.plot.plans(sim_smc_pref_0, draws = 1, geom = pref_map_0)
+
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+#wgt_smc_1 <- cbind(n, wgt_smc_1)
+#wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
+#Maxmin 1.339 #2, 3, 5, 10 etc.
+#divided over whether to split 松山市 or not
+#redist::redist.plot.plans(sim_smc_pref_1, draws = 2, geom = pref_map_1)
+
+###save(list=ls(all=TRUE), file="38_smc_ehime_data_0to1split.Rdata")
+
+############Boxplot########################
+boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min)
+names(boxplot_data) <- c("0_split", "1_split")
+boxplot(boxplot_data$"0_split", boxplot_data$"1_split",
+        names = c("0 split", "1 split"),
+        ylab = "Max: min ratio")
+
+
 ##################
 redist.plot.map(shp = pref_1) + theme_map()
 
