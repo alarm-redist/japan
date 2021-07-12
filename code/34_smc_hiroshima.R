@@ -678,7 +678,6 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 ##########Co-occurrence############
 library(network)
-#Butts C (2015). _network: Classes for Relational Data_. The Statnet Project (<URL: http://www.statnet.org>). R package version 1.13.0.1, <URL:https://CRAN.R-project.org/package=network>.
 library(ggmap)
 library(ggnetwork)
 good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.2)]
@@ -724,7 +723,7 @@ pref_0 %>%
   geom_point(data = pref_0_longlat, aes(x = long, y = lat, size = pop/100000), color = "grey") +
   geom_edges(data = edges, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend)) +
   scale_color_gradient(low = "white", high = "dodgerblue") +
-  labs(size = "Population (10,000)", color = "Co-occurrence (%)",
+  labs(size = "Population (100,000)", color = "Co-occurrence (%)",
        title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
   theme(legend.box = "vertical",
         legend.title = element_text(color = "black", size = 7),
@@ -734,4 +733,41 @@ pref_0 %>%
         axis.title = element_blank(),
         panel.background = element_blank())
 
+##########Co-occurrence (only adjacent municipalities) ############
+#Creat 0 x 3 tibble
+cooccurrence_data_adj <- cooccurrence_data
+cooccurrence_data_adj <- cooccurrence_data_adj[ !(cooccurrence_data_adj$Var1 %in% cooccurrence_data$Var1), ]
 
+for(i in 1:length(pref_map_0$code)){
+  p <- cooccurrence_data %>%
+    filter(Var1 == pref_map_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj_0[[i]]+1])))
+  cooccurrence_data_adj <- dplyr::bind_rows(p, cooccurrence_data_adj)
+}
+
+network_adj <- network::network(cooccurrence_data_adj, directed = FALSE, multiple = TRUE)
+
+geometry_adj <- cbind(lon[ network.vertex.names(network_adj) ],
+                      lat[ network.vertex.names(network_adj) ])
+
+edges_adj <- ggnetwork(network_adj, layout = geometry_adj, scale = FALSE) %>%
+  rename(lon = x, lat = y)
+
+pref_0 %>%
+  ggplot() +
+  geom_sf() +
+  geom_point(data = pref_0_longlat, aes(x = long, y = lat, size = 10*pop/100000), color = "grey") +
+  geom_edges(data = edges_adj, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend),
+             size = 0.8) +
+  scale_color_gradient(low = "white", high = "navy") +
+  labs(size = "Population (10,000)", color = "Co-occurrence (%)",
+       title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2",
+       caption = "Plotting only co-occurrence between adjacent municipalities") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+#4.5*5.0
