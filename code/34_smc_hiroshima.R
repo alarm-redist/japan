@@ -715,14 +715,14 @@ names(lon) <- as.character(pref_0_longlat$code)
 
 geometry <- cbind(lon[ network.vertex.names(network) ], lat[ network.vertex.names(network) ])
 
-map <- ggnetwork(network, layout = geometry, scale = FALSE) %>%
+edges <- ggnetwork(network, layout = geometry, scale = FALSE) %>%
   rename(lon = x, lat = y)
 
 pref_0 %>%
   ggplot() +
   geom_sf() +
   geom_point(data = pref_0_longlat, aes(x = long, y = lat, size = pop/100000), color = "grey") +
-  geom_edges(data = map, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend)) +
+  geom_edges(data = edges, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend)) +
   scale_color_gradient(low = "white", high = "dodgerblue") +
   labs(size = "Population (10,000)", color = "Co-occurrence (%)",
        title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
