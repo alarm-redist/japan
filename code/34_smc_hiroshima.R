@@ -676,27 +676,50 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 
 
-##########Co-occurrence############
+##########Co-occurrence (only adjacent municipalities) ############
+#load packages
 library(network)
 library(ggmap)
 library(ggnetwork)
+
+#get plans that have a low max:min ratio
 good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.2)]
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
   filter(draw %in% good_num_0)
-matrix <- prec_cooccurrence(sim_smc_pref_0_good)
+#obtain matrix that shows the co-occurrence between municipalities
+matrix <- redist::prec_cooccurrence(sim_smc_pref_0_good)
 
+#Convert matrix into a tibble
 rownames(matrix) <- pref_map_0$code
 colnames(matrix) <- pref_map_0$code
 cooccurrence_data <- as_tibble(as.data.frame(as.table(matrix)))
-cooccurrence_data$Freq <- cooccurrence_data$Freq*100 #Change cooccurrence frequency to %
+
+#Change co-occurrence frequency to %
+cooccurrence_data$Freq <- cooccurrence_data$Freq*100
+
+#Clean up dataframe
 cooccurrence_data <- cooccurrence_data %>%
   mutate(Freq = as.integer(Freq), Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
   filter(Var1 != Var2, Freq > 50) %>%
   #Only the municipalities that are in the same district more than 50% of the time are included in the plot
   group_by(Var1)
 
-network <- network::network(cooccurrence_data, directed = FALSE, multiple = TRUE)
+cooccurrence_data_adj <- cooccurrence_data
+#Creat 0 x 3 tibble
+cooccurrence_data_adj <- cooccurrence_data_adj[ !(cooccurrence_data_adj$Var1 %in% cooccurrence_data$Var1), ]
 
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(pref_map_0$code)){
+  p <- cooccurrence_data %>%
+    filter(Var1 == pref_map_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj_0[[i]]+1])))
+  cooccurrence_data_adj <- dplyr::bind_rows(p, cooccurrence_data_adj)
+}
+
+#use network package to obtain network
+network_adj <- network::network(cooccurrence_data_adj, directed = FALSE, multiple = TRUE)
+
+#calculate the centroids of each municipality/gun (as well as the geometry of each centroid) in order to plot the popultion size
 pref_0$CENTROID <- sf::st_centroid(pref_0$geometry)
 pref_0_longlat <- pref_0 %>%
   as_tibble() %>%
@@ -707,52 +730,19 @@ pref_0_longlat$lat <- str_remove_all(pref_0_longlat$lat, "[)]")
 pref_0_longlat$long <- as.numeric(pref_0_longlat$long)
 pref_0_longlat$lat <- as.numeric(pref_0_longlat$lat)
 
+#prepare to bind together
 lat <- pref_0_longlat$lat
 names(lat) <- as.character(pref_0_longlat$code)
 lon <- pref_0_longlat$long
 names(lon) <- as.character(pref_0_longlat$code)
 
-geometry <- cbind(lon[ network.vertex.names(network) ], lat[ network.vertex.names(network) ])
-
-edges <- ggnetwork(network, layout = geometry, scale = FALSE) %>%
-  rename(lon = x, lat = y)
-
-pref_0 %>%
-  ggplot() +
-  geom_sf() +
-  geom_point(data = pref_0_longlat, aes(x = long, y = lat, size = pop/100000), color = "grey") +
-  geom_edges(data = edges, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend)) +
-  scale_color_gradient(low = "white", high = "dodgerblue") +
-  labs(size = "Population (100,000)", color = "Co-occurrence (%)",
-       title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
-  theme(legend.box = "vertical",
-        legend.title = element_text(color = "black", size = 7),
-        axis.line = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank(),
-        panel.background = element_blank())
-
-##########Co-occurrence (only adjacent municipalities) ############
-#Creat 0 x 3 tibble
-cooccurrence_data_adj <- cooccurrence_data
-cooccurrence_data_adj <- cooccurrence_data_adj[ !(cooccurrence_data_adj$Var1 %in% cooccurrence_data$Var1), ]
-
-for(i in 1:length(pref_map_0$code)){
-  p <- cooccurrence_data %>%
-    filter(Var1 == pref_map_0$code[i]) %>%
-    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj_0[[i]]+1])))
-  cooccurrence_data_adj <- dplyr::bind_rows(p, cooccurrence_data_adj)
-}
-
-network_adj <- network::network(cooccurrence_data_adj, directed = FALSE, multiple = TRUE)
-
+#Final step: Prepare geometry/edges for plotting
 geometry_adj <- cbind(lon[ network.vertex.names(network_adj) ],
                       lat[ network.vertex.names(network_adj) ])
-
 edges_adj <- ggnetwork(network_adj, layout = geometry_adj, scale = FALSE) %>%
   rename(lon = x, lat = y)
 
+#Plot (4.5 inches * 5.0 inches)
 pref_0 %>%
   ggplot() +
   geom_sf() +
@@ -770,4 +760,4 @@ pref_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
-#4.5*5.0
+
