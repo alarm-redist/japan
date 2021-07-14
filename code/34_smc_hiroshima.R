@@ -773,7 +773,7 @@ geometry_adj <- cbind(lon[ network.vertex.names(network_adj) ],
 edges_adj <- ggnetwork(network_adj, layout = geometry_adj, scale = FALSE) %>%
   rename(lon = x, lat = y)
 
-###5.Plot (4.5 inches * 5.0 inches)
+###5.Plot (4.5 inches * 5.5 inches)
 pref_map_0 %>%
   ggplot() +
   geom_sf(aes(fill = membership), show.legend = FALSE) +
