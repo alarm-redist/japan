@@ -680,7 +680,6 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 library(network)
 library(ggmap)
 library(ggnetwork)
-library(viridis)
 
 ###0. Prepare co-occurrence matrix
 #get plans that have a low max:min ratio
