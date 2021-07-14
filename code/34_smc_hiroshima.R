@@ -675,13 +675,14 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 
 
-
 ##########Co-occurrence (only adjacent municipalities) ############
 #load packages
 library(network)
 library(ggmap)
 library(ggnetwork)
+library(viridis)
 
+###0. Prepare co-occurrence matrix
 #get plans that have a low max:min ratio
 good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.2)]
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
@@ -694,34 +695,12 @@ rownames(matrix) <- pref_map_0$code
 colnames(matrix) <- pref_map_0$code
 cooccurrence_data <- as_tibble(as.data.frame(as.table(matrix)))
 
-#Change co-occurrence frequency to %
+#Convert co-occurrence frequency to %
 cooccurrence_data$Freq <- cooccurrence_data$Freq*100
 
-#Clean up dataframe
-cooccurrence_data <- cooccurrence_data %>%
-  mutate(Freq = as.integer(Freq), Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
-  filter(Var1 != Var2, Freq > 50) %>%
-  #Only the municipalities that are in the same district more than 50% of the time are included in the plot
-  group_by(Var1)
-
-cooccurrence_data_adj <- cooccurrence_data
-#Creat 0 x 3 tibble
-cooccurrence_data_adj <- cooccurrence_data_adj[ !(cooccurrence_data_adj$Var1 %in% cooccurrence_data$Var1), ]
-
-#filter out the co-occurrence between adjacent municipalities
-for(i in 1:length(pref_map_0$code)){
-  p <- cooccurrence_data %>%
-    filter(Var1 == pref_map_0$code[i]) %>%
-    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj_0[[i]]+1])))
-  cooccurrence_data_adj <- dplyr::bind_rows(p, cooccurrence_data_adj)
-}
-
-#use network package to obtain network
-network_adj <- network::network(cooccurrence_data_adj, directed = FALSE, multiple = TRUE)
-
-#calculate the centroids of each municipality/gun (as well as the geometry of each centroid) in order to plot the popultion size
-pref_0$CENTROID <- sf::st_centroid(pref_0$geometry)
-pref_0_longlat <- pref_0 %>%
+###1. Calculate the centroids of each municipality/gun (as well as the geometry of each centroid)  to plot the popultion size
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
+pref_0_longlat <- pref_map_0 %>%
   as_tibble() %>%
   dplyr::select(code, CENTROID, pop) %>%
   separate(CENTROID, into = c("long", "lat"), sep = c(" "))
@@ -730,29 +709,88 @@ pref_0_longlat$lat <- str_remove_all(pref_0_longlat$lat, "[)]")
 pref_0_longlat$long <- as.numeric(pref_0_longlat$long)
 pref_0_longlat$lat <- as.numeric(pref_0_longlat$lat)
 
-#prepare to bind together
+#prepare to bind together with other dataframes
 lat <- pref_0_longlat$lat
 names(lat) <- as.character(pref_0_longlat$code)
 lon <- pref_0_longlat$long
 names(lon) <- as.character(pref_0_longlat$code)
 
-#Final step: Prepare geometry/edges for plotting
+###2. Color municipalities that tend to be in the same district
+matrix_significance_0 <-matrix
+#extract co-occurrence > 90%
+matrix_significance_0[which(matrix_significance_0 < 0.9)] <- 0
+
+#Obtain igraph adjacency object
+pref_graph_0 <- igraph::graph.adjacency(matrix_significance_0,
+                                        weighted=TRUE,
+                                        mode="undirected",
+                                        diag=FALSE)
+
+
+#Obtain the connected components for the igraph adjacency object
+pref_components_0 <- igraph::components(pref_graph_0)
+
+#Filter out the connected components that have more than one member
+pref_clusterindex_0 <- which(pref_components_0$csize > 1)
+
+#Create tibble that shows the membership of each municipality
+pref_membership <- as_tibble(as.data.frame(pref_components_0$membership))
+pref_membership <- bind_cols(pref_map_0$code, pref_membership)
+names(pref_membership) <- c("code", "membership")
+
+#Make it so that the municipalities that are on their own are assigned the code "0"
+alone <- setdiff(pref_membership$membership, pref_clusterindex_0)
+pref_membership$membership[pref_membership$membership %in% alone ] <- 0
+
+#match membership with pref_map_0
+pref_map_0 <- merge(pref_map_0, pref_membership, by = "code")
+pref_map_0$membership <- as.factor(pref_map_0$membership)
+
+###3. Draw lines between municipalities that tend to be in the same district
+#Clean up dataframe
+cooccurrence_data <- cooccurrence_data %>%
+  mutate(Freq = as.integer(Freq), Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
+  filter(Var1 != Var2, Freq > 50)
+  #Only the municipalities that are in the same district more than 50% of the time are included in the plot
+
+#Creat 0 x 3 tibble
+cooccurrence_data_adj <- cooccurrence_data
+cooccurrence_data_adj <- cooccurrence_data_adj[ !(cooccurrence_data_adj$Var1 %in% cooccurrence_data$Var1), ]
+
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(pref_0$code)){
+  p <- cooccurrence_data %>%
+    filter(Var1 == pref_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_0$code[prefadj_0[[i]]+1])))
+  cooccurrence_data_adj <- dplyr::bind_rows(p, cooccurrence_data_adj)
+}
+
+#use network package to obtain network
+network_adj <- network::network(cooccurrence_data_adj, directed = FALSE, multiple = TRUE)
+
+###4.: Prepare geometry/edges for plotting
 geometry_adj <- cbind(lon[ network.vertex.names(network_adj) ],
                       lat[ network.vertex.names(network_adj) ])
 edges_adj <- ggnetwork(network_adj, layout = geometry_adj, scale = FALSE) %>%
   rename(lon = x, lat = y)
 
-#Plot (4.5 inches * 5.0 inches)
-pref_0 %>%
+###5.Plot (4.5 inches * 5.0 inches)
+pref_map_0 %>%
   ggplot() +
-  geom_sf() +
+  geom_sf(aes(fill = membership), show.legend = FALSE) +
+  scale_fill_manual(values= c("0" = "white", "1" = "violetred", "2" = "yellow", "6" = "green",
+                              "7" = "orange", "10" = "brown")) +
+  #size of the circles corresponds to population size in the municipality/gun
   geom_point(data = pref_0_longlat, aes(x = long, y = lat, size = 10*pop/100000), color = "grey") +
+  #color of the edges corresponds to the strength of the co-occurrence
   geom_edges(data = edges_adj, mapping = aes(color = Freq, lon, lat, xend = xend, yend = yend),
              size = 0.8) +
   scale_color_gradient(low = "white", high = "navy") +
   labs(size = "Population (10,000)", color = "Co-occurrence (%)",
        title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2",
-       caption = "Plotting only co-occurrence between adjacent municipalities") +
+       caption = "Plotting only co-occurrence between adjacent municipalities.\n
+       Municipalities that are in the same district more than 90% of the time \n
+       are colored in the same color.") +
   theme(legend.box = "vertical",
         legend.title = element_text(color = "black", size = 7),
         axis.line = element_blank(),
@@ -760,4 +798,13 @@ pref_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
+
+
+
+
+
+
+
+
+
 
