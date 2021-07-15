@@ -678,7 +678,6 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 ##########Co-occurrence (only adjacent municipalities) ############
 #load packages
 library(network)
-library(ggmap)
 library(ggnetwork)
 
 ###0. Prepare co-occurrence matrix
