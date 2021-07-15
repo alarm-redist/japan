@@ -139,11 +139,11 @@ pref_1 <- merge_gun(pref_1)
 
 # -------- Old boundary ------------#
 pref_1 <- reflect_old_boundaries(pref_1,
-                                old_boundary = old_pref,
-                                pop_by_old_boundary = pop_by_old_boundary,
-                                old_code = c(34207, 34481, 34482, 34501, 34524),
-                                #codes of municipalities that now belong to Fukuyamashi
-                                new_code = 34207) #code of merged municipality (Fukuyamashi)
+                                 old_boundary = old_pref,
+                                 pop_by_old_boundary = pop_by_old_boundary,
+                                 old_code = c(34207, 34481, 34482, 34501, 34524),
+                                 #codes of municipalities that now belong to Fukuyamashi
+                                 new_code = 34207) #code of merged municipality (Fukuyamashi)
 
 #Estimate 2020 pop based on old boundary
 pref_1 <- estimate_old_boundary_pop(old_34207, 34207, pref_1, census2020)
@@ -172,18 +172,18 @@ prefadj_1 <- geomander::add_edge(prefadj_1, 2, 3)
 #connect 34481内海町 to 34482沼隈町
 
 pref_map_1 <- redist::redist_map(pref_1,
-                                ndists = ndists_new,
-                                pop_tol= 0.20,
-                                total_pop = pop,
-                                adj = prefadj_1)
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_1)
 
 ###save(list=ls(all=TRUE), file="34_smc_hiroshima_data_1split.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
 sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
-                                    nsims = nsims,
-                                    pop_temper = 0.05)
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
 
 # save it
 saveRDS(sim_smc_pref_1, paste("simulation/",
@@ -516,7 +516,7 @@ wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 
 ############Boxplot########################
 boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,
-                     wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
+                          wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
 names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
 
 boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
@@ -531,8 +531,8 @@ boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
 
 ##########Different Measures of Disparity######################
 maxmin_LH_0 <- ggplot(data = wgt_smc_0,
-                    mapping = aes(x = LH,
-                                  y = max_to_min))+
+                      mapping = aes(x = LH,
+                                    y = max_to_min))+
   geom_point()+
   geom_smooth(method='lm', formula= y~x)
 maxmin_LH_1 <- ggplot(data = wgt_smc_1,
@@ -749,7 +749,7 @@ pref_map_0$membership <- as.factor(pref_map_0$membership)
 cooccurrence_data <- cooccurrence_data %>%
   mutate(Freq = as.integer(Freq), Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
   filter(Var1 != Var2, Freq > 50)
-  #Only the municipalities that are in the same district more than 50% of the time are included in the plot
+#Only the municipalities that are in the same district more than 50% of the time are included in the plot
 
 #Creat 0 x 3 tibble
 cooccurrence_data_adj <- cooccurrence_data
@@ -796,7 +796,3 @@ pref_map_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
-
-
-
-
