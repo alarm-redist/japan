@@ -796,3 +796,26 @@ pref_map_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
+
+
+
+
+########Alternative method 2###################
+library(cluster)
+library(viridis)
+m_co = prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+cl_co = cluster::agnes(m_co)
+plot(as.dendrogram(cl_co)) # pick a number of clusters from the dendrogram.
+prec_clusters = cutree(cl_co, 6) # change 6 to the number of clusters you want
+plot(pref_map_0, prec_clusters) +
+  scale_fill_viridis(option = "turbo", name = "District")
+
+
+########Alternative method 1 (medoids)###################
+m_vi = plan_distances(sim_smc_pref_0_good)[-1, -1] # -1 drops the ref. plan
+cl_vi = cluster::pam(m_co, 4) # number of clusters
+cl_vi$id.med # plan numbers of the medoids of each cluster #3-> 102 19->  8 ->217 10->263
+redist::redist.plot.plans(sim_smc_pref_0, draws = 263, geom = pref_map_0)
+
+
+
