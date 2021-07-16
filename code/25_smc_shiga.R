@@ -18,7 +18,6 @@ sim_type <- "smc"
 nsims <- 25000
 pref_code <- 25
 pref_name <- "shiga"
-sq_maxmin <- 1.2
 lakes_removed <- c("琵琶湖") # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
@@ -101,7 +100,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.35,
                                  total_pop = pop,
                                  adj = prefadj)
 
