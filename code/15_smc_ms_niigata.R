@@ -120,13 +120,13 @@ for(i in 0:nsplit){
 
   init_plan_vec <- redist::get_plans_matrix(sim_smc_pref)[, which(parities == min(parities))[1]]
 
-  sim_ms_pref <- redist::redist_mergesplit(map = pref_map,
+  sim_smc_pref <- redist::redist_mergesplit(map = pref_map,
                                    nsims = nsims,
                                    warmup = 0,
                                    init_plan = init_plan_vec)
 
   # save it
-  saveRDS(sim_ms_pref, paste("simulation/",
+  saveRDS(sim_smc_pref, paste("simulation/",
                               sprintf("%02d", pref_code),
                               "_",
                               as.character(pref_name),
@@ -140,10 +140,10 @@ for(i in 0:nsplit){
                               sep = ""))
 
   # get plans
-  ms_plans_pref <- redist::get_plans_matrix(sim_ms_pref)
+  smc_plans_pref <- redist::get_plans_matrix(sim_smc_pref)
 
   # get disparity data
-  ms_weight_pref <- simulation_weight_disparity_table(sim_ms_pref)
+  smc_weight_pref <- simulation_weight_disparity_table(sim_smc_pref)
 
   # rename elements to be used
   assign(paste(pref_name, pref_code, i, sep = "_"),
@@ -152,12 +152,12 @@ for(i in 0:nsplit){
          prefadj)
   assign(paste(pref_name, pref_code, "map", i, sep = "_"),
          pref_map)
-  assign(paste(pref_name, pref_code, "ms_smc", i, sep = "_"),
-         sim_ms_pref)
-  assign(paste(pref_name, pref_code, "ms_plans", i, sep = "_"),
-         ms_plans_pref)
-  assign(paste(pref_name, pref_code,"ms_weight", i, sep = "_"),
-        ms_weight_pref)
+  assign(paste(pref_name, pref_code, "sim_smc", i, sep = "_"),
+         sim_smc_pref)
+  assign(paste(pref_name, pref_code, "smc_plans", i, sep = "_"),
+         smc_plans_pref)
+  assign(paste(pref_name, pref_code,"smc_weight", i, sep = "_"),
+        smc_weight_pref)
 
   rm(list= ls()[(ls() %in% c("pref_n",
                              "prefadj",
@@ -175,25 +175,25 @@ for(i in 0:nsplit){
 
 niigata_15_orig_map <- status_quo_match(niigata_15_2)
 
-niigata_15_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(niigata_sq$ku, niigata_15_map_2, algorithm = "smc"))
+niigata_15_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(niigata_15_orig_map$ku, niigata_15_map_2, algorithm = "smc"))
 
 niigata_15_cooccurence_0 <- redist::prec_cooccurrence(niigata_15_sim_smc_0[which(niigata_15_smc_weight_0$max_to_min < 1.20), ])
 
 heatmap(niigata_15_cooccurence_0, scale = "column")
 
-niigata_15_significance_0 <-niigata_15_cooccurence_0
-niigata_15_significance_0[which(niigata_15_significance_0 < 0.5)] <- 0
+niigata_15_significance_0 <- niigata_15_cooccurence_0
+niigata_15_significance_0[which(niigata_15_significance_0 < 0.7)] <- 0
 
 niigata_15_graph_0 <- igraph::graph.adjacency(niigata_15_significance_0,
                          weighted=TRUE,
                          mode="undirected",
                          diag=FALSE)
 
-plot(graph,
+plot(niigata_15_graph_0,
      vertex.label = substr(niigata_15_0$code, 3, 5),
      vertex.size = (niigata_15_0$pop)/max((niigata_15_0$pop)) * 30,
-     edge.width=igraph::E(graph)$weight^4 * 5,
-     layout = igraph::layout_with_fr(graph))
+     edge.width=igraph::E(niigata_15_graph_0)$weight^4 * 5,
+     layout = igraph::layout_with_fr(niigata_15_graph_0))
 
 redist::redist.plot.map(niigata_15_0)
 
@@ -212,6 +212,9 @@ for(i in 1:nrow(niigata_15_0)) {
 redist::redist.plot.map(shp = niigata_15_0,
                 plan = niigata_15_colorclusters_0
 ) + scale_fill_manual(values = c("red", "green", "blue", "yellow", "gray"))
+
+niigata_15_centroids_0 <- sf::st_centroid(niigata_15_0)
+
 
 
 
