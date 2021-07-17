@@ -100,7 +100,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.35,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -177,8 +177,8 @@ ggsave(filename = paste("plots/",
        plot = maxmin_LH)
 
 LH_HH <- ggplot(data = shiga_25_smc_weight_0,
-                    mapping = aes(x = LH,
-                                  y = HH))+
+                mapping = aes(x = LH,
+                              y = HH))+
   geom_point()+
   geom_smooth(method='lm', formula= y~x)
 
@@ -199,8 +199,8 @@ ggsave(filename = paste("plots/",
        plot = LH_HH)
 
 maxmin_HH <- ggplot(data = shiga_25_smc_weight_0,
-                mapping = aes(x = HH,
-                              y = max_to_min))+
+                    mapping = aes(x = HH,
+                                  y = max_to_min))+
   geom_point()+
   geom_smooth(method='lm', formula= y~x)
 
@@ -219,8 +219,8 @@ ggsave(filename = paste("plots/",
        plot = maxmin_HH)
 
 maxmin_Gini <- ggplot(data = shiga_25_smc_weight_0,
-                    mapping = aes(x = Gini,
-                                  y = max_to_min))+
+                      mapping = aes(x = Gini,
+                                    y = max_to_min))+
   geom_point()+
   geom_smooth(method='lm', formula= y~x)
 
@@ -237,3 +237,8 @@ ggsave(filename = paste("plots/",
                         "max_to_min_Gini_split.png",
                         sep = ""),
        plot = maxmin_Gini)
+
+
+shiga_25_orig_map <- status_quo_match(shiga_25_0)
+
+shiga_25_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(shiga_25_orig_map$ku, shiga_25_map_0, algorithm = "smc"))
