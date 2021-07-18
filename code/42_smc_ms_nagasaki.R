@@ -111,18 +111,8 @@ for(i in 0:0){
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = 2500,
+                                     nsims = 25000,
                                      pop_temper = 0.05)
-
-  parities <- redist::redist.parity(redist::get_plans_matrix(sim_smc_pref),
-                                    total_pop = pref_n$pop)
-
-  init_plan_vec <- redist::get_plans_matrix(sim_smc_pref)[, which(parities == min(parities))[1]]
-
-  sim_smc_pref <- redist::redist_mergesplit(map = pref_map,
-                                   nsims = nsims,
-                                   warmup = 0,
-                                   init_plan = init_plan_vec)
 
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
@@ -172,12 +162,11 @@ for(i in 0:0){
 
 }
 
-optimal_plan <- nagasaki_42_smc_plans_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))]
+optimal_plan <- nagasaki_42_smc_plans_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))[1]]
 
 split_codes <- intersect(nagasaki_42_0$code, unique(pop_by_old_boundary %>% dplyr::filter(X.1 == 9) %>% dplyr::select(X))$X)
 
 nsplit <- length(split_codes)
-
 
 for(i in c(nsplit)){
 
@@ -251,16 +240,6 @@ for(i in c(nsplit)){
   }
 
   ###### simulation ######
-  sim_smc_pref <- redist::redist_mergesplit(pref_map,
-                                     nsims = 2500,
-                                     warmup = 0,
-                                     init_plan = init_plan_vec,
-                                     counties = key)
-
-  parities <- redist::redist.parity(redist::get_plans_matrix(sim_smc_pref),
-                                    total_pop = pref_n$pop)
-
-  init_plan_vec <- redist::get_plans_matrix(sim_smc_pref)[, which(parities == min(parities))[1]]
 
   sim_smc_pref <- redist::redist_mergesplit(map = pref_map,
                                             nsims = nsims,
