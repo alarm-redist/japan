@@ -69,6 +69,11 @@ old_34212 <- find_old_codes(34212, pop_by_old_boundary)
 old_34205 <- find_old_codes(34205, pop_by_old_boundary)
 #尾道市: 34205 34206 34430 34441 34444
 
+#--------status quo-----------#
+sq_max = 476612
+sq_min = 276528
+sq_maxmin = sq_max / sq_min
+
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 pref_0 <- pref %>%
@@ -101,7 +106,7 @@ prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0$V1, ferries_0$V2)
 
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = prefadj_0)
 
@@ -173,11 +178,9 @@ prefadj_1 <- geomander::add_edge(prefadj_1, 2, 3)
 
 pref_map_1 <- redist::redist_map(pref_1,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = prefadj_1)
-
-###save(list=ls(all=TRUE), file="34_smc_hiroshima_data_1split.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -253,11 +256,9 @@ prefadj_2 <- geomander::add_edge(prefadj_2, 8, 9) #34425 豊浜町 -> 34426 豊�
 
 pref_map_2 <- redist::redist_map(pref_2,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = prefadj_2)
-
-####save(list=ls(all=TRUE), file="34_smc_hiroshima_data_2splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -339,11 +340,9 @@ prefadj_3 <- geomander::add_edge(prefadj_3, 14, 15) #34425  豊浜町 -> 34426 �
 
 pref_map_3 <- redist::redist_map(pref_3,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = prefadj_3)
-
-####save(list=ls(all=TRUE), file="34_smc_hiroshima_data_3splits.Rdata")
 
 # --------- SMC simulation ----------------#
 # simulation
@@ -363,7 +362,6 @@ saveRDS(sim_smc_pref_3, paste("simulation/",
                               "_3",
                               ".Rds",
                               sep = ""))
-
 
 ###############4 splits#############
 pref_4 <- pref %>%
@@ -430,26 +428,17 @@ prefadj_4 <- geomander::add_edge(prefadj_4, 16, 15) #34314 蒲刈町 -> 34313 �
 prefadj_4 <- geomander::add_edge(prefadj_4, 19, 20) #34425  豊浜町 -> 34426 豊町
 prefadj_4 <- geomander::add_edge(prefadj_4, 2, 5)　#34206因島 -> 34444向島
 
-
 pref_map_4 <- redist::redist_map(pref_4,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = prefadj_4)
-
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data_4splits.Rdata")
-
-##pref_map_4tol <- redist::redist_map(pref_4,ndists = ndists_new,pop_tol= 0.08,total_pop = pop, adj = prefadj_4)
 
 # --------- SMC simulation ----------------#
 # simulation
 sim_smc_pref_4 <- redist::redist_smc(pref_map_4,
                                      nsims = nsims,
                                      pop_temper = 0.05)
-
-
-##sim_smc_pref_4tol <- redist::redist_smc(pref_map_4tol,nsims = nsims,  pop_temper = 0.05)
-##saveRDS(sim_smc_pref_4tol, paste("simulation/", as.character(pref_code), "_", as.character(pref_name),  "_", as.character(sim_type), "_", as.character(nsims), "_4lowerpoptol",".Rds", sep = ""))
 
 # save it
 saveRDS(sim_smc_pref_4, paste("simulation/",
@@ -478,39 +467,32 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 #n <- as.data.frame(n)
 #wgt_smc_0 <- cbind(n, wgt_smc_0)
 #wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
-#Maxmin 1.165 #4708 13939 18240 22240 24195
-#redist::redist.plot.plans(sim_smc_pref_0, draws = 4708, geom = pref_map_0)
+#Maxmin 1.168 #13791 14555 18491 23815
+#redist::redist.plot.plans(sim_smc_pref_0, draws = 18491, geom = pref_map_0)
 
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 #wgt_smc_1 <- cbind(n, wgt_smc_1)
 #wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
-#Maxmin 1.158 #1135  3733  4817 21074
-#redist::redist.plot.plans(sim_smc_pref_1, draws = 1135, geom = pref_map_1)
+#Maxmin 1.165 #12855
+#redist::redist.plot.plans(sim_smc_pref_1, draws = 12855, geom = pref_map_1)
 
 wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 #wgt_smc_2 <- cbind(n, wgt_smc_2)
 #wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
-#Maxmin 1.152 #19065
-#redist::redist.plot.plans(sim_smc_pref_2, draws = 19065, geom = pref_map_2)
+#Maxmin 1.165 #31   526  1406  1926  2243....
+#redist::redist.plot.plans(sim_smc_pref_2, draws = 526, geom = pref_map_2)
 
 wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
 #wgt_smc_3 <- cbind(n, wgt_smc_3)
 #wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
-#Maxmin  1.077 #20019
-#redist::redist.plot.plans(sim_smc_pref_3, draws = 20019, geom = pref_map_3)
+#Maxmin  1.129 #1910 4168 8799
+#redist::redist.plot.plans(sim_smc_pref_3, draws = 1910, geom = pref_map_3)
 
 wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #wgt_smc_4 <- cbind(n, wgt_smc_4)
 #wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
-#Maxmin  1.131 #5584 7645
-#redist::redist.plot.plans(sim_smc_pref_4, draws = 5584, geom = pref_map_4)
-
-
-##wgt_smc_4tol <- simulation_weight_disparity_table(sim_smc_pref_4tol)
-##wgt_smc_4tol <- cbind(n, wgt_smc_4tol)
-##wgt_smc_4tol$n[which(wgt_smc_4tol$max_to_min == min(wgt_smc_4tol$max_to_min))]
-##Maxmin 1.064 #7156 13765 16160 16429
-##redist.plot.plans(sim_smc_pref_4tol, draws = 16160, geom = pref_map_4tol)
+#Maxmin  1.139 #13974
+#redist::redist.plot.plans(sim_smc_pref_4, draws = 13974, geom = pref_map_4)
 
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0to4splits.Rdata")
 
@@ -675,58 +657,50 @@ ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 
 
-##########Co-occurrence ############
+##########Co-occurrence 0 splits ############
 #load packages
 library(cluster)
 library(viridis)
-#library(dplyr)
-#library(redist)
-#library(tidyverse)
-
-#extract "good plans"
-good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.2)]
-sim_smc_pref_0_good <- sim_smc_pref_0 %>%
-  filter(draw %in% good_num_0)
 
 #obtain co-occurrence matrix
-m_co = prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+m_co_0 = prec_cooccurrence(sim_smc_pref_0, sampled_only=TRUE)
 
 #cluster
-cl_co = cluster::agnes(m_co)
-plot(as.dendrogram(cl_co)) # pick a number of clusters from the dendrogram.
-prec_clusters = cutree(cl_co, 6) # change 6 to the number of clusters you want
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, 6) # change 6 to the number of clusters you want
 
 #convert to tibble
-pref_membership <- as_tibble(as.data.frame(prec_clusters))
-pref_membership <- bind_cols(pref_map_0$code, pref_membership)
-names(pref_membership) <- c("code", "membership")
-pref_membership$membership <- as.factor(pref_membership$membership)
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
 
 #match membership data with pref_map_0
-pref_map_0 <- merge(pref_map_0, pref_membership, by = "code")
+pref_map_0 <- merge(pref_map_0, pref_membership_0, by = "code")
 
 #calculate the centroids of each municipality/gun to plot population size
 pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
-pref_map_pop_centroid <- pref_map_0 %>%
+pref_map_pop_centroid_0 <- pref_map_0 %>%
   as_tibble() %>%
   dplyr::select(code, CENTROID, pop) %>%
   separate(CENTROID, into = c("long", "lat"), sep = c(" "))
-pref_map_pop_centroid$long <- str_remove_all(pref_map_pop_centroid$long, "[c(,]")
-pref_map_pop_centroid$lat <- str_remove_all(pref_map_pop_centroid$lat, "[)]")
-pref_map_pop_centroid$long <- as.numeric(pref_map_pop_centroid$long)
-pref_map_pop_centroid$lat <- as.numeric(pref_map_pop_centroid$lat)
+pref_map_pop_centroid_0$long <- str_remove_all(pref_map_pop_centroid_0$long, "[c(,]")
+pref_map_pop_centroid_0$lat <- str_remove_all(pref_map_pop_centroid_0$lat, "[)]")
+pref_map_pop_centroid_0$long <- as.numeric(pref_map_pop_centroid_0$long)
+pref_map_pop_centroid_0$lat <- as.numeric(pref_map_pop_centroid_0$lat)
 
 #plot
 pref_map_0 %>%
   ggplot() +
   geom_sf(aes(fill = membership), show.legend = FALSE) +
-  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow",
-                              "4" = "green", "5" = "orange", "6" = "brown")) +
+  scale_fill_manual(values= c("1" = "blue", "2" = "lightsteelblue", "3" = "darkgreen",
+                              "4" = "yellow", "5" = "saddlebrown", "6" = "green")) +
   #size of the circles corresponds to population size in the municipality/gun
-  geom_point(data = pref_map_pop_centroid, aes(x = long, y = lat, size = 10*pop/100000),
+  geom_point(data = pref_map_pop_centroid_0, aes(x = long, y = lat, size = 10*pop/100000),
              color = "grey") +
   labs(size = "Population (10,000)",
-       title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
+       title = "Co-occurrence Analysis: Plans with 0 Municipality Split") +
   theme(legend.box = "vertical",
         legend.title = element_text(color = "black", size = 7),
         axis.line = element_blank(),
@@ -735,5 +709,51 @@ pref_map_0 %>%
         axis.title = element_blank(),
         panel.background = element_blank())
 
+##########Co-occurrence 1 split ############
+#obtain co-occurrence matrix
+m_co_1 = prec_cooccurrence(sim_smc_pref_1, sampled_only=TRUE)
 
+#cluster
+cl_co_1 = cluster::agnes(m_co_1)
+plot(as.dendrogram(cl_co_1)) # pick a number of clusters from the dendrogram.
+prec_clusters_1 = cutree(cl_co_1, 6) # change 6 to the number of clusters you want
+
+#convert to tibble
+pref_membership_1 <- as_tibble(as.data.frame(prec_clusters_1))
+pref_membership_1 <- bind_cols(pref_map_1$code, pref_membership_1)
+names(pref_membership_1) <- c("code", "membership")
+pref_membership_1$membership <- as.factor(pref_membership_1$membership)
+
+#match membership data with pref_map_0
+pref_map_1 <- merge(pref_map_1, pref_membership_1, by = "code")
+
+#calculate the centroids of each municipality/gun to plot population size
+pref_map_1$CENTROID <- sf::st_centroid(pref_map_1$geometry)
+pref_map_pop_centroid_1 <- pref_map_1 %>%
+  as_tibble() %>%
+  dplyr::select(code, CENTROID, pop) %>%
+  separate(CENTROID, into = c("long", "lat"), sep = c(" "))
+pref_map_pop_centroid_1$long <- str_remove_all(pref_map_pop_centroid_1$long, "[c(,]")
+pref_map_pop_centroid_1$lat <- str_remove_all(pref_map_pop_centroid_1$lat, "[)]")
+pref_map_pop_centroid_1$long <- as.numeric(pref_map_pop_centroid_1$long)
+pref_map_pop_centroid_1$lat <- as.numeric(pref_map_pop_centroid_1$lat)
+
+#plot
+pref_map_1 %>%
+  ggplot() +
+  geom_sf(aes(fill = membership), show.legend = FALSE) +
+  scale_fill_manual(values= c("1" = "green", "2" = "darkgreen", "3" = "yellow",
+                              "4" = "blue", "5" = "saddlebrown", "6" = "lightsteelblue")) +
+  #size of the circles corresponds to population size in the municipality/gun
+  geom_point(data = pref_map_pop_centroid_1, aes(x = long, y = lat, size = 10*pop/100000),
+             color = "grey") +
+  labs(size = "Population (10,000)",
+       title = "Co-occurrence Analysis: Plans with 1 Municipality Split") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
 
