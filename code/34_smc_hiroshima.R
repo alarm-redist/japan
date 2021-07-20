@@ -664,7 +664,7 @@ library(viridis)
 library(network)
 library(ggnetwork)
 
-#get plans that have a low max:min ratio
+#get plans that have a low max:min ratio (Top 10%)
 good_num_0 <-  wgt_smc_0 %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(nsims*0.1)) %>%
@@ -749,10 +749,10 @@ pref_map_0 %>%
   scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow",
                               "4" = "green", "5" = "orange", "6" = "brown")) +
   #size of the circles corresponds to population size in the municipality/gun
-  geom_point(data = pref_map_pop_centroid_0, aes(x = long, y = lat, size = 10*pop/100000),
+  geom_point(data = pref_map_pop_centroid_0, aes(long, lat, size = 10*pop/100000),
              color = "grey") +
   #color of the edges corresponds to the strength of the co-occurrence
-  geom_edges(data = edges_0_adj, mapping = aes(color = Freq, x, y, xend = xend, yend = yend),
+  geom_edges(data = edges_0_adj, mapping = aes(x, y, xend = xend, yend = yend, color = Freq),
              size = 0.8) +
   scale_color_gradient(low = "white", high = "navy") +
   labs(size = "Population (10,000)",
