@@ -675,22 +675,7 @@ sim_smc_pref_0_good <- sim_smc_pref_0 %>%
 #obtain co-occurrence matrix
 m_co_0 = prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
-### Color municipalities that tend to be in the same district
-#cluster
-cl_co_0 = cluster::agnes(m_co_0)
-plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
-prec_clusters_0 = cutree(cl_co_0, 6) # change 6 to the number of clusters you want
-
-#convert to tibble
-pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
-pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
-names(pref_membership_0) <- c("code", "membership")
-pref_membership_0$membership <- as.factor(pref_membership_0$membership)
-
-#match membership data with pref_map_0
-pref_map_0 <- merge(pref_map_0, pref_membership_0, by = "code")
-
-#calculate the centroids of each municipality/gun to plot population size
+###calculate the centroids of each municipality/gun to plot population size
 pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
 pref_map_pop_centroid_0 <- pref_map_0 %>%
   as_tibble() %>%
@@ -736,11 +721,25 @@ for(i in 1:length(pref_0$code)){
 #use network package to obtain network
 network_0_adj <- network(m_co_sig_0_adj, directed = FALSE, multiple = TRUE)
 
-#.: Prepare geometry/edges for plotting
+#Prepare geometry/edges for plotting
 geometry_0_adj <- cbind(long[ network.vertex.names(network_0_adj) ],
                         lat[ network.vertex.names(network_0_adj) ])
 edges_0_adj <- ggnetwork(network_0_adj, layout = geometry_0_adj, scale = FALSE)
 
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, 6) # change 6 to the number of clusters you want
+
+#convert to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
+
+#match membership data with pref_map_0
+pref_map_0 <- merge(pref_map_0, pref_membership_0, by = "code")
 
 ###plot
 pref_map_0 %>%
