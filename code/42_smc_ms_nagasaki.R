@@ -16,17 +16,18 @@ setwd("..")
 # prefectural information
 sim_type <- "smc_ms"
 nsims <- 25000
-pref_code <- 15
-pref_name <- "niigata"
+pref_code <- 42
+pref_name <- "nagasaki"
 lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
-ndists_new <- 5
-ndists_old <- 6
+ndists_new <- 3
+ndists_old <- 4
 
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
-merge_gun_exception <- c()  # enter `c()` if not applicable
+nsplit <- 0
+merge_gun_exception <- c(42383)  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -57,9 +58,10 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
-####### Simulation by number of splits#######
-
+# the code of split municipalities
 intact_codes <- c()
+
+####### Simulation by number of splits#######
 
 for(i in 0:0){
   pref_n <- split_pref(pref = pref,
@@ -70,10 +72,6 @@ for(i in 0:0){
                        split_codes = split_codes,
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
-
-  # new 15000 ~ 15001 district
-  pref_n <- avoid_enclave(pref_n, c(15211, 15202, 15208))
-  pref_n <- avoid_enclave(pref_n, c(15500, 15205))
 
   #------------- set up map ----------------
   # simulation parameters
@@ -113,9 +111,8 @@ for(i in 0:0){
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims,
+                                     nsims = 25000,
                                      pop_temper = 0.05)
-
 
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
@@ -165,22 +162,14 @@ for(i in 0:0){
 
 }
 
-optimal_plan <- niigata_15_smc_plans_0[, which(niigata_15_smc_weight_0$max_to_min == min(niigata_15_smc_weight_0$max_to_min))]
+optimal_plan <- nagasaki_42_smc_plans_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))[1]]
 
-niigata_15_orig <- split_pref(pref = pref,
-                              census2020 = census2020,
-                              old_boundary = old_boundary,
-                              pop_by_old_boundary = pop_by_old_boundary,
-                              nsplit = 0,
-                              split_codes = split_codes,
-                              intact_codes = intact_codes,
-                              merge_gun_exception = merge_gun_exception)
-
-split_codes <- intersect(niigata_15_orig$code, as.numeric(unique(pop_by_old_boundary %>% dplyr::filter(X.1 == 9) %>% dplyr::select(X))$X))
+split_codes <- intersect(nagasaki_42_0$code, unique(pop_by_old_boundary %>% dplyr::filter(X.1 == 9) %>% dplyr::select(X))$X)
 
 nsplit <- length(split_codes)
 
 for(i in c(nsplit)){
+
   pref_n <- split_pref(pref = pref,
                        census2020 = census2020,
                        old_boundary = old_boundary,
@@ -189,9 +178,6 @@ for(i in c(nsplit)){
                        split_codes = split_codes,
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
-
-  pref_n <- avoid_enclave(pref_n, c(15211, 15215))
-  pref_n <- avoid_enclave(pref_n, c(15500, 15505))
 
   #------------- set up map ----------------
   # simulation parameters
@@ -222,12 +208,10 @@ for(i in c(nsplit)){
 
   }
 
-
-
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol = redist::redist.parity(optimal_plan, total_pop = niigata_15_0$pop),
+                                 pop_tol = redist::redist.parity(optimal_plan, nagasaki_42_0$pop),
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -246,26 +230,21 @@ for(i in c(nsplit)){
     for (j in 1:length(split_codes)) {
       if (pref_n$code[i] %in% old_codes[[j]]) {key[i] <- split_codes[j]}
     }
-    if (key[i] == 15000) {key[i] <- 15202}
-    else if (key[i] == 15001) {key[i] <- 15205}
     if (key[i] == FALSE) {key[i] <- pref_n$code[i]}
   }
 
-  init_plan_vec <- vector(length = nrow(pref_n))
+  init_plan_vec <- vector(length = length(pref_n))
 
   for(i in 1:nrow(pref_n)) {
-    if(length(which(niigata_15_0$code == key[i])) > 0) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == key[i])]}
-    else if (key[i] %in% c(15205, 15500)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15001)]}
-    else if (key[i] %in% c(15211, 15202, 15208)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15000)]}
+    init_plan_vec[i] <- optimal_plan[which(nagasaki_42_0$code == as.numeric(key[i]))]
   }
 
   ###### simulation ######
-  sim_smc_pref <- redist::redist_mergesplit(pref_map,
+
+  sim_smc_pref <- redist::redist_mergesplit(map = pref_map,
                                             nsims = nsims,
                                             warmup = 0,
-                                            init_plan = init_plan_vec,
-                                            counties = key,
-                                            constraints = list(splits = 10))
+                                            init_plan = init_plan_vec)
 
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
@@ -315,59 +294,8 @@ for(i in c(nsplit)){
 
 }
 
-niigata_15_splits <- count_splits(niigata_15_smc_plans_99, key)
+nagasaki_42_splits <- count_splits(nagasaki_42_smc_plans_72, key)
 
-niigata_15_goodindices <- which(niigata_15_splits <= 2)
-niigata_15_goodmaps <- niigata_15_smc_plans_99[, niigata_15_goodindices]
-niigata_15_bestmap <- niigata_15_goodmaps[, which(niigata_15_smc_weight_99$max_to_min[niigata_15_goodindices] == min(niigata_15_smc_weight_99$max_to_min[niigata_15_goodindices]))]
-
-redist::redist.plot.map(niigata_15_99, plan = niigata_15_bestmap[,1], boundaries = FALSE)
-
-
-niigata_15_orig_map <- status_quo_match(niigata_15_2)
-
-niigata_15_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(niigata_15_orig_map$ku, niigata_15_map_2, algorithm = "smc"))
-
-niigata_15_cooccurence_0 <- redist::prec_cooccurrence(niigata_15_sim_smc_0[which(niigata_15_smc_weight_0$max_to_min < 1.20), ])
-
-heatmap(niigata_15_cooccurence_0, scale = "column")
-
-niigata_15_significance_0 <- niigata_15_cooccurence_0
-niigata_15_significance_0[which(niigata_15_significance_0 < 0.7)] <- 0
-
-niigata_15_graph_0 <- igraph::graph.adjacency(niigata_15_significance_0,
-                         weighted=TRUE,
-                         mode="undirected",
-                         diag=FALSE)
-
-plot(niigata_15_graph_0,
-     vertex.label = substr(niigata_15_0$code, 3, 5),
-     vertex.size = (niigata_15_0$pop)/max((niigata_15_0$pop)) * 30,
-     edge.width=igraph::E(niigata_15_graph_0)$weight^4 * 5,
-     layout = igraph::layout_with_fr(niigata_15_graph_0))
-
-redist::redist.plot.map(niigata_15_0)
-
-niigata_15_components_0 <- igraph::components(niigata_15_graph_0)
-
-niigata_15_clusterindex_0 <- which(niigata_15_components_0$csize > 1)
-
-niigata_15_colorclusters_0 <- vector(length = nrow(niigata_15_0))
-
-for(i in 1:nrow(niigata_15_0)) {
-  ifelse(niigata_15_components_0$membership [i] %in% niigata_15_clusterindex_0,
-         niigata_15_colorclusters_0[i] <- which(niigata_15_clusterindex_0 == niigata_15_components_0$membership[i]),
-         niigata_15_colorclusters_0[i] <- length(niigata_15_clusterindex_0) + 1)
-}
-
-redist::redist.plot.map(shp = niigata_15_0,
-                plan = niigata_15_colorclusters_0
-) + scale_fill_manual(values = c("red", "green", "blue", "yellow", "gray"))
-
-niigata_15_centroids_0 <- sf::st_centroid(niigata_15_0)
-
-
-
-
+nagasaki_42_good <- which(nagasaki_42_splits <= 2)
 
 
