@@ -23,7 +23,7 @@ avoid_enclave <- function(pref, merge_codes){
   num <- rep(pref_code*1000, times = length(merge_codes))
   #re-coded as prefecture_code * 1000
 
-  while(sum(pref_n$code == num) > 0) {num <- num + 1}
+  while(sum(pref_n$code == num[1]) > 0) {num <- num + 1}
 
   pref_to_group$code <- num
 
