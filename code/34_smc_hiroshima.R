@@ -106,7 +106,7 @@ prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0$V1, ferries_0$V2)
 
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_0)
 
@@ -165,7 +165,6 @@ ferries_1 <- add_ferries(pref_1) %>%
 ####otherwise 広島市南区 would be strangely connected to 宮島、江田島、呉
 ###will also remove ferry route between 呉 and 大崎上崎町 to avoid 飛び地
 
-
 # -------- set up for simulation ------------#
 # simulation parameters
 prefadj_1 <- redist::redist.adjacency(pref_1) # Adjacency list
@@ -178,7 +177,7 @@ prefadj_1 <- geomander::add_edge(prefadj_1, 2, 3)
 
 pref_map_1 <- redist::redist_map(pref_1,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_1)
 
@@ -256,7 +255,7 @@ prefadj_2 <- geomander::add_edge(prefadj_2, 8, 9) #34425 豊浜町 -> 34426 豊�
 
 pref_map_2 <- redist::redist_map(pref_2,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_2)
 
@@ -340,7 +339,7 @@ prefadj_3 <- geomander::add_edge(prefadj_3, 14, 15) #34425  豊浜町 -> 34426 �
 
 pref_map_3 <- redist::redist_map(pref_3,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_3)
 
@@ -430,7 +429,7 @@ prefadj_4 <- geomander::add_edge(prefadj_4, 2, 5)　#34206因島 -> 34444向島
 
 pref_map_4 <- redist::redist_map(pref_4,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.09,
                                  total_pop = pop,
                                  adj = prefadj_4)
 
@@ -467,195 +466,69 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 #n <- as.data.frame(n)
 #wgt_smc_0 <- cbind(n, wgt_smc_0)
 #wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
-#Maxmin 1.168 #13791 14555 18491 23815
-#redist::redist.plot.plans(sim_smc_pref_0, draws = 18491, geom = pref_map_0)
+#Maxmin 1.165 # 18   180   448 ...
+#redist::redist.plot.plans(sim_smc_pref_0, draws = 18, geom = pref_map_0)
+
+hiroshima_34_optimalmap_0 <- redist::redist.plot.map(shp = pref_0,
+                                                     plan = pref_smc_plans_0[, which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Hiroshima Optimal Plan (0-split)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_0$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 #wgt_smc_1 <- cbind(n, wgt_smc_1)
 #wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
-#Maxmin 1.165 #12855
-#redist::redist.plot.plans(sim_smc_pref_1, draws = 12855, geom = pref_map_1)
+#Maxmin 1.148 #6310 15948
+#redist::redist.plot.plans(sim_smc_pref_1, draws = 6310, geom = pref_map_1)
+
+hiroshima_34_optimalmap_1 <- redist::redist.plot.map(shp = pref_1,
+                                                     plan = pref_smc_plans_1[, which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Hiroshima Optimal Plan (1-split)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_1$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 #wgt_smc_2 <- cbind(n, wgt_smc_2)
 #wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
-#Maxmin 1.165 #31   526  1406  1926  2243....
-#redist::redist.plot.plans(sim_smc_pref_2, draws = 526, geom = pref_map_2)
+#Maxmin 1.152 #7523 10544 11817 13345 22210
+#redist::redist.plot.plans(sim_smc_pref_2, draws = 7523, geom = pref_map_2)
+
+hiroshima_34_optimalmap_2 <- redist::redist.plot.map(shp = pref_2,
+                                                     plan = pref_smc_plans_2[, which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Hiroshima Optimal Plan (2-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_2$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
 #wgt_smc_3 <- cbind(n, wgt_smc_3)
 #wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
-#Maxmin  1.129 #1910 4168 8799
-#redist::redist.plot.plans(sim_smc_pref_3, draws = 1910, geom = pref_map_3)
+#Maxmin  1.085 #18525, 19937
+#redist::redist.plot.plans(sim_smc_pref_3, draws = 18525, geom = pref_map_3)
+
+hiroshima_34_optimalmap_3 <- redist::redist.plot.map(shp = pref_3,
+                                                     plan = pref_smc_plans_3[, which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Hiroshima Optimal Plan (3-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_3$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #wgt_smc_4 <- cbind(n, wgt_smc_4)
 #wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
-#Maxmin  1.139 #13974
-#redist::redist.plot.plans(sim_smc_pref_4, draws = 13974, geom = pref_map_4)
+#Maxmin  1.065 #8866
+#redist::redist.plot.plans(sim_smc_pref_4, draws = 8866, geom = pref_map_4)
+
+hiroshima_34_optimalmap_4 <- redist::redist.plot.map(shp = pref_4,
+                                                    plan = pref_smc_plans_4[, which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))[1]],
+                                                    boundaries = FALSE,
+                                                    title = "Hiroshima Optimal Plan (4-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_4$max_to_min), 3), sep = ""), hjust = 0.5)
 
 #save(list=ls(all=TRUE), file="34_smc_hiroshima_data_0to4splits.Rdata")
-
-############Boxplot########################
-boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,
-                          wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
-names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
-
-boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits",
-        boxplot_data$"3_splits", boxplot_data$"4_splits",
-        names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),
-        ylab = "Max: min ratio")
-
-##boxplot_data <- bind_cols(wgt_smc_0$max_to_min, wgt_smc_1$max_to_min, wgt_smc_2$max_to_min,wgt_smc_3$max_to_min, wgt_smc_4tol$max_to_min)
-##names(boxplot_data) <- c("0_split", "1_split", "2_splits", "3_splits", "4_splits")
-##boxplot(boxplot_data$"0_split", boxplot_data$"1_split", boxplot_data$"2_splits", boxplot_data$"3_splits", boxplot_data$"4_splits",names = c("0 split", "1 split", "2 splits", "3 splits", "4 splits"),ylab = "Max: min ratio")
-
-
-##########Different Measures of Disparity######################
-maxmin_LH_0 <- ggplot(data = wgt_smc_0,
-                      mapping = aes(x = LH,
-                                    y = max_to_min))+
-  geom_point()+
-  geom_smooth(method='lm', formula= y~x)
-maxmin_LH_1 <- ggplot(data = wgt_smc_1,
-                      mapping = aes(x = LH,
-                                    y = max_to_min))+
-  geom_point()+
-  geom_smooth(method='lm', formula= y~x)
-maxmin_LH_2 <- ggplot(data = wgt_smc_2,
-                      mapping = aes(x = LH,
-                                    y = max_to_min))+
-  geom_point()+
-  geom_smooth(method='lm', formula= y~x)
-maxmin_LH_3 <- ggplot(data = wgt_smc_3,
-                      mapping = aes(x = LH,
-                                    y = max_to_min))+
-  geom_point()+
-  geom_smooth(method='lm', formula= y~x)
-maxmin_LH_4 <- ggplot(data = wgt_smc_4,
-                      mapping = aes(x = LH,
-                                    y = max_to_min))+
-  geom_point()+
-  geom_smooth(method='lm', formula= y~x)
-
-############Status quo (not successful yet)################
-status_quo <- status_quo_match(pref_4)
-
-# establish keys
-key <- vector(length = length(pref_4$code))
-for (i in 1:length(pref_4$code)) {
-  if (pref_4$code[i] %in% old_34205) {key[i] <- 34205}
-  else if (pref_4$code[i] %in% old_34212) {key[i] <- 34212}
-  else if (pref_4$code[i] %in% old_34202) {key[i] <- 34202}
-  else if (pref_4$code[i] %in% old_34207) {key[i] <- 34207}
-  else {key[i] <- pref_4$code[i]}
-}
-
-# map 0-split plans to 4-split plans
-modified_smc_0 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
-                         ncol = dim(pref_smc_plans_0)[2])
-
-for (i in 1:dim(pref_smc_plans_4)[1]) {
-  if (pref_4$code[i] %in% pref_0$code) {modified_smc_0[i, ] <-
-    pref_smc_plans_0[which(pref_0$code == pref_4$code[i]), ]}
-  else {modified_smc_0[i, ] <- pref_smc_plans_0[which(pref_0$code == key[i]), ]}
-}
-
-# map 1-split plans to 4-split plans
-modified_smc_1 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
-                         ncol = dim(pref_smc_plans_1)[2])
-
-for (i in 1:dim(pref_smc_plans_4)[1]) {
-  if (pref_4$code[i] %in% pref_1$code) {modified_smc_1[i, ] <-
-    pref_smc_plans_1[which(pref_1$code == pref_4$code[i]), ]}
-  else {modified_smc_1[i, ] <- pref_smc_plans_1[which(pref_1$code == key[i]), ]}
-}
-
-# map 2-split plans to 4-split plans
-modified_smc_2 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
-                         ncol = dim(pref_smc_plans_2)[2])
-
-for (i in 1:dim(pref_smc_plans_4)[1]) {
-  if (pref_4$code[i] %in% pref_2$code) {modified_smc_2[i, ] <-
-    pref_smc_plans_2[which(pref_2$code == pref_4$code[i]), ]}
-  else {modified_smc_2[i, ] <- pref_smc_plans_2[which(pref_2$code == key[i]), ]}
-}
-
-# map 3-split plans to 3-split plans
-modified_smc_3 <- matrix(0, nrow = dim(pref_smc_plans_4)[1],
-                         ncol = dim(pref_smc_plans_3)[2])
-
-for (i in 1:dim(pref_smc_plans_4)[1]) {
-  if (pref_4$code[i] %in% pref_3$code) {modified_smc_3[i, ] <-
-    pref_smc_plans_3[which(pref_3$code == pref_4$code[i]), ]}
-  else {modified_smc_3[i, ] <- pref_smc_plans_3[which(pref_3$code == key[i]), ]}
-}
-
-overlap_smc_0 <- vector(length = dim(pref_smc_plans_0)[2])
-overlap_smc_1 <- vector(length = dim(pref_smc_plans_1)[2])
-overlap_smc_2 <- vector(length = dim(pref_smc_plans_2)[2])
-overlap_smc_3 <- vector(length = dim(pref_smc_plans_3)[2])
-overlap_smc_4 <- vector(length = dim(pref_smc_plans_4)[2])
-
-#save(list=ls(all=TRUE), file="34_smc_hiroshima_data.Rdata")
-
-
-for (i in 1:length(overlap_smc_0)){
-  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], pref_4$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-for (i in 1:length(overlap_smc_1)){
-  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], pref_4$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-for (i in 1:length(overlap_smc_2)){
-  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_2[, i], pref_4$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-
-for (i in 1:length(overlap_smc_3)){
-  overlap_smc_3[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_3[, i], pref_4$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-
-for (i in 1:length(overlap_smc_4)){
-  overlap_smc_4[i] <- redist::redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_4[, i], pref_4$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-
-wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_4, algorithm = "smc"))
-
-# set parameters
-
-improved_plans <- as.data.frame(
-  cbind(rbind(wgt_smc_0 %>% dplyr::filter(LH < wgt_orig$LH),
-              wgt_smc_1 %>% dplyr::filter(LH < wgt_orig$LH),
-              wgt_smc_2 %>% dplyr::filter(LH < wgt_orig$LH),
-              wgt_smc_3 %>% dplyr::filter(LH < wgt_orig$LH),
-              wgt_smc_4 %>% dplyr::filter(LH < wgt_orig$LH)
-  ),
-
-  c(overlap_smc_0[which(wgt_smc_0$LH < wgt_orig$LH)],
-    overlap_smc_1[which(wgt_smc_1$LH < wgt_orig$LH)],
-    overlap_smc_2[which(wgt_smc_2$LH < wgt_orig$LH)],
-    overlap_smc_3[which(wgt_smc_3$LH < wgt_orig$LH)],
-    overlap_smc_4[which(wgt_smc_4$LH < wgt_orig$LH)]
-  ),
-
-  as.character(count_splits(modified_smc_0[, which(wgt_smc_0$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_1[, which(wgt_smc_1$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_2[, which(wgt_smc_2$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_3[, which(wgt_smc_3$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_4[, which(wgt_smc_4$LH < wgt_orig$LH)], key)
-  )))
-
-names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
-
-plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
-  geom_point(size = 1, alpha = 0.3)
-ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
-
-
 
 ##########Co-occurrence ############
 #load packages
@@ -765,4 +638,36 @@ pref_map_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
+
+########Dissimilarity VS Max-Min#############
+status_quo <- status_quo_match(pref_0)
+
+orig_weight <- sq_maxmin
+#orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = pref_map_0, algorithm = "smc"))
+
+overlap_0 <- vector(length = dim(pref_smc_plans_0)[2])
+for (i in 1:length(overlap_0)){
+  overlap_0[i] <- redist.prec.pop.overlap(status_quo$ku, pref_smc_plans_0[, i], pref_0$pop,
+                                          weighting = "s", index_only = TRUE)
+}
+
+
+
+improved_plans <- as.data.frame(
+  cbind(wgt_smc_0 %>% dplyr::filter(max_to_min < orig_weight),
+
+        c(overlap_0[which(wgt_smc_0$max_to_min < orig_weight)]
+        ),
+
+        as.character(rep("0", length(which(wgt_smc_0$max_to_min < orig_weight))))
+  ))
+
+names(improved_plans) <- c(names(wgt_smc_0), "Dissimilarity", "Splits")
+
+
+hiroshima_marginal <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colour = Splits)) +
+  geom_point(size = 1, alpha = 0.3) +
+  ylim(1.00, sq_maxmin) +
+  ggplot2::ggtitle("Hiroshima Dissimilarity vs Max-Min")
+ggExtra::ggMarginal(hiroshima_marginal, groupColour = TRUE, groupFill = TRUE)
 
