@@ -86,7 +86,7 @@ prefadj_0 <- redist::redist.adjacency(pref_0) # Adjacency list
 
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 pop_tol= 0.25,
                                  total_pop = pop,
                                  adj = prefadj_0)
 
@@ -139,7 +139,7 @@ prefadj_1 <- redist::redist.adjacency(pref_1) # Adjacency list
 
 pref_map_1 <- redist::redist_map(pref_1,
                                  ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 pop_tol= 0.25,
                                  total_pop = pop,
                                  adj = prefadj_1)
 
@@ -412,7 +412,7 @@ prefadj_4 <- redist::redist.adjacency(pref_4) # Adjacency list
 
 pref_map_4 <- redist::redist_map(pref_4,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj_4)
 
@@ -504,7 +504,7 @@ prefadj_5 <- redist::redist.adjacency(pref_5) # Adjacencies
 
 pref_map_5 <- redist::redist_map(pref_5,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj_5)
 
@@ -530,73 +530,206 @@ saveRDS(sim_smc_pref_5, paste("simulation/",
                               sep = ""))
 
 ########Analysis#####################
+# extract plans
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+pref_smc_plans_2 <- redist::get_plans_matrix(sim_smc_pref_2)
+pref_smc_plans_3 <- redist::get_plans_matrix(sim_smc_pref_3)
+pref_smc_plans_4 <- redist::get_plans_matrix(sim_smc_pref_4)
+pref_smc_plans_5 <- redist::get_plans_matrix(sim_smc_pref_5)
+
 # get disparity table data
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 #n <- c(1:25000)
 #n <- as.data.frame(n)
 #wgt_smc_0 <- cbind(n, wgt_smc_0)
 #wgt_smc_0$n[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))]
-#Maxmin 1.019 #8394  9865 13069 14567 22135
-#redist::redist.plot.plans(sim_smc_pref_0, draws = 8394, geom = pref_map_0)
+#Maxmin 1.0225 #12581
+#redist::redist.plot.plans(sim_smc_pref_0, draws = 12581, geom = pref_map_0)
+
+okayama_33_optimalmap_0 <- redist::redist.plot.map(shp = pref_0,
+                                                  plan = pref_smc_plans_0[, which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))[1]],
+                                                  boundaries = FALSE,
+                                                  title = "Okayama Optimal Plan (0-split)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_0$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 #wgt_smc_1 <- cbind(n, wgt_smc_1)
 #wgt_smc_1$n[which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))]
-#Maxmin 1.019 [Same] # 3051  4201 11213 21711 22191 24758
-#redist::redist.plot.plans(sim_smc_pref_1, draws = 3051, geom = pref_map_1)
+#Maxmin 1.0299 #6754
+#redist::redist.plot.plans(sim_smc_pref_1, draws = 6754, geom = pref_map_1)
+
+okayama_33_optimalmap_1 <- redist::redist.plot.map(shp = pref_1,
+                                                     plan = pref_smc_plans_1[, which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Okayama Optimal Plan (1-split)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_1$max_to_min), 3), sep = ""), hjust = 0.5)
+
 
 wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 #wgt_smc_2 <- cbind(n, wgt_smc_2)
 #wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
-#Maxmin 1.019 #897 14273
-#redist::redist.plot.plans(sim_smc_pref_2, draws = 897, geom = pref_map_2)
+#Maxmin 1.0198 #22745
+#redist::redist.plot.plans(sim_smc_pref_2, draws = 22745, geom = pref_map_2)
+
+okayama_33_optimalmap_2 <- redist::redist.plot.map(shp = pref_2,
+                                                     plan = pref_smc_plans_2[, which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Okayama Optimal Plan (2-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_2$max_to_min), 3), sep = ""), hjust = 0.5)
+
 
 wgt_smc_3 <- simulation_weight_disparity_table(sim_smc_pref_3)
 #wgt_smc_3 <- cbind(n, wgt_smc_3)
 #wgt_smc_3$n[which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))]
-#Maxmin  1.019 #11424
-#redist::redist.plot.plans(sim_smc_pref_3, draws = 11424, geom = pref_map_3)
+#Maxmin  1.0192 #1242  1303  4483  7098 ....
+#redist::redist.plot.plans(sim_smc_pref_3, draws = 1242, geom = pref_map_3)
+
+okayama_33_optimalmap_3 <- redist::redist.plot.map(shp = pref_3,
+                                                     plan = pref_smc_plans_3[, which(wgt_smc_3$max_to_min == min(wgt_smc_3$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Okayama Optimal Plan (3-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_3$max_to_min), 3), sep = ""), hjust = 0.5)
 
 wgt_smc_4 <- simulation_weight_disparity_table(sim_smc_pref_4)
 #wgt_smc_4 <- cbind(n, wgt_smc_4)
 #wgt_smc_4$n[which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))]
-#Maxmin  1.0198 #1358  7625 15285 19573
-#redist::redist.plot.plans(sim_smc_pref_4, draws = 1358, geom = pref_map_4)
+#Maxmin  1.019 #11481 13685 15912 16991 17110
+#redist::redist.plot.plans(sim_smc_pref_4, draws = 11481, geom = pref_map_4)
+
+okayama_33_optimalmap_4 <- redist::redist.plot.map(shp = pref_4,
+                                                     plan = pref_smc_plans_4[, which(wgt_smc_4$max_to_min == min(wgt_smc_4$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Okayama Optimal Plan (4-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_4$max_to_min), 3), sep = ""), hjust = 0.5)
+
 
 wgt_smc_5 <- simulation_weight_disparity_table(sim_smc_pref_5)
 #wgt_smc_5 <- cbind(n, wgt_smc_5)
 #wgt_smc_5$n[which(wgt_smc_5$max_to_min == min(wgt_smc_5$max_to_min))]
-#Maxmin  #1.010 #8212 20130
-#redist::redist.plot.plans(sim_smc_pref_5, draws = 8212, geom = pref_map_5)
+#Maxmin  #1.008 #7545 10888 11775 16942 20091
+#redist::redist.plot.plans(sim_smc_pref_5, draws = 7545, geom = pref_map_5)
 
+okayama_33_optimalmap_5 <- redist::redist.plot.map(shp = pref_5,
+                                                     plan = pref_smc_plans_5[, which(wgt_smc_5$max_to_min == min(wgt_smc_5$max_to_min))[1]],
+                                                     boundaries = FALSE,
+                                                     title = "Okayama Optimal Plan (5-splits)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green")) +
+  labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_5$max_to_min), 3), sep = ""), hjust = 0.5)
+
+
+#save(list=ls(all=TRUE), file="32_smc_okayama_data_0to5splits.Rdata")
 
 ##############Co-occcurrence###################
-library(igraph)
-good_num_0 <- wgt_smc_0$n[which(wgt_smc_0$max_to_min < 1.1)]
+#load packages
+library(cluster)
+library(viridis)
+library(network)
+library(ggnetwork)
+
+#get plans that have a low max:min ratio (Top 10%)
+good_num_0 <-  wgt_smc_0 %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(nsims*0.1)) %>%
+  select(n)
+good_num_0 <- as.vector(t(good_num_0))
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
   filter(draw %in% good_num_0)
-matrix <- prec_cooccurrence(sim_smc_pref_0_good)
-par(family= "HiraKakuProN-W3")
+#obtain co-occurrence matrix
+m_co_0 = prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
-#co_occurrence <- t(matrix) %*% matrix
-graph <- graph_from_adjacency_matrix(matrix, mode = "undirected", diag = FALSE)
-plot(graph,
-     vertex.size = 1,
-     vertex.label = names(data))
+###calculate the centroids of each municipality/gun to plot population size
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
+pref_map_pop_centroid_0 <- pref_map_0 %>%
+  as_tibble() %>%
+  dplyr::select(code, CENTROID, pop) %>%
+  separate(CENTROID, into = c("long", "lat"), sep = c(" "))
+pref_map_pop_centroid_0$long <- str_remove_all(pref_map_pop_centroid_0$long, "[c(,]")
+pref_map_pop_centroid_0$lat <- str_remove_all(pref_map_pop_centroid_0$lat, "[)]")
+pref_map_pop_centroid_0$long <- as.numeric(pref_map_pop_centroid_0$long)
+pref_map_pop_centroid_0$lat <- as.numeric(pref_map_pop_centroid_0$lat)
 
+#prepare to bind together with network dataframe
+lat <- pref_map_pop_centroid_0$lat
+names(lat) <- as.character(pref_map_pop_centroid_0$code)
+long <- pref_map_pop_centroid_0$long
+names(long) <- as.character(pref_map_pop_centroid_0$code)
 
-############Boxplot########################
-boxplot_data <- bind_cols(wgt_smc_2$max_to_min,
-                          wgt_smc_3$max_to_min, wgt_smc_4$max_to_min)
-names(boxplot_data) <- c("2_splits", "3_splits", "4_splits")
+###Draw lines between municipalities that tend to be in the same district
+m_co_sig_0 <- m_co_0
+#extract co-occurrence > 90%
+rownames(m_co_sig_0) <- pref_map_0$code
+colnames(m_co_sig_0) <- pref_map_0$code
+m_co_sig_0 <- as_tibble(as.data.frame(as.table(m_co_sig_0)))
+m_co_sig_0$Freq <- as.numeric(m_co_sig_0$Freq)
 
-boxplot(boxplot_data$"2_splits",
-        boxplot_data$"3_splits", boxplot_data$"4_splits",
-        names = c("2 splits", "3 splits", "4 splits"),
-        ylab = "Max: min ratio")
+#Clean up dataframe
+m_co_sig_0 <- m_co_sig_0 %>%
+  mutate(Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
+  filter(Var1 != Var2, Freq > 0.9)
+#Only the municipalities that are in the same district more than 90% of the time are included
 
-##################
-redist.plot.map(shp = minus_added_municipalities_5) + theme_map()
+#Creat 0 x 3 tibble
+m_co_sig_0_adj <- m_co_sig_0
+m_co_sig_0_adj <- m_co_sig_0_adj[ !(m_co_sig_0_adj$Var1 %in% m_co_sig_0$Var1), ]
 
-redist.plot.plans(sim_smc_pref_0, draws = 1,
-                  geom = pref_map_0)
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(pref_0$code)){
+  p <- m_co_sig_0 %>%
+    filter(Var1 == pref_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_0$code[prefadj_0[[i]]+1])))
+  m_co_sig_0_adj <- dplyr::bind_rows(p, m_co_sig_0_adj)
+}
+
+#use network package to obtain network
+network_0_adj <- network(m_co_sig_0_adj, directed = FALSE, multiple = TRUE)
+
+#Prepare geometry/edges for plotting
+geometry_0_adj <- cbind(long[ network.vertex.names(network_0_adj) ],
+                        lat[ network.vertex.names(network_0_adj) ])
+edges_0_adj <- ggnetwork(network_0_adj, layout = geometry_0_adj, scale = FALSE)
+
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, 4) # change 6 to the number of clusters you want
+
+#convert to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
+
+#match membership data with pref_map_0
+pref_map_0 <- merge(pref_map_0, pref_membership_0, by = "code")
+
+###plot
+pref_map_0 %>%
+  ggplot() +
+  geom_sf(aes(fill = membership.y), show.legend = FALSE) +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow",
+                              "4" = "green")) +
+  #size of the circles corresponds to population size in the municipality/gun
+  geom_point(data = pref_map_pop_centroid_0, aes(long, lat, size = 10*pop/100000),
+             color = "grey") +
+  #color of the edges corresponds to the strength of the co-occurrence
+  geom_edges(data = edges_0_adj, mapping = aes(x, y, xend = xend, yend = yend, color = Freq),
+             size = 0.8) +
+  scale_color_gradient(low = "white", high = "navy") +
+  labs(size = "Population (10,000)",
+       color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio",
+       caption = "Lines represent co-occurrence between adjacent municipalities.") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())

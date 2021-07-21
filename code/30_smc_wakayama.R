@@ -59,7 +59,6 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 # the code of split municipalities
-split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
 intact_codes <- c()
 
 ####### Simulation by number of splits#######
@@ -73,6 +72,9 @@ for(i in 0:nsplit){
                        split_codes = split_codes,
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
+
+  pref_n <- avoid_enclave(pref_n, c(30203, 30340))
+  pref_n <- avoid_enclave(pref_n, c(30420, 30207))
 
   #------------- set up map ----------------
   # simulation parameters
@@ -99,8 +101,6 @@ for(i in 0:nsplit){
 
   }
 
-
-
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
@@ -110,7 +110,8 @@ for(i in 0:nsplit){
 
   ###### simulation ######
   sim_smc_pref <- redist::redist_smc(pref_map,
-                                     nsims = nsims)
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
   # save it
   saveRDS(sim_smc_pref, paste("simulation/",
                               as.character(pref_code),
@@ -159,4 +160,114 @@ for(i in 0:nsplit){
 
 }
 
+wakayama_30_optimalmap <- redist::redist.plot.map(shp = wakayama_30_0, plan = wakayama_30_smc_plans_0[, which(wakayama_30_smc_weight_0$max_to_min == min(wakayama_30_smc_weight_0$max_to_min))[1]], boundaries = FALSE, title = "Wakayama Optimal Plan (0-split)") +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red")) + ggplot2::labs(caption = paste("Max-min Ratio: ", round(min(wakayama_30_smc_weight_0$max_to_min), 3), sep = ""), hjust = 0.5)
 
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "_optimal.png",
+                        sep = ""),
+       plot = wakayama_30_optimalmap)
+
+status_quo <- status_quo_match(wakayama_30_0)
+
+wakayama_orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = wakayama_30_map_0, algorithm = "smc"))
+
+wakayama_overlap_0 <- vector(length = dim(wakayama_30_smc_plans_0)[2])
+for (i in 1:length(nagasaki_overlap_0)){
+  wakayama_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, wakayama_30_smc_plans_0[, i], wakayama_30_0$pop,
+                                                      weighting = "s", index_only = TRUE)
+}
+
+
+improved_plans <- as.data.frame(
+  cbind(wakayama_30_smc_weight_0 %>% dplyr::filter(max_to_min < wakayama_orig_weight$max_to_min),
+
+  c(wakayama_overlap_0[which(wakayama_30_smc_weight_0$max_to_min < wakayama_orig_weight$max_to_min)]
+  ),
+
+  as.character(rep("0", length(which(wakayama_30_smc_weight_0$max_to_min < wakayama_orig_weight$max_to_min))))
+  ))
+
+names(improved_plans) <- c(names(wakayama_30_smc_weight_0), "Dissimilarity", "Splits")
+
+
+wakayama_marginal <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colour = Splits)) +
+  geom_point(size = 1, alpha = 0.3) + ylim(1.00, wakayama_orig_weight$max_to_min) + ggplot2::ggtitle("Wakayama Dissimilarity vs Max-Min")
+ggExtra::ggMarginal(wakayama_marginal, groupColour = TRUE, groupFill = TRUE)
+
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "_dissim_maxmin.png",
+                        sep = ""),
+       plot = ggExtra::ggMarginal(wakayama_marginal, groupColour = TRUE, groupFill = TRUE))
+
+top_5pc <- wakayama_30_smc_weight_0 %>% dplyr::filter(rank(desc(-max_to_min)) <= 0.05*nrow(wakayama_30_smc_weight_0))
+
+pref_map_0 <- wakayama_30_map_0
+
+library(cluster)
+
+m_co = redist::prec_cooccurrence(plans = redist::redist_plans(map = wakayama_30_map_0, plans = wakayama_30_smc_plans_0[, which(wakayama_30_smc_weight_0$max_to_min <= max(top_5pc$max_to_min))], algorithm = "smc")
+                                 , sampled_only=TRUE)
+cl_co = cluster::agnes(m_co)
+plot(as.dendrogram(cl_co)) # pick a number of clusters from the dendrogram.
+prec_clusters = cutree(cl_co, 2) # change 6 to the number of clusters you want
+
+#convert to tibble
+pref_membership <- as_tibble(as.data.frame(prec_clusters))
+pref_membership <- bind_cols(pref_map_0$code, pref_membership)
+names(pref_membership) <- c("code", "membership")
+pref_membership$membership <- as.factor(pref_membership$membership)
+
+#match membership data with pref_map_0
+pref_map_0 <- merge(pref_map_0, pref_membership, by = "code")
+
+#calculate the centroids of each municipality/gun to plot population size
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
+pref_map_pop_centroid <- pref_map_0 %>%
+  as_tibble() %>%
+  dplyr::select(code, CENTROID, pop) %>%
+  separate(CENTROID, into = c("long", "lat"), sep = c(" "))
+pref_map_pop_centroid$long <- str_remove_all(pref_map_pop_centroid$long, "[c(,]")
+pref_map_pop_centroid$lat <- str_remove_all(pref_map_pop_centroid$lat, "[)]")
+pref_map_pop_centroid$long <- as.numeric(pref_map_pop_centroid$long)
+pref_map_pop_centroid$lat <- as.numeric(pref_map_pop_centroid$lat)
+
+#plot
+pref_map_0 %>%
+  ggplot() +
+  geom_sf(aes(fill = membership), show.legend = FALSE) +
+  scale_fill_manual(values= c("1" = "blue", "2" = "red")) +
+  #size of the circles corresponds to population size in the municipality/gun
+  geom_point(data = pref_map_pop_centroid, aes(x = long, y = lat, size = 10*pop/100000),
+             color = "grey") +
+  labs(size = "Population (10,000)",
+       title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+install.packages("ggpubr")
+
+ggpubr::stat

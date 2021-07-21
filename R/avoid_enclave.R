@@ -20,10 +20,14 @@ avoid_enclave <- function(pref, merge_codes){
 
   #re-code the municipalities to group together
   pref_code <- merge_codes[1] %/% 1000
-  pref_to_group$code <- rep(pref_code*1000, times = 2)
+  num <- rep(pref_code*1000 + 1, times = length(merge_codes))
   #re-coded as prefecture_code * 1000
 
-  #group together the desingated municipalities
+  while(sum(pref_n$code == num[1]) > 0) {num <- num + 1}
+
+  pref_to_group$code <- num
+
+  #group together the designated municipalities
   pref_grouped <- pref_to_group %>%
     group_by(code) %>%
     summarise(geometry = sf::st_union(geometry), pop = sum(pop))
@@ -32,6 +36,7 @@ avoid_enclave <- function(pref, merge_codes){
   bound <- dplyr::bind_rows(pref_intact, pref_grouped)
 
   return(bound)
+
 }
 
 
