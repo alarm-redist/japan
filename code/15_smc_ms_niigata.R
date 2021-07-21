@@ -71,7 +71,7 @@ for(i in 0:0){
                        intact_codes = intact_codes,
                        merge_gun_exception = merge_gun_exception)
 
-  # new 15000 ~ 15001 district
+  # new 15001 ~ 15002 district
   pref_n <- avoid_enclave(pref_n, c(15211, 15202, 15208))
   pref_n <- avoid_enclave(pref_n, c(15500, 15205))
 
@@ -246,8 +246,8 @@ for(i in c(nsplit)){
     for (j in 1:length(split_codes)) {
       if (pref_n$code[i] %in% old_codes[[j]]) {key[i] <- split_codes[j]}
     }
-    if (key[i] == 15000) {key[i] <- 15202}
-    else if (key[i] == 15001) {key[i] <- 15205}
+    if (pref_n$code[i] == 15001) {key[i] <- 15202}
+    else if (pref_n$code[i] == 15002) {key[i] <- 15205}
     if (key[i] == FALSE) {key[i] <- pref_n$code[i]}
   }
 
@@ -255,8 +255,8 @@ for(i in c(nsplit)){
 
   for(i in 1:nrow(pref_n)) {
     if(length(which(niigata_15_0$code == key[i])) > 0) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == key[i])]}
-    else if (key[i] %in% c(15205, 15500)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15001)]}
-    else if (key[i] %in% c(15211, 15202, 15208)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15000)]}
+    else if (key[i] %in% c(15205, 15500)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15002)]}
+    else if (key[i] %in% c(15211, 15202, 15208)) {init_plan_vec[i] <- optimal_plan[which(niigata_15_0$code == 15001)]}
   }
 
   ###### simulation ######
