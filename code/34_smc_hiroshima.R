@@ -537,6 +537,11 @@ library(viridis)
 library(network)
 library(ggnetwork)
 
+#add column "n" as an indicator of the plans
+#n <- c(1:25000)
+#n <- as.data.frame(n)
+#wgt_smc_0 <- cbind(n, wgt_smc_0)
+
 #get plans that have a low max:min ratio (Top 10%)
 good_num_0 <-  wgt_smc_0 %>%
   arrange(max_to_min) %>%
