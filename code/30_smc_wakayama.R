@@ -2,7 +2,7 @@
 #-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-#remotes::install_github("alarm-redist/redist@dev")
+remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -182,7 +182,7 @@ status_quo <- status_quo_match(wakayama_30_0)
 wakayama_orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = wakayama_30_map_0, algorithm = "smc"))
 
 wakayama_overlap_0 <- vector(length = dim(wakayama_30_smc_plans_0)[2])
-for (i in 1:length(nagasaki_overlap_0)){
+for (i in 1:length(wakayama_overlap_0)){
   wakayama_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, wakayama_30_smc_plans_0[, i], wakayama_30_0$pop,
                                                       weighting = "s", index_only = TRUE)
 }
@@ -218,48 +218,117 @@ ggsave(filename = paste("plots/",
                         sep = ""),
        plot = ggExtra::ggMarginal(wakayama_marginal, groupColour = TRUE, groupFill = TRUE))
 
-top_5pc <- wakayama_30_smc_weight_0 %>% dplyr::filter(rank(desc(-max_to_min)) <= 0.05*nrow(wakayama_30_smc_weight_0))
+
+
+##########Co-occurrence ############
+#load packages
+library(cluster)
+library(viridis)
+library(network)
+library(ggnetwork)
 
 pref_map_0 <- wakayama_30_map_0
 
-library(cluster)
+#get plans that have a low max:min ratio (Top 10%)
+n <- c(1:nsims)
+n <- as.data.frame(n)
+pref_smc_weight_0 <- cbind(n, wakayama_30_smc_weight_0)
 
-m_co = redist::prec_cooccurrence(plans = redist::redist_plans(map = wakayama_30_map_0, plans = wakayama_30_smc_plans_0[, which(wakayama_30_smc_weight_0$max_to_min <= max(top_5pc$max_to_min))], algorithm = "smc")
-                                 , sampled_only=TRUE)
-cl_co = cluster::agnes(m_co)
-plot(as.dendrogram(cl_co)) # pick a number of clusters from the dendrogram.
-prec_clusters = cutree(cl_co, 2) # change 6 to the number of clusters you want
+good_num_0 <- pref_smc_weight_0 %>%
+  dplyr::arrange(max_to_min) %>%
+  dplyr::slice(1: as.numeric(nsims*0.1)) %>%
+  dplyr::select(n)
 
-#convert to tibble
-pref_membership <- as_tibble(as.data.frame(prec_clusters))
-pref_membership <- bind_cols(pref_map_0$code, pref_membership)
-names(pref_membership) <- c("code", "membership")
-pref_membership$membership <- as.factor(pref_membership$membership)
+good_num_0 <- as.vector(t(good_num_0))
 
-#match membership data with pref_map_0
-pref_map_0 <- merge(pref_map_0, pref_membership, by = "code")
+sim_smc_pref_0_good <- wakayama_30_sim_smc_0 %>%
+  filter(draw %in% good_num_0)
 
-#calculate the centroids of each municipality/gun to plot population size
+#obtain co-occurrence matrix
+m_co_0 <- redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+
+###calculate the centroids of each municipality/gun to plot population size
+
 pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
-pref_map_pop_centroid <- pref_map_0 %>%
+pref_map_pop_centroid_0 <- pref_map_0 %>%
   as_tibble() %>%
   dplyr::select(code, CENTROID, pop) %>%
   separate(CENTROID, into = c("long", "lat"), sep = c(" "))
-pref_map_pop_centroid$long <- str_remove_all(pref_map_pop_centroid$long, "[c(,]")
-pref_map_pop_centroid$lat <- str_remove_all(pref_map_pop_centroid$lat, "[)]")
-pref_map_pop_centroid$long <- as.numeric(pref_map_pop_centroid$long)
-pref_map_pop_centroid$lat <- as.numeric(pref_map_pop_centroid$lat)
 
-#plot
+pref_map_pop_centroid_0$long <- stringr::str_remove_all(pref_map_pop_centroid_0$long, "[c(,]")
+pref_map_pop_centroid_0$lat <- stringr::str_remove_all(pref_map_pop_centroid_0$lat, "[)]")
+pref_map_pop_centroid_0$long <- as.numeric(pref_map_pop_centroid_0$long)
+pref_map_pop_centroid_0$lat <- as.numeric(pref_map_pop_centroid_0$lat)
+
+#prepare to bind together with network dataframe
+lat <- pref_map_pop_centroid_0$lat
+names(lat) <- as.character(pref_map_pop_centroid_0$code)
+long <- pref_map_pop_centroid_0$long
+names(long) <- as.character(pref_map_pop_centroid_0$code)
+
+###Draw lines between municipalities that tend to be in the same district
+m_co_sig_0 <- m_co_0
+#extract co-occurrence > 90%
+rownames(m_co_sig_0) <- pref_map_0$code
+colnames(m_co_sig_0) <- pref_map_0$code
+m_co_sig_0 <- as_tibble(as.data.frame(as.table(m_co_sig_0)))
+m_co_sig_0$Freq <- as.numeric(m_co_sig_0$Freq)
+#Clean up dataframe
+m_co_sig_0 <- m_co_sig_0 %>%
+  mutate(Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
+  filter(Var1 != Var2, Freq > 0.9)
+
+#Only the municipalities that are in the same district more than 90% of the time are included
+#Creat 0 x 3 tibble
+m_co_sig_0_adj <- m_co_sig_0
+m_co_sig_0_adj <- m_co_sig_0_adj[ !(m_co_sig_0_adj$Var1 %in% m_co_sig_0$Var1), ]
+
+pref_0 <- wakayama_30_0
+prefadj_0 <- wakayama_30_adj_0
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(pref_0$code)){
+  p <- m_co_sig_0 %>%
+    filter(Var1 == pref_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_0$code[prefadj_0[[i]]+1])))
+  m_co_sig_0_adj <- dplyr::bind_rows(p, m_co_sig_0_adj)
+}
+
+#use network package to obtain network
+network_0_adj <- network::network(m_co_sig_0_adj, directed = FALSE, multiple = TRUE)
+#Prepare geometry/edges for plotting
+geometry_0_adj <- cbind(long[ network::network.vertex.names(network_0_adj) ],
+                        lat[ network::network.vertex.names(network_0_adj) ])
+edges_0_adj <- ggnetwork::ggnetwork(network_0_adj, layout = geometry_0_adj, scale = FALSE)
+
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, 2) # change 6 to the number of clusters you want
+#convert to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
+#match membership data with pref_map_0
+pref_map_0 <- merge(pref_map_0, pref_membership_0, by = "code")
+
+###plot
 pref_map_0 %>%
   ggplot() +
   geom_sf(aes(fill = membership), show.legend = FALSE) +
   scale_fill_manual(values= c("1" = "blue", "2" = "red")) +
   #size of the circles corresponds to population size in the municipality/gun
-  geom_point(data = pref_map_pop_centroid, aes(x = long, y = lat, size = 10*pop/100000),
+  geom_point(data = pref_map_pop_centroid_0, aes(long, lat, size = 10*pop/100000),
              color = "grey") +
+  #color of the edges corresponds to the strength of the co-occurrence
+  geom_edges(data = edges_0_adj, mapping = aes(x, y, xend = xend, yend = yend, color = Freq),
+             size = 0.8) +
+  scale_color_gradient(low = "white", high = "navy") +
   labs(size = "Population (10,000)",
-       title = "Co-occurrence Analysis: Plans with Max:Min Ratio < 1.2") +
+       color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio",
+       caption = "Lines represent co-occurrence between adjacent municipalities.") +
   theme(legend.box = "vertical",
         legend.title = element_text(color = "black", size = 7),
         axis.line = element_blank(),
@@ -268,6 +337,16 @@ pref_map_0 %>%
         axis.title = element_blank(),
         panel.background = element_blank())
 
-install.packages("ggpubr")
-
-ggpubr::stat
+ggsave(filename = paste("plots/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(nsplit),
+                        "_cooccurrence_plot.png",
+                        sep = ""),
+       plot = wakayama_cooccurence_plot)
