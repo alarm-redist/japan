@@ -26,7 +26,7 @@ ndists_old <- 4
 # enter `c()` if not applicable
 # number of splits
 nsplit <- 2
-merge_gun_exception <- c(42383)  # enter `c()` if not applicable
+merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
@@ -99,7 +99,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.45,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -170,6 +170,7 @@ nagasaki_42_smc_plans_2 <- redist::get_plans_matrix(nagasaki_42_sim_smc_2)
 nagasaki_42_smc_weight_0 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_0)
 nagasaki_42_smc_weight_1 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_1)
 nagasaki_42_smc_weight_2 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_2)
+
 
 # Cooccurence analysis
 status_quo <- status_quo_match(nagasaki_42_2)

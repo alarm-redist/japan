@@ -181,23 +181,28 @@ status_quo <- status_quo_match(wakayama_30_0)
 
 wakayama_orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = wakayama_30_map_0, algorithm = "smc"))
 
-wakayama_overlap_0 <- vector(length = dim(wakayama_30_smc_plans_0)[2])
+unique_weights <- wakayama_30_smc_weight_0
+unique_weights$n <- 1:nsims
+unique_weights <- unique_weights %>%
+  dplyr::group_by(max_to_min, Gini, LH, HH) %>% summarize(n = first(n))
+
+wakayama_overlap_0 <- vector(length = nrow(unique_weights))
 for (i in 1:length(wakayama_overlap_0)){
-  wakayama_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, wakayama_30_smc_plans_0[, i], wakayama_30_0$pop,
+  wakayama_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, wakayama_30_smc_plans_0[, unique_weights$n[i]], wakayama_30_0$pop,
                                                       weighting = "s", index_only = TRUE)
 }
 
 
 improved_plans <- as.data.frame(
-  cbind(wakayama_30_smc_weight_0 %>% dplyr::filter(max_to_min < wakayama_orig_weight$max_to_min),
+  cbind(unique_weights %>% dplyr::filter(max_to_min < wakayama_orig_weight$max_to_min),
 
-  c(wakayama_overlap_0[which(wakayama_30_smc_weight_0$max_to_min < wakayama_orig_weight$max_to_min)]
+  c(wakayama_overlap_0[which(unique_weights$max_to_min < wakayama_orig_weight$max_to_min)]
   ),
 
-  as.character(rep("0", length(which(wakayama_30_smc_weight_0$max_to_min < wakayama_orig_weight$max_to_min))))
+  as.character(rep("0", length(which(unique_weights$max_to_min < wakayama_orig_weight$max_to_min))))
   ))
 
-names(improved_plans) <- c(names(wakayama_30_smc_weight_0), "Dissimilarity", "Splits")
+names(improved_plans) <- c(names(unique_weights), "Dissimilarity", "Splits")
 
 
 wakayama_marginal <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colour = Splits)) +
@@ -337,16 +342,3 @@ pref_map_0 %>%
         axis.title = element_blank(),
         panel.background = element_blank())
 
-ggsave(filename = paste("plots/",
-                        as.character(pref_code),
-                        "_",
-                        as.character(pref_name),
-                        "_",
-                        as.character(sim_type),
-                        "_",
-                        as.character(nsims),
-                        "_",
-                        as.character(nsplit),
-                        "_cooccurrence_plot.png",
-                        sep = ""),
-       plot = wakayama_cooccurence_plot)
