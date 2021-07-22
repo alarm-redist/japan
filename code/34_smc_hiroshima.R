@@ -645,6 +645,73 @@ pref_map_0 %>%
         panel.background = element_blank())
 
 ########Dissimilarity VS Max-Min#############
+redist.prec.pop.overlap <- function(plan_old, plan_new, total_pop, weighting = 's',
+                                    normalize = TRUE, index_only = FALSE, return_mat = FALSE) {
+
+  weighting <- match.arg(weighting, choices = c('s','m','g','n'))
+
+  if (missing(plan_old)) {
+    stop('Please pass an argument to `plan_old`.')
+  } else {
+    plan_old <- as.matrix(plan_old)
+  }
+  if (missing(plan_new)) {
+    stop('Please pass an argument to `plan_new`.')
+  } else {
+    plan_new <- as.matrix(plan_new)
+  }
+
+  if (length(plan_old) != length(plan_new)) {
+    stop('plan_old and plan_new must have the same number of entries.')
+  }
+
+  nprec <- length(plan_old)
+
+  if (missing(total_pop)) {
+    total_pop <- rep(1L, nprec)
+  } else {
+    if (inherits(total_pop, 'redist_map')) {
+      total_pop <- total_pop[[attr(total_pop, 'pop_col')]]
+    }
+  }
+
+  total_pop <- matrix(total_pop, nrow = length(total_pop))
+
+  if (weighting == 's') { # weight by sum of ith and jth pop
+    cmat <- matrix(rep(total_pop, nprec), ncol = nprec)
+    rmat <- t(cmat)
+    wts <- (cmat + rmat)
+  } else if (weighting == 'g') { # weight by geometric mean of ith and jth pop
+    wts <- sqrt(total_pop %*% t(total_pop))
+  } else if (weighting == 'm') {# weight by mean of ith and jth pop
+    cmat <- matrix(rep(total_pop, nprec), ncol = nprec)
+    rmat <- t(cmat)
+    wts <- (cmat + rmat)/2
+  } else { #if (weighting == 'n') { # no weights (matrix of 1s)
+    wts <- matrix(1, nprec, nprec)
+  }
+
+  mat_old <- redist:::prec_cooccur(plan_old, 1)
+  mat_new <- redist:::prec_cooccur(plan_new, 1)
+
+  wted_mat <- wts * abs(mat_old - mat_new)
+
+  if (normalize) {
+    wted_mat <- wted_mat / sum(total_pop)
+  }
+
+  if (index_only) {
+    return(mean(wted_mat[upper.tri(wted_mat)]))
+  }
+
+  if (return_mat) {
+    return(wted_mat)
+  }
+  apply(wted_mat, MARGIN = 1, FUN = mean)
+}
+
+
+
 status_quo <- status_quo_match(pref_0)
 
 orig_weight <- sq_maxmin
