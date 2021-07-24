@@ -198,25 +198,30 @@ key_1 <- vector(length = length(shiga_25_1$code))
 old_codes <-
   list(find_old_codes(split_codes[1], pop_by_old_boundary))
 
-for (i in 1:length(pref_n$code)) {
+for (i in 1:length(shiga_25_1$code)) {
   for (j in 1:length(split_codes)) {
-    if (pref_n$code[i] %in% old_codes[[j]]) {key[i] <- split_codes[j]}
+    if (shiga_25_1$code[i] %in% old_codes[[j]]) {key_1[i] <- split_codes[j]}
   }
-  if (pref_n$code[i] == 15001) {key[i] <- 15202}
-  else if (pref_n$code[i] == 15002) {key[i] <- 15205}
-  if (key[i] == FALSE) {key[i] <- pref_n$code[i]}
+  if (key_1[i] == FALSE) {key_1[i] <- shiga_25_1$code[i]}
 }
 
-unique_weights <- cbind(shiga_smc_weight_0, shiga_smc_weight_1)
-unique_weights$n <- cbind(1:nsims, 1:nsims)
-unique_weights$splits <- cbind(rep(0, nsims), count_splits(shiga_25_smc_plans_1))
+unique_weights <- dplyr::bind_rows(shiga_25_smc_weight_0, shiga_25_smc_weight_1)
+unique_weights$n <- rep(1:nsims, 2)
+unique_weights$splits <- c(rep(0, nsims), count_splits(shiga_25_smc_plans_1, key_1))
 unique_weights <- unique_weights %>%
-  dplyr::group_by(max_to_min, Gini, LH, HH) %>% summarize(n = first(n))
+  dplyr::group_by(max_to_min, Gini, LH, HH, splits) %>% summarize(n = first(n))
 
-wakayama_overlap_0 <- vector(length = nrow(unique_weights))
-for (i in 1:length(wakayama_overlap_0)){
-  wakayama_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, wakayama_30_smc_plans_0[, unique_weights$n[i]], wakayama_30_0$pop,
+shiga_overlap_0 <- vector(length = nrow(unique_weights))
+
+for (i in 1:length(shiga_overlap_0)){
+  if (unique_weights$splits[i] == 0) {
+    shiga_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, shiga_25_smc_plans_0[, unique_weights$n[i]], shiga_25_0$pop,
                                                            weighting = "s", index_only = TRUE)
+  }
+  if (unique_weights$splits[i] == 1) {
+    shiga_overlap_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, shiga_25_smc_plans_1[, unique_weights$n[i]], shiga_25_1$pop,
+                                                          weighting = "s", index_only = TRUE)
+  }
 }
 
 
