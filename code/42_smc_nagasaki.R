@@ -22,6 +22,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 3
 ndists_old <- 4
+
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -99,7 +100,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.45,
+                                 pop_tol= 0.20,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -156,6 +157,7 @@ for(i in 0:nsplit){
 
 # ------ Analysis ------- #
 
+#Import Statements
 # import as files, if necessary
 nagasaki_42_sim_smc_0 <- readRDS("simulation/42_nagasaki_smc_25000_0.Rds")
 nagasaki_42_sim_smc_1 <- readRDS("simulation/42_nagasaki_smc_25000_1.Rds")
@@ -171,22 +173,22 @@ nagasaki_42_smc_weight_0 <- simulation_weight_disparity_table(nagasaki_42_sim_sm
 nagasaki_42_smc_weight_1 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_1)
 nagasaki_42_smc_weight_2 <- simulation_weight_disparity_table(nagasaki_42_sim_smc_2)
 
-
 # Cooccurence analysis
 status_quo <- status_quo_match(nagasaki_42_2)
 
 # establish keys to map 0-split, 1-split plans to 2-split plans
-key <- vector(length = length(nagasaki_42_2$code))
+key_0 <- vector(length = length(nagasaki_42_2$code))
 
 old_codes <-
   list(find_old_codes(split_codes[1], pop_by_old_boundary),
      find_old_codes(split_codes[2], pop_by_old_boundary))
 
 for (i in 1:length(nagasaki_42_2$code)) {
-  if (nagasaki_42_2$code[i] %in% old_codes[[1]]) {key[i] <- split_codes[1]}
-  else if (nagasaki_42_2$code[i] %in% old_codes[[2]]) {key[i] <- split_codes[2]}
-  else {key[i] <- nagasaki_42_2$code[i]}
+  if (nagasaki_42_2$code[i] %in% old_codes[[1]]) {key_0[i] <- split_codes[1]}
+  else if (nagasaki_42_2$code[i] %in% old_codes[[2]]) {key_0[i] <- split_codes[2]}
+  else {key_0[i] <- nagasaki_42_2$code[i]}
 }
+
 
 # map 0-split plans to 2-split plans
 modified_smc_0 <- matrix(0, nrow = dim(nagasaki_42_smc_plans_2)[1],
@@ -195,7 +197,7 @@ modified_smc_0 <- matrix(0, nrow = dim(nagasaki_42_smc_plans_2)[1],
 for (i in 1:dim(nagasaki_42_smc_plans_2)[1]) {
   if (nagasaki_42_2$code[i] %in% nagasaki_42_0$code) {modified_smc_0[i, ] <-
     nagasaki_42_smc_plans_0[which(nagasaki_42_0$code == nagasaki_42_2$code[i]), ]}
-  else {modified_smc_0[i, ] <- nagasaki_42_smc_plans_0[which(nagasaki_42_0$code == key[i]), ]}
+  else {modified_smc_0[i, ] <- nagasaki_42_smc_plans_0[which(nagasaki_42_0$code == key_0[i]), ]}
 }
 
 # map 1-split plans to 2-split plans
@@ -205,47 +207,43 @@ modified_smc_1 <- matrix(0, nrow = dim(nagasaki_42_smc_plans_2)[1],
 for (i in 1:dim(nagasaki_42_smc_plans_2)[1]) {
   if (nagasaki_42_2$code[i] %in% nagasaki_42_1$code) {modified_smc_1[i, ] <-
     nagasaki_42_smc_plans_1[which(nagasaki_42_1$code == nagasaki_42_2$code[i]), ]}
-  else {modified_smc_1[i, ] <- nagasaki_42_smc_plans_1[which(nagasaki_42_1$code == key[i]), ]}
+  else {modified_smc_1[i, ] <- nagasaki_42_smc_plans_1[which(nagasaki_42_1$code == key_0[i]), ]}
 }
 
-overlap_smc_0 <- vector(length = dim(nagasaki_42_smc_plans_0)[2])
-overlap_smc_1 <- vector(length = dim(nagasaki_42_smc_plans_1)[2])
-overlap_smc_2 <- vector(length = dim(nagasaki_42_smc_plans_2)[2])
+unique_weights <- dplyr::bind_rows(nagasaki_42_smc_weight_0, nagasaki_42_smc_weight_1, nagasaki_42_smc_weight_2)
+unique_weights$n <- rep(1:(nsims*(nsplit+1)))
+unique_weights$splits <- c(rep(0, nsims), count_splits(modified_smc_1, key_0), count_splits(nagasaki_42_smc_plans_2, key_0))
+unique_weights <- unique_weights %>%
+  dplyr::group_by(max_to_min, Gini, LH, HH, splits) %>% dplyr::summarize(n = first(n))
 
-for (i in 1:length(overlap_smc_0)){
-  overlap_smc_0[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i], nagasaki_42_2$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-for (i in 1:length(overlap_smc_1)){
-  overlap_smc_1[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i], nagasaki_42_2$pop,
-                                                      weighting = "s", index_only = TRUE)
-}
-for (i in 1:length(overlap_smc_2)){
-  overlap_smc_2[i] <- redist::redist.prec.pop.overlap(status_quo$ku, nagasaki_42_smc_plans_2[, i], nagasaki_42_2$pop,
-                                                      weighting = "s", index_only = TRUE)
+overlap_smc <- vector(length = nrow(unique_weights))
+
+for (i in 1:length(overlap_smc)){
+  if (unique_weights$n[i] <= nsims) {overlap_smc[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_0[, i %% nsims], nagasaki_42_2$pop,
+                                                                     weighting = "s", index_only = TRUE)}
+  else if (unique_weights$n[i] > nsims & unique_weights$n[i] <= 2*nsims) {overlap_smc[i] <- redist::redist.prec.pop.overlap(status_quo$ku, modified_smc_1[, i %% nsims], nagasaki_42_2$pop,
+                                                                                         weighting = "s", index_only = TRUE)}
+  else {overlap_smc[i] <- redist::redist.prec.pop.overlap(status_quo$ku, nagasaki_42_smc_plans_2[, i %% nsims], nagasaki_42_2$pop,
+                                                          weighting = "s", index_only = TRUE)}
 }
 
-wgt_orig <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = nagasaki_42_map_2, algorithm = "smc"))
+
+nagasaki_orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = nagasaki_42_map_2, algorithm = "smc"))
 
 # set parameters
 
 improved_plans <- as.data.frame(
-  cbind(rbind(nagasaki_42_smc_weight_1 %>% dplyr::filter(LH < wgt_orig$LH),
-              nagasaki_42_smc_weight_0 %>% dplyr::filter(LH < wgt_orig$LH)
-  ),
+  cbind(unique_weights[which(unique_weights$max_to_min < nagasaki_orig_weight$max_to_min), ],
 
-  c(overlap_smc_1[which(nagasaki_42_smc_weight_1$LH < wgt_orig$LH)],
-    overlap_smc_0[which(nagasaki_42_smc_weight_0$LH < wgt_orig$LH)]
-  ),
+  overlap_smc[which(unique_weights$max_to_min < nagasaki_orig_weight$max_to_min)])
+)
 
-  as.character(c(count_splits(modified_smc_1[, which(nagasaki_42_smc_weight_1$LH < wgt_orig$LH)], key),
-               count_splits(modified_smc_0[, which(nagasaki_42_smc_weight_0$LH < wgt_orig$LH)], key)
-  ))))
+names(improved_plans) <- c(names(unique_weights), "Dissimilarity")
 
-names(improved_plans) <- c(names(nagasaki_42_smc_weight_0), "Dissimilarity", "Splits")
+improved_plans$splits <- as.character(improved_plans$splits)
 
-plot_smc <- ggplot(improved_plans, aes(Dissimilarity, LH, colour = Splits)) +
-  geom_point(size = 1, alpha = 0.3)
+plot_smc <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colour = splits)) +
+  geom_point(size = 1, alpha = 0.3) + ggplot2::ggtitle("Nagasaki Dissimilarity vs Max-Min")
 ggExtra::ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
 pal <- c("#CC79A7", "#E69F00", "#56B4E9", "#20B073", "#0072B2", "#D55E00", "#999999")
