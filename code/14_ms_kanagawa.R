@@ -141,17 +141,23 @@ for (j in 1:n_blocks) {
 
   part_map <- redist::redist_map(pref_part,
                                   ndists = ndists_new/n_blocks,
-                                  pop_tol = 0.20,
+                                  pop_tol = 0.30,
                                   total_pop = pop,
                                   adj = part_adj)
 
+  init_plan <- redist::redist_smc(map = part_map,
+                                  nsims = 1,
+                                  pop_temper = 0.05)
+
+  init_plan_vec <- redist::get_plans_matrix(init_plan)[,1]
 
   part_smc_pref <- redist::redist_shortburst(map = part_map,
                                              score_fn = 10*redist::scorer_pop_dev(part_map) + redist::scorer_splits(part_map, pref_part$code),
                                              maximize = FALSE,
                                              burst_size = 10,
                                              max_bursts = 1000,
-                                             counties = pref_part$code)
+                                             counties = pref_part$code,
+                                             init_plan = init_plan_vec)
 
   # save it
   saveRDS(part_smc_pref, paste("simulation/",
@@ -208,6 +214,9 @@ for (j in 1:n_blocks) {
   )])
 
 }
+
+# find the best zero-split maps, too!
+
 
 orig_splits <- 6
 
