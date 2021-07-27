@@ -2,7 +2,7 @@
 #-------------- functions set up ---------------
 library(tidyverse)
 set.seed(12345)
-#remotes::install_github("alarm-redist/redist@dev")
+remotes::install_github("alarm-redist/redist@dev")
 
 # pull functions from jcdf
 # set working directory to the function folder
@@ -58,7 +58,7 @@ intact_codes <- c()
 
 nsplit <- length(split_codes)
 
-n_blocks <- 5
+n_blocks <- 4
 
 pref_block <- pref %>%
     dplyr::group_by(code, CITY_NAME) %>%
@@ -91,14 +91,16 @@ small_units <- estimate_2020_pop(small_units, census2020) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 
+x <- 5
+
 #------------- set up map ----------------
 
 for (j in 1:n_blocks) {
 
   part_codes <- pref_block$code[which(kanagawa_blocks == j)]
-  largest_two <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes))$code[1:2]
+  largest_x <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes))$code[1:x]
 
-  pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_two), pref_block %>% dplyr::filter(!(code %in% largest_two) & code %in% part_codes))
+  pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_x), pref_block %>% dplyr::filter(!(code %in% largest_x) & code %in% part_codes))
 
   part_adj <- redist::redist.adjacency(shp = pref_part) # Adjacency list
 
@@ -141,7 +143,7 @@ for (j in 1:n_blocks) {
 
   part_map <- redist::redist_map(pref_part,
                                   ndists = ndists_new/n_blocks,
-                                  pop_tol = 0.30,
+                                  pop_tol = 0.35,
                                   total_pop = pop,
                                   adj = part_adj)
 
@@ -151,11 +153,18 @@ for (j in 1:n_blocks) {
 
   init_plan_vec <- redist::get_plans_matrix(init_plan)[,1]
 
+  part_map <- redist::redist_map(pref_part,
+                                 ndists = ndists_new/n_blocks,
+                                 pop_tol = 0.15,
+                                 total_pop = pop,
+                                 adj = part_adj)
+
+  multiple <- 2
   part_smc_pref <- redist::redist_shortburst(map = part_map,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map) + redist::scorer_splits(part_map, pref_part$code),
+                                             score_fn = redist::scorer_pop_dev(part_map) + multiple*redist::scorer_splits(part_map, pref_part$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part$code,
                                              init_plan = init_plan_vec)
 
@@ -215,8 +224,26 @@ for (j in 1:n_blocks) {
 
 }
 
-# find the best zero-split maps, too!
+kanagawa_14_results <- data.frame(matrix(ncol = 0, nrow = n_blocks*nrow(kanagawa_14_ms_weight_block_1)))
+kanagawa_14_results$block <- c(rep(1, nrow(kanagawa_14_ms_weight_block_1)),
+                               rep(2, nrow(kanagawa_14_ms_weight_block_2)),
+                               rep(3, nrow(kanagawa_14_ms_weight_block_3)),
+                               rep(4, nrow(kanagawa_14_ms_weight_block_4)))
+kanagawa_14_results$index <- rep(1:nrow(kanagawa_14_ms_weight_block_1), n_blocks)
+kanagawa_14_results$max_to_min <- c(kanagawa_14_ms_weight_block_1$max_to_min,
+                                    kanagawa_14_ms_weight_block_2$max_to_min,
+                                    kanagawa_14_ms_weight_block_3$max_to_min,
+                                    kanagawa_14_ms_weight_block_4$max_to_min)
+kanagawa_14_results$splits <- c(kanagawa_14_ms_splits_block_1,
+                                kanagawa_14_ms_splits_block_2,
+                                kanagawa_14_ms_splits_block_3,
+                                kanagawa_14_ms_splits_block_4)
 
+kanagawa_14_uniques <- kanagawa_14_results %>%
+  dplyr::group_by(block, splits) %>%
+  dplyr::summarize(max_to_min = min(max_to_min))
+
+# find the best zero-split maps, too!
 
 orig_splits <- 6
 
