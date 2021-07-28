@@ -225,7 +225,7 @@ part_adj_1 <- redist::redist.adjacency(shp = pref_part_1)
 #define map
 part_map_1 <- redist::redist_map(pref_part_1,
                                  ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.30,
+                                 pop_tol = 0.27,
                                  total_pop = pop,
                                  adj = part_adj_1)
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1.Rdata")
@@ -242,7 +242,7 @@ part_smc_pref_1 <- redist::redist_shortburst(map = part_map_1,
                                                       redist::scorer_splits(part_map_1, pref_part_1$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part_1$code,
                                              init_plan = init_plan_vec_1)
 
@@ -272,12 +272,12 @@ part_weight_pref_1 <- part_smc_pref_1 %>%
 part_splits_1 <- count_splits(part_plans_pref_1, part_map_1$code)
 
 # optimal plan for Block 1
-m <- c(1:1001)
+m <- c(1:2501)
 m <- as.data.frame(m)
 part_weight_pref_1 <- cbind(m, part_weight_pref_1)
 part_weight_pref_1$m[which(part_weight_pref_1$max_to_min == min(part_weight_pref_1$max_to_min))]
-#Maxmin 1.0056 #933  934  935  936  937 ...
-redist::redist.plot.plans(part_smc_pref_1, draws = 1000, geom = part_map_1)
+#Maxmin 1.01101 # 502  503  504  505  506  507  ...
+redist::redist.plot.plans(part_smc_pref_1, draws = 502, geom = part_map_1)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -299,7 +299,7 @@ part_adj_2 <- redist::redist.adjacency(shp = pref_part_2)
 #define map
 part_map_2 <- redist::redist_map(pref_part_2,
                                  ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.30,
+                                 pop_tol = 0.27,
                                  total_pop = pop,
                                  adj = part_adj_2)
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block2.Rdata")
@@ -316,7 +316,7 @@ part_smc_pref_2 <- redist::redist_shortburst(map = part_map_2,
                                              redist::scorer_splits(part_map_2, pref_part_2$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part_2$code,
                                              init_plan = init_plan_vec_2)
 
@@ -348,8 +348,8 @@ part_splits_2 <- count_splits(part_plans_pref_2, part_map_2$code)
 # optimal plan for Block 2
 part_weight_pref_2 <- cbind(m, part_weight_pref_2)
 part_weight_pref_2$m[which(part_weight_pref_2$max_to_min == min(part_weight_pref_2$max_to_min))]
-#Maxmin 1.02325 #461  462  463  464  465   ...
-redist::redist.plot.plans(part_smc_pref_2, draws = 1000, geom = part_map_2)
+#Maxmin 1.0018 #2453 2454 2455 ...
+redist::redist.plot.plans(part_smc_pref_2, draws = 2453, geom = part_map_2)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -373,7 +373,7 @@ part_adj_3 <- geomander::add_edge(part_adj_3, 61, 62)
 #define map
 part_map_3 <- redist::redist_map(pref_part_3,
                                  ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.30,
+                                 pop_tol = 0.27,
                                  total_pop = pop,
                                  adj = part_adj_3)
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block3.Rdata")
@@ -390,7 +390,7 @@ part_smc_pref_3 <- redist::redist_shortburst(map = part_map_3,
                                                redist::scorer_splits(part_map_3, pref_part_3$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part_3$code,
                                              init_plan = init_plan_vec_3)
 
@@ -419,11 +419,11 @@ part_weight_pref_3 <- part_smc_pref_3 %>%
 # get splits
 part_splits_3 <- count_splits(part_plans_pref_3, part_map_3$code)
 
-# optimal plan for Block 2
+# optimal plan for Block 3
 part_weight_pref_3 <- cbind(m, part_weight_pref_3)
 part_weight_pref_3$m[which(part_weight_pref_3$max_to_min == min(part_weight_pref_3$max_to_min))]
-#Maxmin 1.494 #1    2    3    4    5    6 ...
-redist::redist.plot.plans(part_smc_pref_3, draws = 1000, geom = part_map_3)
+#Maxmin 1.3442 #  4    5    6    7    8    9   ...
+redist::redist.plot.plans(part_smc_pref_3, draws = 4, geom = part_map_3)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block3draws.Rdata")
 
@@ -457,7 +457,7 @@ part_adj_4 <- geomander::add_edge(part_adj_4, 85, 36)
 #define map
 part_map_4 <- redist::redist_map(pref_part_4,
                                  ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.30,
+                                 pop_tol = 0.27,
                                  total_pop = pop,
                                  adj = part_adj_4)
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block4.Rdata")
@@ -474,7 +474,7 @@ part_smc_pref_4 <- redist::redist_shortburst(map = part_map_4,
                                                redist::scorer_splits(part_map_4, pref_part_4$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part_4$code,
                                              init_plan = init_plan_vec_4)
 
@@ -506,11 +506,10 @@ part_splits_4 <- count_splits(part_plans_pref_4, part_map_4$code)
 # optimal plan for Block 4
 part_weight_pref_4 <- cbind(m, part_weight_pref_4)
 part_weight_pref_4$m[which(part_weight_pref_4$max_to_min == min(part_weight_pref_4$max_to_min))]
-#Maxmin 1.4789 #6    7    8    9   10   11   12   ...
-redist::redist.plot.plans(part_smc_pref_4, draws = 6, geom = part_map_4)
+#Maxmin 1.4431 #1    2    3    4    5    6    7  ...
+redist::redist.plot.plans(part_smc_pref_4, draws = 1, geom = part_map_4)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block4draws.Rdata")
-
 
 ######Block #5#############
 #find the municipalities that belong to Block 5
@@ -530,7 +529,7 @@ part_adj_5 <- redist::redist.adjacency(shp = pref_part_5)
 #define map
 part_map_5 <- redist::redist_map(pref_part_5,
                                  ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.30,
+                                 pop_tol = 0.27,
                                  total_pop = pop,
                                  adj = part_adj_5)
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block5.Rdata")
@@ -547,7 +546,7 @@ part_smc_pref_5 <- redist::redist_shortburst(map = part_map_5,
                                                redist::scorer_splits(part_map_5, pref_part_5$code),
                                              maximize = FALSE,
                                              burst_size = 10,
-                                             max_bursts = 1000,
+                                             max_bursts = 2500,
                                              counties = pref_part_5$code,
                                              init_plan = init_plan_vec_5)
 
@@ -579,10 +578,112 @@ part_splits_5 <- count_splits(part_plans_pref_5, part_map_5$code)
 # optimal plan for Block 5
 part_weight_pref_5 <- cbind(m, part_weight_pref_5)
 part_weight_pref_5$m[which(part_weight_pref_5$max_to_min == min(part_weight_pref_5$max_to_min))]
-#Maxmin 1.1681 #106  107  108  109 ...
-redist::redist.plot.plans(part_smc_pref_5, draws = 106, geom = part_map_5)
+#Maxmin 1.1638 #926  927  928  929  ...
+redist::redist.plot.plans(part_smc_pref_5, draws = 926, geom = part_map_5)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block5draws.Rdata")
+
+######Block #6#############
+#find the municipalities that belong to Block 6
+part_codes_6 <- pref_block$code[which(tokyo_blocks == 6)] #千代田区中央区
+largest_two_6 <- (pref_block[order(-pref_block$pop),] %>%
+                    dplyr::filter(code %in% part_codes_6))$code[1:2]
+#13123 武蔵村山市 #13108 江東区
+
+#filter out Block 6
+pref_part_6 <- dplyr::bind_rows(small_units %>%
+                                  dplyr::filter(code %in% largest_two_6), pref_block %>%
+                                  dplyr::filter(!(code %in% largest_two_6) & code %in% part_codes_6))
+
+#adjacency list for Block 6
+part_adj_6 <- redist::redist.adjacency(shp = pref_part_6)
+
+#define map
+part_map_6 <- redist::redist_map(pref_part_6,
+                                 ndists = ndists_new/n_blocks, #5 seats per block
+                                 pop_tol = 0.27,
+                                 total_pop = pop,
+                                 adj = part_adj_6)
+
+#run smc
+init_plan_6 <- redist::redist_smc(map = part_map_6,
+                                  nsims = 1,
+                                  pop_temper = 0.05)
+init_plan_vec_6 <- redist::get_plans_matrix(init_plan_6)[,1]
+
+#shortburst
+part_smc_pref_6 <- redist::redist_shortburst(map = part_map_6,
+                                             score_fn = 10*redist::scorer_pop_dev(part_map_6) +
+                                               redist::scorer_splits(part_map_6, pref_part_6$code),
+                                             maximize = FALSE,
+                                             burst_size = 10,
+                                             max_bursts = 2500,
+                                             counties = pref_part_6$code,
+                                             init_plan = init_plan_vec_6)
+
+# save it
+saveRDS(part_smc_pref_6, paste("simulation/",
+                               sprintf("%02d", pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_",
+                               as.character(sim_type),
+                               "_",
+                               as.character(nsims),
+                               "_",
+                               "block_6",
+                               ".Rds",
+                               sep = ""))
+
+# get plans, remove init
+part_plans_pref_6 <- redist::get_plans_matrix(part_smc_pref_6)
+
+# get disparity data
+part_weight_pref_6 <- part_smc_pref_6 %>%
+  dplyr::select("draw", "total_pop") %>%
+  simulation_weight_disparity_table()
+
+# get splits
+part_splits_6 <- count_splits(part_plans_pref_6, part_map_6$code)
+
+# optimal plan for Block 6
+part_weight_pref_6 <- cbind(m, part_weight_pref_6)
+part_weight_pref_6$m[which(part_weight_pref_6$max_to_min == min(part_weight_pref_6$max_to_min))]
+#Maxmin 1.007892 #679  680  681  682  683 ...
+redist::redist.plot.plans(part_smc_pref_6, draws = 679, geom = part_map_6)
+
+###Save RESULTS
+save(list=ls(all=TRUE), file="13_tokyo_data_block6draws.Rdata")
+
+#########Results##########
+pref_results <- data.frame(matrix(ncol = 0, nrow = n_blocks*nrow(part_weight_pref_1)))
+pref_results$block <- c(rep(1, nrow(part_weight_pref_1)),
+                        rep(2, nrow(part_weight_pref_2)),
+                        rep(3, nrow(part_weight_pref_3)),
+                        rep(4, nrow(part_weight_pref_4)),
+                        rep(5, nrow(part_weight_pref_5)),
+                        rep(6, nrow(part_weight_pref_6)))
+pref_results$index <- rep(1:nrow(part_weight_pref_1), n_blocks)
+pref_results$max_to_min <- c(part_weight_pref_1$max_to_min,
+                             part_weight_pref_2$max_to_min,
+                             part_weight_pref_3$max_to_min,
+                             part_weight_pref_4$max_to_min,
+                             part_weight_pref_5$max_to_min,
+                             part_weight_pref_6$max_to_min)
+pref_results$splits <- c(part_splits_1,
+                         part_splits_2,
+                         part_splits_3,
+                         part_splits_4,
+                         part_splits_5,
+                         part_splits_6)
+
+pref_uniques <- pref_results %>%
+  dplyr::group_by(block, splits) %>%
+  dplyr::summarize(max_to_min = min(max_to_min))
+
+###Save RESULTS
+save(list=ls(all=TRUE), file="13_tokyo_data_results_6.Rdata")
+
 ############Loop#######################
 #------------- set up map ----------------#
 for (j in 1:n_blocks) {
