@@ -211,8 +211,8 @@ small_units <- estimate_2020_pop(small_units, census2020) %>%
 ######Block #1#############
 #find the municipalities that belong to Block 1
 part_codes_1 <- pref_block$code[which(tokyo_blocks == 1)] #Eastern Tokyo
-largest_two_1 <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes_1))$code[1:2]
-#13201八王子市 #13209 町田市
+largest_two_1 <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes_1))$code[1:3]
+#13201八王子市 #13209 町田市 #13212 日野市
 
 #filter out Block 1
 pref_part_1 <- dplyr::bind_rows(small_units %>%
@@ -276,8 +276,8 @@ m <- c(1:2501)
 m <- as.data.frame(m)
 part_weight_pref_1 <- cbind(m, part_weight_pref_1)
 part_weight_pref_1$m[which(part_weight_pref_1$max_to_min == min(part_weight_pref_1$max_to_min))]
-#Maxmin 1.01101 # 502  503  504  505  506  507  ...
-redist::redist.plot.plans(part_smc_pref_1, draws = 502, geom = part_map_1)
+#Maxmin 1.0051 # 1441 1442 1443 1444 1445   ...
+redist::redist.plot.plans(part_smc_pref_1, draws = 1441, geom = part_map_1)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -285,8 +285,8 @@ redist::redist.plot.plans(part_smc_pref_1, draws = 502, geom = part_map_1)
 #find the municipalities that belong to Block 2
 part_codes_2 <- pref_block$code[which(tokyo_blocks == 2)] #世田谷, 杉並etc
 largest_two_2 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_2))$code[1:2]
-#13112 世田谷区 #13115 杉並区
+                    dplyr::filter(code %in% part_codes_2))$code[1:3]
+#13112 世田谷区 #13115 杉並区 #13208 調布市
 
 #filter out Block 2
 pref_part_2 <- dplyr::bind_rows(small_units %>%
@@ -348,8 +348,8 @@ part_splits_2 <- count_splits(part_plans_pref_2, part_map_2$code)
 # optimal plan for Block 2
 part_weight_pref_2 <- cbind(m, part_weight_pref_2)
 part_weight_pref_2$m[which(part_weight_pref_2$max_to_min == min(part_weight_pref_2$max_to_min))]
-#Maxmin 1.0018 #2453 2454 2455 ...
-redist::redist.plot.plans(part_smc_pref_2, draws = 2453, geom = part_map_2)
+#Maxmin 1.0097 #931  932  933  934  935  936  ...
+redist::redist.plot.plans(part_smc_pref_2, draws = 931, geom = part_map_2)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -357,8 +357,8 @@ redist::redist.plot.plans(part_smc_pref_2, draws = 2453, geom = part_map_2)
 #find the municipalities that belong to Block 3
 part_codes_3 <- pref_block$code[which(tokyo_blocks == 3)] #中野　練馬　府中
 largest_two_3 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_3))$code[1:2]
-#13120 練馬区 #13114 中野区
+                    dplyr::filter(code %in% part_codes_3))$code[1:4]
+#13120 練馬区 #13114 中野区 #13206 府中市 (won't be split) #13229西東京市
 
 #filter out Block 3
 pref_part_3 <- dplyr::bind_rows(small_units %>%
@@ -367,7 +367,7 @@ pref_part_3 <- dplyr::bind_rows(small_units %>%
 
 #adjacency list for Block 3
 part_adj_3 <- redist::redist.adjacency(shp = pref_part_3)
-#練馬区西大泉町 is an enclave within 埼玉県新座市 -> connect to 練馬区西大泉(６丁目)
+#練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to 練馬区西大泉(６丁目) 0430
 part_adj_3 <- geomander::add_edge(part_adj_3, 61, 62)
 
 #define map
@@ -422,8 +422,8 @@ part_splits_3 <- count_splits(part_plans_pref_3, part_map_3$code)
 # optimal plan for Block 3
 part_weight_pref_3 <- cbind(m, part_weight_pref_3)
 part_weight_pref_3$m[which(part_weight_pref_3$max_to_min == min(part_weight_pref_3$max_to_min))]
-#Maxmin 1.3442 #  4    5    6    7    8    9   ...
-redist::redist.plot.plans(part_smc_pref_3, draws = 4, geom = part_map_3)
+#Maxmin 1.0161 #  2160 2161 2162 2163 2164 2165  ...
+redist::redist.plot.plans(part_smc_pref_3, draws = 2160, geom = part_map_3)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block3draws.Rdata")
 
@@ -431,8 +431,8 @@ redist::redist.plot.plans(part_smc_pref_3, draws = 4, geom = part_map_3)
 #find the municipalities that belong to Block 4
 part_codes_4 <- pref_block$code[which(tokyo_blocks == 4)] #港区　新宿区　離島
 largest_two_4 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_4))$code[1:2]
-#13111 大田区 #13109 品川区
+                    dplyr::filter(code %in% part_codes_4))$code[1:3]
+#13111 大田区 #13109 品川区 #13104新宿区
 
 #filter out Block 4
 pref_part_4 <- dplyr::bind_rows(small_units %>%
@@ -447,12 +447,12 @@ ferries_4 <- add_ferries(pref_part_4)
 part_adj_4 <- geomander::add_edge(part_adj_4,
                                   ferries_4[, 1],
                                   ferries_4[, 2])
-part_adj_4 <- geomander::add_edge(part_adj_4, 25, 18)
-part_adj_4 <- geomander::add_edge(part_adj_4, 25, 16)
-part_adj_4 <- geomander::add_edge(part_adj_4, 25, 4)
-part_adj_4 <- geomander::add_edge(part_adj_4, 85, 36)
-#connect [25]品川区八潮 to [18]東京都品川区東品川;[16] 東京都品川区東大井 [4]東京都品川区勝島
-#connect [85]大田区東海 to [36]東京都大田区平和島
+part_adj_4 <- geomander::add_edge(part_adj_4, 119, 112)
+part_adj_4 <- geomander::add_edge(part_adj_4, 119, 110)
+part_adj_4 <- geomander::add_edge(part_adj_4, 119, 98)
+part_adj_4 <- geomander::add_edge(part_adj_4, 179, 130)
+#connect [119]品川区八潮13109 250 to [112]品川区東品川180;[110]品川区東大井160 [98]品川区勝島40
+#connect [179]大田区東海 13111 580to [130]東京都大田区平和島90
 
 #define map
 part_map_4 <- redist::redist_map(pref_part_4,
@@ -506,8 +506,8 @@ part_splits_4 <- count_splits(part_plans_pref_4, part_map_4$code)
 # optimal plan for Block 4
 part_weight_pref_4 <- cbind(m, part_weight_pref_4)
 part_weight_pref_4$m[which(part_weight_pref_4$max_to_min == min(part_weight_pref_4$max_to_min))]
-#Maxmin 1.4431 #1    2    3    4    5    6    7  ...
-redist::redist.plot.plans(part_smc_pref_4, draws = 1, geom = part_map_4)
+#Maxmin 1.0038 #1693 1694 1695 1696 1697  ...
+redist::redist.plot.plans(part_smc_pref_4, draws = 1693, geom = part_map_4)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block4draws.Rdata")
 
@@ -515,8 +515,8 @@ redist::redist.plot.plans(part_smc_pref_4, draws = 1, geom = part_map_4)
 #find the municipalities that belong to Block 5
 part_codes_5 <- pref_block$code[which(tokyo_blocks == 5)] #文京区　豊島区　北区
 largest_two_5 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_5))$code[1:2]
-#13121 足立区 #13119 板橋区
+                    dplyr::filter(code %in% part_codes_5))$code[1:3]
+#13121 足立区 #13119 板橋区 #13117北区
 
 #filter out Block 5
 pref_part_5 <- dplyr::bind_rows(small_units %>%
@@ -578,8 +578,8 @@ part_splits_5 <- count_splits(part_plans_pref_5, part_map_5$code)
 # optimal plan for Block 5
 part_weight_pref_5 <- cbind(m, part_weight_pref_5)
 part_weight_pref_5$m[which(part_weight_pref_5$max_to_min == min(part_weight_pref_5$max_to_min))]
-#Maxmin 1.1638 #926  927  928  929  ...
-redist::redist.plot.plans(part_smc_pref_5, draws = 926, geom = part_map_5)
+#Maxmin  1.0033 #1065 1066 1067 1068 1069  ...
+redist::redist.plot.plans(part_smc_pref_5, draws = 1065, geom = part_map_5)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block5draws.Rdata")
 
@@ -587,8 +587,8 @@ redist::redist.plot.plans(part_smc_pref_5, draws = 926, geom = part_map_5)
 #find the municipalities that belong to Block 6
 part_codes_6 <- pref_block$code[which(tokyo_blocks == 6)] #千代田区中央区
 largest_two_6 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_6))$code[1:2]
-#13123 武蔵村山市 #13108 江東区
+                    dplyr::filter(code %in% part_codes_6))$code[1:3]
+#13123 江戸川区 #13108 江東区 #13122　葛飾区
 
 #filter out Block 6
 pref_part_6 <- dplyr::bind_rows(small_units %>%
@@ -649,8 +649,8 @@ part_splits_6 <- count_splits(part_plans_pref_6, part_map_6$code)
 # optimal plan for Block 6
 part_weight_pref_6 <- cbind(m, part_weight_pref_6)
 part_weight_pref_6$m[which(part_weight_pref_6$max_to_min == min(part_weight_pref_6$max_to_min))]
-#Maxmin 1.007892 #679  680  681  682  683 ...
-redist::redist.plot.plans(part_smc_pref_6, draws = 679, geom = part_map_6)
+#Maxmin 1.0045 #1608 1609 1610 1611 1612 1613  ...
+redist::redist.plot.plans(part_smc_pref_6, draws = 1608, geom = part_map_6)
 
 ###Save RESULTS
 save(list=ls(all=TRUE), file="13_tokyo_data_block6draws.Rdata")
