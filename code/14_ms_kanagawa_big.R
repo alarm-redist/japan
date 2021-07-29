@@ -56,6 +56,8 @@ pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 intact_codes <- c()
 
+nsplit <- length(split_codes)
+
 n_blocks <- 4
 
 pref_block <- pref %>%
@@ -64,25 +66,7 @@ pref_block <- pref %>%
     dplyr::left_join(census2020, by = c('code')) %>%
     dplyr::rename(pop = pop_national) %>%
     dplyr::select(code, pop, geometry)
-
-pref_block <- merge_gun(pref_block)
-pref_block$subcode = "0000"
-
-blockadj <- redist::redist.adjacency(shp = pref_block)
-
-block_map <- redist::redist_map(pref_block,
-                                 ndists = n_blocks,
-                                 pop_tol = 0.1,
-                                 total_pop = pop,
-                                 adj = blockadj)
-
-smc_block <- redist::redist_smc(map = block_map, nsims = 25000)
-
-block_plans_pref <- redist::get_plans_matrix(smc_block)
-
-block_weight_pref <- simulation_weight_disparity_table(smc_block)
-
-kanagawa_blocks <- block_plans_pref[, which(block_weight_pref$max_to_min == min(block_weight_pref$max_to_min))[1]]
+  pref_block$subcode = "0000"
 
 ###### simulation ######
 small_units <- pref %>% dplyr::select(code, KIHON1, JINKO, geometry)
@@ -91,16 +75,15 @@ small_units <- estimate_2020_pop(small_units, census2020) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 
+small_units <- sf::st_as_sf(small_units)
+
 #------------- set up map ----------------
 
-for (j in 1:n_blocks) {
+for (j in 1:1) {
 
-  part_codes <- pref_block$code[which(kanagawa_blocks == j)]
+  largest_x <- small_units$code
 
-  x <- length(part_codes)
-  largest_x <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes))$code[1:x]
-
-  pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_x), pref_block %>% dplyr::filter(!(code %in% unique(small_units$code)) & code %in% part_codes))
+  pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_x), pref_block %>% dplyr::filter(!(code %in% largest_x) & code %in% part_codes))
 
   part_adj <- redist::redist.adjacency(shp = pref_part) # Adjacency list
 
@@ -142,7 +125,7 @@ for (j in 1:n_blocks) {
   }
 
   part_map <- redist::redist_map(pref_part,
-                                  ndists = ndists_new/n_blocks,
+                                  ndists = ndists_new,
                                   pop_tol = 0.30,
                                   total_pop = pop,
                                   adj = part_adj)
@@ -150,16 +133,17 @@ for (j in 1:n_blocks) {
   init_plan <- redist::redist_smc(map = part_map,
                                   nsims = 10,
                                   pop_temper = 0.05)
+
   init_parities <- redist::redist.parity(redist::get_plans_matrix(init_plan), pref_part$pop)
   init_plan_vec <- redist::get_plans_matrix(init_plan)[, which(init_parities == min(init_parities))[1]]
 
   part_map <- redist::redist_map(pref_part,
-                                 ndists = ndists_new/n_blocks,
+                                 ndists = ndists_new,
                                  pop_tol = 0.10,
                                  total_pop = pop,
                                  adj = part_adj)
 
-  multiple <- length(part_codes)
+  multiple <- length(unique(pref_part$code))
   part_smc_pref <- redist::redist_shortburst(map = part_map,
                                              score_fn = redist::scorer_pop_dev(part_map) + multiple*redist::scorer_splits(part_map, pref_part$code),
                                              maximize = FALSE,
@@ -190,7 +174,7 @@ for (j in 1:n_blocks) {
   part_weight_pref <- simulation_weight_disparity_table(part_smc_pref)
 
   # get splits
-  part_splits <- count_splits(part_plans_pref, pref_part$code)
+  part_splits <- count_splits(part_plans_pref, part_map$code)
 
   # rename elements to be used
   assign(paste(pref_name, pref_code, "block", j, sep = "_"),
@@ -234,57 +218,70 @@ kanagawa_14_results$max_to_min <- c(kanagawa_14_ms_weight_block_1$max_to_min,
                                     kanagawa_14_ms_weight_block_2$max_to_min,
                                     kanagawa_14_ms_weight_block_3$max_to_min,
                                     kanagawa_14_ms_weight_block_4$max_to_min)
-
 kanagawa_14_results$splits <- c(kanagawa_14_ms_splits_block_1,
                                 kanagawa_14_ms_splits_block_2,
                                 kanagawa_14_ms_splits_block_3,
                                 kanagawa_14_ms_splits_block_4)
 
-kanagawa_14_results$counties_split <- c(redist::redist.splits(kanagawa_14_ms_plans_block_1, kanagawa_14_block_1$code),
-                                        redist::redist.splits(kanagawa_14_ms_plans_block_2, kanagawa_14_block_2$code),
-                                        redist::redist.splits(kanagawa_14_ms_plans_block_3, kanagawa_14_block_3$code),
-                                        redist::redist.splits(kanagawa_14_ms_plans_block_4, kanagawa_14_block_4$code))
-
 kanagawa_14_uniques <- kanagawa_14_results %>%
-  dplyr::group_by(block, splits, counties_split) %>%
+  dplyr::group_by(block, splits) %>%
   dplyr::summarize(max_to_min = min(max_to_min))
-kanagawa_14_uniques$index <- 0
+
+large_results <- cbind(part_weight_pref$max_to_min, part_splits
+                       )
+
+View(large_results)
+
+# find the best zero-split maps, too!
 
 orig_splits <- 6
 
-kanagawa_14_sim_ms_total <- dplyr::bind_rows(kanagawa_14_sim_ms_block_1,
-                                             kanagawa_14_sim_ms_block_2,
-                                             kanagawa_14_sim_ms_block_3,
-                                             kanagawa_14_sim_ms_block_4
-                                             )
-kanagawa_14_sim_ms_total$block <- c(rep(1, 5*nrow(kanagawa_14_ms_weight_block_1)),
-                               rep(2, 5*nrow(kanagawa_14_ms_weight_block_2)),
-                               rep(3, 5*nrow(kanagawa_14_ms_weight_block_3)),
-                               rep(4, 5*nrow(kanagawa_14_ms_weight_block_4)))
+niigata_15_goodindices <- which(niigata_15_splits <= 2)
+niigata_15_goodmaps <- niigata_15_smc_plans_99[, niigata_15_goodindices]
+niigata_15_bestmap <- niigata_15_goodmaps[, which(niigata_15_smc_weight_99$max_to_min[niigata_15_goodindices] == min(niigata_15_smc_weight_99$max_to_min[niigata_15_goodindices]))]
+
+redist::redist.plot.map(niigata_15_99, plan = niigata_15_bestmap[,1], boundaries = FALSE)
 
 
+niigata_15_orig_map <- status_quo_match(niigata_15_2)
 
-for (i in 1:nrow(kanagawa_14_uniques)) {
+niigata_15_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(niigata_15_orig_map$ku, niigata_15_map_2, algorithm = "smc"))
 
-  search <- kanagawa_14_uniques[i, ]
+niigata_15_cooccurence_0 <- redist::prec_cooccurrence(niigata_15_sim_smc_0[which(niigata_15_smc_weight_0$max_to_min < 1.20), ])
 
-  entries <- kanagawa_14_results %>% dplyr::filter(block == search$block &
-                                          splits == search$splits &
-                                          max_to_min == search$max_to_min)
+heatmap(niigata_15_cooccurence_0, scale = "column")
 
-  kanagawa_14_uniques[i, ]$index <- entries[1, ]$index
+niigata_15_significance_0 <- niigata_15_cooccurence_0
+niigata_15_significance_0[which(niigata_15_significance_0 < 0.7)] <- 0
 
-  plan <- kanagawa_14_sim_ms_total[(nrow(kanagawa_14_sim_ms_block_1) * (kanagawa_14_uniques[i, ]$block - 1) + 5*kanagawa_14_uniques[i, ]$index - 4):(nrow(kanagawa_14_sim_ms_block_1) * (kanagawa_14_uniques[i, ]$block - 1) + 5*kanagawa_14_uniques[i, ]$index) , ]
+niigata_15_graph_0 <- igraph::graph.adjacency(niigata_15_significance_0,
+                                              weighted=TRUE,
+                                              mode="undirected",
+                                              diag=FALSE)
 
-  if (i == 1) {kanagawa_14_uniques_pops <- plan
-  } else {
-    kanagawa_14_uniques_pops <- dplyr::bind_rows(kanagawa_14_uniques_pops, plan)
-  }
+plot(niigata_15_graph_0,
+     vertex.label = substr(niigata_15_0$code, 3, 5),
+     vertex.size = (niigata_15_0$pop)/max((niigata_15_0$pop)) * 30,
+     edge.width=igraph::E(niigata_15_graph_0)$weight^4 * 5,
+     layout = igraph::layout_with_fr(niigata_15_graph_0))
 
+redist::redist.plot.map(niigata_15_0)
+
+niigata_15_components_0 <- igraph::components(niigata_15_graph_0)
+
+niigata_15_clusterindex_0 <- which(niigata_15_components_0$csize > 1)
+
+niigata_15_colorclusters_0 <- vector(length = nrow(niigata_15_0))
+
+for(i in 1:nrow(niigata_15_0)) {
+  ifelse(niigata_15_components_0$membership [i] %in% niigata_15_clusterindex_0,
+         niigata_15_colorclusters_0[i] <- which(niigata_15_clusterindex_0 == niigata_15_components_0$membership[i]),
+         niigata_15_colorclusters_0[i] <- length(niigata_15_clusterindex_0) + 1)
 }
 
-optimal_pops <- kanagawa_14_uniques_pops %>% dplyr::filter((block == 1 & draw == 1984) | (block == 2 & draw == 252) | (block == 3 & draw == 31) | (block == 4 & draw == 143))
+redist::redist.plot.map(shp = niigata_15_0,
+                        plan = niigata_15_colorclusters_0
+) + scale_fill_manual(values = c("red", "green", "blue", "yellow", "gray"))
 
-max(optimal_pops$total_pop)/min(optimal_pops$total_pop)
-
+niigata_15_centroids_0 <- sf::st_centroid(niigata_15_0)
 
