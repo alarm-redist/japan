@@ -52,11 +52,11 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
 
   ### output of the simulations ###
   # remove initial draw
-  simulation <- redist_simulation_output %>%
+  simulation_n <- redist_simulation_output %>%
     dplyr::filter(draw != "<init>")
 
   # Number of iterations for the simulation
-  n_sims <- nrow(simulation)/n_dist
+  n_sims <- nrow(simulation_n)/n_dist
 
   # reset the data frame
   max_to_min <- vector(length = n_sims)
@@ -69,7 +69,7 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
   for(k in 1 : n_sims){
 
     # filter to simulation level
-    simulation <- simulation[(n_dist*(k-1) + 1):(n_dist*k), ]
+    simulation <- simulation_n[(n_dist*(k-1) + 1):(n_dist*k), ]
 
     total_pop <- simulation$total_pop
 
