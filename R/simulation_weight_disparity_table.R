@@ -69,7 +69,7 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
   for(k in 1 : n_sims){
 
     # filter to simulation level
-    simulation <- redist_simulation_output[(n_dist*(k-1) + 1):(n_dist*k), ]
+    simulation <- simulation[(n_dist*(k-1) + 1):(n_dist*k), ]
 
     total_pop <- simulation$total_pop
 
