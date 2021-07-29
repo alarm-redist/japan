@@ -211,8 +211,8 @@ small_units <- estimate_2020_pop(small_units, census2020) %>%
 ######Block #1#############
 #find the municipalities that belong to Block 1
 part_codes_1 <- pref_block$code[which(tokyo_blocks == 1)] #Eastern Tokyo
-largest_two_1 <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes_1))$code[1:3]
-#13201八王子市 #13209 町田市 #13212 日野市
+largest_two_1 <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes_1))$code[1:1]
+#13201八王子市 のみ
 
 #filter out Block 1
 pref_part_1 <- dplyr::bind_rows(small_units %>%
@@ -276,8 +276,8 @@ m <- c(1:2501)
 m <- as.data.frame(m)
 part_weight_pref_1 <- cbind(m, part_weight_pref_1)
 part_weight_pref_1$m[which(part_weight_pref_1$max_to_min == min(part_weight_pref_1$max_to_min))]
-#Maxmin 1.0051 # 1441 1442 1443 1444 1445   ...
-redist::redist.plot.plans(part_smc_pref_1, draws = 1441, geom = part_map_1)
+#Maxmin 1.0065　#2370 2371 2372 2373 ...
+redist::redist.plot.plans(part_smc_pref_1, draws = 2370, geom = part_map_1)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -285,8 +285,8 @@ redist::redist.plot.plans(part_smc_pref_1, draws = 1441, geom = part_map_1)
 #find the municipalities that belong to Block 2
 part_codes_2 <- pref_block$code[which(tokyo_blocks == 2)] #世田谷, 杉並etc
 largest_two_2 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_2))$code[1:3]
-#13112 世田谷区 #13115 杉並区 #13208 調布市
+                    dplyr::filter(code %in% part_codes_2))$code[1:2]
+#13112 世田谷区 #13115 杉並区
 
 #filter out Block 2
 pref_part_2 <- dplyr::bind_rows(small_units %>%
@@ -348,8 +348,8 @@ part_splits_2 <- count_splits(part_plans_pref_2, part_map_2$code)
 # optimal plan for Block 2
 part_weight_pref_2 <- cbind(m, part_weight_pref_2)
 part_weight_pref_2$m[which(part_weight_pref_2$max_to_min == min(part_weight_pref_2$max_to_min))]
-#Maxmin 1.0097 #931  932  933  934  935  936  ...
-redist::redist.plot.plans(part_smc_pref_2, draws = 931, geom = part_map_2)
+#Maxmin 1.0030 #972  973  974  975  976  ...
+redist::redist.plot.plans(part_smc_pref_2, draws = 972, geom = part_map_2)
 
 ###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
 
@@ -587,8 +587,8 @@ redist::redist.plot.plans(part_smc_pref_5, draws = 1065, geom = part_map_5)
 #find the municipalities that belong to Block 6
 part_codes_6 <- pref_block$code[which(tokyo_blocks == 6)] #千代田区中央区
 largest_two_6 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_6))$code[1:3]
-#13123 江戸川区 #13108 江東区 #13122　葛飾区
+                    dplyr::filter(code %in% part_codes_6))$code[1:2]
+#13123 江戸川区 #13108 江東区
 
 #filter out Block 6
 pref_part_6 <- dplyr::bind_rows(small_units %>%
@@ -649,11 +649,23 @@ part_splits_6 <- count_splits(part_plans_pref_6, part_map_6$code)
 # optimal plan for Block 6
 part_weight_pref_6 <- cbind(m, part_weight_pref_6)
 part_weight_pref_6$m[which(part_weight_pref_6$max_to_min == min(part_weight_pref_6$max_to_min))]
-#Maxmin 1.0045 #1608 1609 1610 1611 1612 1613  ...
-redist::redist.plot.plans(part_smc_pref_6, draws = 1608, geom = part_map_6)
+#Maxmin 1.0035 #2377 2378 2379 2380 2381  ...
+redist::redist.plot.plans(part_smc_pref_6, draws = 2377, geom = part_map_6)
 
 ###Save RESULTS
 save(list=ls(all=TRUE), file="13_tokyo_data_block6draws.Rdata")
+
+########Check intra-prefecture maxmin ratio################
+pop_by_district <- dplyr::bind_rows(part_smc_pref_1 %>% filter(draw %in% "2500"),
+                                    part_smc_pref_2 %>% filter(draw %in% "2500"),
+                                    part_smc_pref_3 %>% filter(draw %in% "2500"),
+                                    part_smc_pref_4 %>% filter(draw %in% "2500"),
+                                    part_smc_pref_5 %>% filter(draw %in% "2500"),
+                                    part_smc_pref_6 %>% filter(draw %in% "2500"))
+
+redis_maxmin <- max(pop_by_district$total_pop)/min(pop_by_district$total_pop)
+#1.0209
+#sq_maxmin <- 573969 / 482077 #1.190617
 
 #########Results##########
 pref_results <- data.frame(matrix(ncol = 0, nrow = n_blocks*nrow(part_weight_pref_1)))
