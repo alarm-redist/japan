@@ -246,60 +246,8 @@ plot_smc <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colour = split
   geom_point(size = 1, alpha = 0.3) + ggplot2::ggtitle("Nagasaki Dissimilarity vs Max-Min")
 ggExtra::ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 
-pal <- c("#CC79A7", "#E69F00", "#56B4E9", "#20B073", "#0072B2", "#D55E00", "#999999")
-plot_comparison <- function(stat, stat_ref, geom = "density", lbls, ...){
-  ymax = max(density(stat)$y)
-  if (geom=="histogram")  ymax = max(hist(stat, plot=F)$counts)
-  xlims = range(c(stat, stat_ref)) * c(0.97, 1.03)
-  ylims = c(0, ymax*1.02)
-  qplot(stat, geom=geom, ..., fill=I("#888888"), color=I(NA)) +
-    geom_vline(aes(xintercept=stat_ref, lty=lbls, color=lbls)) +
-    ggrepel::geom_label_repel(aes(x=stat_ref, label=lbls, fill=lbls),
-                     y=ymax*runif(length(lbls), 0.7, 0.95), fontface="bold",
-                     size=4, label.r=0, label.padding=0.15, force=2,
-                     family="Times New Roman") +
-    scale_color_manual(values=pal) +
-    scale_fill_manual(values=pal) +
-    guides(lty=F, fill=F, color=F) +
-    coord_cartesian(xlim=xlims, ylim=ylims, expand=F) +
-    theme_bw(base_family="Times New Roman", base_size=11) +
-    theme(panel.grid=element_blank())
-}
+unique_weights %>% dplyr::group_by(splits) %>% dplyr::summarize(min(max_to_min))
 
-mu <- plyr::ddply(improved_plans, "Splits", summarise, grp.mean=mean(LH))
-
-p <- ggplot(improved_plans, aes(x=LH, fill = Splits)) +
-  geom_density(alpha = 0.4)
-
-p + geom_vline(data = mu, aes(xintercept=grp.mean, color= Splits),
-             linetype="dashed", size = 1)
-
-pc_0 <- RSpectra::eigs_sym(redist::prec_cooccurrence(nagasaki_42_sim_smc_0), k = 4)
-
-redist::redist.plot.map(nagasaki_42_0, fill = pc_0$vectors[, 1]) + scale_fill_brewer(palette = "Dark2")
-
-comp <- ggplot(improved_plans, aes(x=LH, y=max_to_min)) +
-  geom_point(size = 0.5)
-
-dis <- ggplot(improved_plans, aes(x=Dissimilarity, fill = Splits)) +
-  geom_density(alpha = 0.4)
-
-mu2 <- plyr::ddply(improved_plans, "Splits", summarise, grp.mean=mean(Dissimilarity))
-
-dis + geom_vline(data = mu2, aes(xintercept=grp.mean, color= Splits),
-               linetype="dashed", size = 1)
-
-# ------ Cooccurence ------- #
-
-nagasaki_42_orig_map <- status_quo_match(nagasaki_42_2)
-
-nagasaki_42_orig_weights <- simulation_weight_disparity_table(redist::redist_plans(nagasaki_42_orig_map$ku, nagasaki_42_map_2, algorithm = "smc"))
-
-nagasaki_42_cooccurence_0 <- redist::prec_cooccurrence(nagasaki_42_sim_smc_0[which(nagasaki_42_smc_weight_0$max_to_min < (nagasaki_42_orig_weights$max_to_min + 1)/2), ])
-
-heatmap(nagasaki_42_cooccurence_0)
-
-names(niigata_15_coocurence_0) <-  redist::prec_cooccurrence(niigata_15_sim_smc_0)
-
-hist(unlist(nagasaki_42_cooccurence_0))
-
+redist::redist.plot.map(
+shp = nagasaki_42_2, plan = modified_smc_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))[1]]
+)
