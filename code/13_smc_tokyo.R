@@ -45,6 +45,97 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
+########Pref: pref_raw############
+pref <- clean_jcdf(pref_raw)
+pref_0 <- pref %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+
+##########17 splits#################
+#find the municipality codes of the 1st ~ 17th largest municipalities
+largest_17 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:17]
+
+#filter out the municipalities to keep treat as one unit, without dividing them
+pref_intact_17 <- pref_0 %>% dplyr::filter(code %in% largest_17 == FALSE ) %>%
+  merge_gun()
+  #run merge at this stage
+pref_intact_17$subcode <- "0000"
+
+#filter out the municipalities to split and estimate the population as of 2020
+pref_split_17 <- pref %>%
+  dplyr::filter(code %in% largest_17) %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref_split_17 <- calc_kokumin(pref_split_17, dem_pops)
+pref_split_17 <- estimate_2020_pop(pref_split_17, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+pref_17 <- dplyr::bind_rows(pref_intact_17, pref_split_17)
+
+#Ferries
+ferries_17 <- add_ferries(pref_17)
+
+# -------- set up for simulation ------------#
+# Adjacency list
+prefadj_17 <- redist::redist.adjacency(pref_17)
+#add edge
+prefadj_17 <- geomander::add_edge(prefadj_17, ferries_17$V1, ferries_17$V2)
+
+#manually add adjacency
+prefadj_17 <- geomander::add_edge(prefadj_17, 201, 194)
+prefadj_17 <- geomander::add_edge(prefadj_17, 201, 192)
+prefadj_17 <- geomander::add_edge(prefadj_17, 201, 180)
+prefadj_17 <- geomander::add_edge(prefadj_17, 288, 289)
+prefadj_17 <- geomander::add_edge(prefadj_17, 557, 558)
+
+#connect [201]品川区八潮 13109 250 to [194]品川区東品川180;[192]品川区東大井160 [180]品川区勝島40
+#connect [288]大田区東海 13111 580 to [289]東京都大田区城南島590
+#[557] 練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to [558]練馬区西大泉(６丁目) 0430
+
+pref_map_17 <- redist::redist_map(pref_17,
+                                  ndists = ndists_new,
+                                  pop_tol= 0.05,
+                                  total_pop = pop,
+                                  adj = prefadj_17)
+
+###save(list=ls(all=TRUE), file="13_smc_tokyo_data_17split.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_17 <- redist::redist_smc(pref_map_17,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_17, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_17",
+                              ".Rds",
+                              sep = ""))
+
+#pop disparity
+wgt_smc_17 <- simulation_weight_disparity_table(sim_smc_pref_17)
+#n <- c(1:25000)
+#wgt_smc_17 <- cbind(n, wgt_smc_17)
+#wgt_smc_17$n[which(wgt_smc_17$max_to_min == min(wgt_smc_17$max_to_min))]
+#Maxmin 1.0835 #14466
+#redist::redist.plot.plans(sim_smc_pref_17, draws = 14466, geom = pref_map_17)
+
+#county splits
+plans_pref_17 <- redist::get_plans_matrix(sim_smc_pref_17)
+# get splits
+splits_17 <- count_splits(plans_pref_17, pref_map_17$code)
+#48 splits?
+
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 pref_0 <- pref_raw %>%
@@ -126,696 +217,3 @@ tokyo_13_optimalmap_0 <- redist::redist.plot.map(shp = pref_0,
 #save(list=ls(all=TRUE), file="13_smc_tokyo_data_0to0splits.Rdata")
 
 
-########Divide Tokyo into 6 Blocks###############
-#clean pref_raw
-pref <- pref_raw %>%
-  clean_jcdf()
-
-#define the number of blocks (divide Tokyo into 6 blocks)
-n_blocks <- 6
-
-#Further clean data
-pref_block <- pref %>%
-  dplyr::group_by(code, CITY_NAME) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code')) %>%
-  dplyr::rename(pop = pop_national) %>%
-  dplyr::select(code, pop, geometry)
-pref_block$subcode = "0000"
-
-#Merge gun (No exceptions in this case; all the gun will be merged together)
-pref_block <- merge_gun(pref_block)
-
-#prepare for smc analysis (build adjacency list)
-blockadj <- redist::redist.adjacency(shp = pref_block)
-
-#ferries
-ferries_block <- add_ferries(pref_block)
-#[3]13103港区 -> [54]13420小笠原支庁 [52]13380三宅支庁 [51]13360大島支庁
-#[52]13380三宅支庁 -> [53]13400八丈支庁
-
-#add edge
-blockadj <- geomander::add_edge(blockadj,
-                                ferries_block[, 1],
-                                ferries_block[, 2])
-
-###save(list=ls(all=TRUE), file="13_smc_tokyo_data_block.Rdata")
-
-#prepare for smc analysis (define map)
-block_map <- redist::redist_map(pref_block,
-                                ndists = n_blocks,
-                                pop_tol = 0.1,
-                                total_pop = pop,
-                                adj = blockadj)
-
-#smc split
-smc_block <- redist::redist_smc(map = block_map,
-                                nsims = 25000)
-
-saveRDS(smc_block, paste("simulation/",
-                         as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_",
-                          as.character(sim_type),
-                          "_",
-                          as.character(nsims),
-                          "_blocks",
-                          ".Rds",
-                          sep = ""))
-
-#get plans
-block_plans_pref <- redist::get_plans_matrix(smc_block)
-
-#check disparity table
-block_weight_pref <- simulation_weight_disparity_table(smc_block)
-#n <- c(1:25000)
-#n <- as.data.frame(n)
-#block_weight_pref <- cbind(n, block_weight_pref)
-#block_weight_pref$n[which(block_weight_pref$max_to_min == min(block_weight_pref$max_to_min))]
-#Maxmin  1.0176 #49 412
-#redist::redist.plot.plans(smc_block, draws = 412, geom = block_map)
-
-#optimal plan
-tokyo_blocks <- block_plans_pref[, which(block_weight_pref$max_to_min == min(block_weight_pref$max_to_min))[1]]
-
-######Small units###########
-small_units <- pref %>% dplyr::select(code, KIHON1, JINKO, geometry)
-small_units <- calc_kokumin(small_units, dem_pops)
-small_units <- estimate_2020_pop(small_units, census2020) %>%
-  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
-  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_smallunitprep.Rdata")
-
-######Block #1#############
-#find the municipalities that belong to Block 1
-part_codes_1 <- pref_block$code[which(tokyo_blocks == 1)] #Eastern Tokyo
-largest_two_1 <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes_1))$code[1:1]
-#13201八王子市 のみ
-
-#filter out Block 1
-pref_part_1 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_1), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_1) & code %in% part_codes_1))
-
-#adjacency list for Block 1
-part_adj_1 <- redist::redist.adjacency(shp = pref_part_1)
-
-#define map
-part_map_1 <- redist::redist_map(pref_part_1,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_1)
-###save(list=ls(all=TRUE), file="13_tokyo_data_block1.Rdata")
-
-#run smc
-init_plan_1 <- redist::redist_smc(map = part_map_1,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_1 <- redist::get_plans_matrix(init_plan_1)[,1]
-
-#shortburst
-part_smc_pref_1 <- redist::redist_shortburst(map = part_map_1,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_1) +
-                                                      redist::scorer_splits(part_map_1, pref_part_1$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_1$code,
-                                             init_plan = init_plan_vec_1)
-
-# save it
-saveRDS(part_smc_pref_1, paste("simulation/",
-                              sprintf("%02d", pref_code),
-                              "_",
-                              as.character(pref_name),
-                              "_",
-                              as.character(sim_type),
-                              "_",
-                              as.character(nsims),
-                              "_",
-                              "block_1",
-                              ".Rds",
-                              sep = ""))
-
-# get plans, remove init
-part_plans_pref_1 <- redist::get_plans_matrix(part_smc_pref_1)
-
-# get disparity data
-part_weight_pref_1 <- part_smc_pref_1 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_1 <- count_splits(part_plans_pref_1, part_map_1$code)
-
-# optimal plan for Block 1
-m <- c(1:2501)
-m <- as.data.frame(m)
-part_weight_pref_1 <- cbind(m, part_weight_pref_1)
-part_weight_pref_1$m[which(part_weight_pref_1$max_to_min == min(part_weight_pref_1$max_to_min))]
-#Maxmin 1.0065　#2370 2371 2372 2373 ...
-redist::redist.plot.plans(part_smc_pref_1, draws = 2370, geom = part_map_1)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
-
-######Block #2#############
-#find the municipalities that belong to Block 2
-part_codes_2 <- pref_block$code[which(tokyo_blocks == 2)] #世田谷, 杉並etc
-largest_two_2 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_2))$code[1:2]
-#13112 世田谷区 #13115 杉並区
-
-#filter out Block 2
-pref_part_2 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_2), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_2) & code %in% part_codes_2))
-
-#adjacency list for Block 2
-part_adj_2 <- redist::redist.adjacency(shp = pref_part_2)
-
-#define map
-part_map_2 <- redist::redist_map(pref_part_2,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_2)
-###save(list=ls(all=TRUE), file="13_tokyo_data_block2.Rdata")
-
-#run smc
-init_plan_2 <- redist::redist_smc(map = part_map_2,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_2 <- redist::get_plans_matrix(init_plan_2)[,1]
-
-#shortburst
-part_smc_pref_2 <- redist::redist_shortburst(map = part_map_2,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_2) +
-                                             redist::scorer_splits(part_map_2, pref_part_2$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_2$code,
-                                             init_plan = init_plan_vec_2)
-
-# save it
-saveRDS(part_smc_pref_2, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_2",
-                               ".Rds",
-                               sep = ""))
-
-# get plans, remove init
-part_plans_pref_2 <- redist::get_plans_matrix(part_smc_pref_2)
-
-# get disparity data
-part_weight_pref_2 <- part_smc_pref_2 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_2 <- count_splits(part_plans_pref_2, part_map_2$code)
-
-# optimal plan for Block 2
-part_weight_pref_2 <- cbind(m, part_weight_pref_2)
-part_weight_pref_2$m[which(part_weight_pref_2$max_to_min == min(part_weight_pref_2$max_to_min))]
-#Maxmin 1.0030 #972  973  974  975  976  ...
-redist::redist.plot.plans(part_smc_pref_2, draws = 972, geom = part_map_2)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_block1draws.Rdata")
-
-######Block #3#############
-#find the municipalities that belong to Block 3
-part_codes_3 <- pref_block$code[which(tokyo_blocks == 3)] #中野　練馬　府中
-largest_two_3 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_3))$code[1:4]
-#13120 練馬区 #13114 中野区 #13206 府中市 (won't be split) #13229西東京市
-
-#filter out Block 3
-pref_part_3 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_3), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_3) & code %in% part_codes_3))
-
-#adjacency list for Block 3
-part_adj_3 <- redist::redist.adjacency(shp = pref_part_3)
-#練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to 練馬区西大泉(６丁目) 0430
-part_adj_3 <- geomander::add_edge(part_adj_3, 61, 62)
-
-#define map
-part_map_3 <- redist::redist_map(pref_part_3,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_3)
-###save(list=ls(all=TRUE), file="13_tokyo_data_block3.Rdata")
-
-#run smc
-init_plan_3 <- redist::redist_smc(map = part_map_3,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_3 <- redist::get_plans_matrix(init_plan_3)[,1]
-
-#shortburst
-part_smc_pref_3 <- redist::redist_shortburst(map = part_map_3,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_3) +
-                                               redist::scorer_splits(part_map_3, pref_part_3$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_3$code,
-                                             init_plan = init_plan_vec_3)
-
-# save it
-saveRDS(part_smc_pref_3, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_3",
-                               ".Rds",
-                               sep = ""))
-
-# get plans, remove init
-part_plans_pref_3 <- redist::get_plans_matrix(part_smc_pref_3)
-
-# get disparity data
-part_weight_pref_3 <- part_smc_pref_3 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_3 <- count_splits(part_plans_pref_3, part_map_3$code)
-
-# optimal plan for Block 3
-part_weight_pref_3 <- cbind(m, part_weight_pref_3)
-part_weight_pref_3$m[which(part_weight_pref_3$max_to_min == min(part_weight_pref_3$max_to_min))]
-#Maxmin 1.0161 #  2160 2161 2162 2163 2164 2165  ...
-redist::redist.plot.plans(part_smc_pref_3, draws = 2160, geom = part_map_3)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_block3draws.Rdata")
-
-######Block #4#############
-#find the municipalities that belong to Block 4
-part_codes_4 <- pref_block$code[which(tokyo_blocks == 4)] #港区　新宿区　離島
-largest_two_4 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_4))$code[1:3]
-#13111 大田区 #13109 品川区 #13104新宿区
-
-#filter out Block 4
-pref_part_4 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_4), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_4) & code %in% part_codes_4))
-
-#adjacency list for Block 4
-part_adj_4 <- redist::redist.adjacency(shp = pref_part_4)
-#add ferries
-ferries_4 <- add_ferries(pref_part_4)
-#add edge
-part_adj_4 <- geomander::add_edge(part_adj_4,
-                                  ferries_4[, 1],
-                                  ferries_4[, 2])
-part_adj_4 <- geomander::add_edge(part_adj_4, 119, 112)
-part_adj_4 <- geomander::add_edge(part_adj_4, 119, 110)
-part_adj_4 <- geomander::add_edge(part_adj_4, 119, 98)
-part_adj_4 <- geomander::add_edge(part_adj_4, 179, 130)
-#connect [119]品川区八潮13109 250 to [112]品川区東品川180;[110]品川区東大井160 [98]品川区勝島40
-#connect [179]大田区東海 13111 580to [130]東京都大田区平和島90
-
-#define map
-part_map_4 <- redist::redist_map(pref_part_4,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_4)
-###save(list=ls(all=TRUE), file="13_tokyo_data_block4.Rdata")
-
-#run smc
-init_plan_4 <- redist::redist_smc(map = part_map_4,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_4 <- redist::get_plans_matrix(init_plan_4)[,1]
-
-#shortburst
-part_smc_pref_4 <- redist::redist_shortburst(map = part_map_4,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_4) +
-                                               redist::scorer_splits(part_map_4, pref_part_4$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_4$code,
-                                             init_plan = init_plan_vec_4)
-
-# save it
-saveRDS(part_smc_pref_4, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_4",
-                               ".Rds",
-                               sep = ""))
-
-# get plans, remove init
-part_plans_pref_4 <- redist::get_plans_matrix(part_smc_pref_4)
-
-# get disparity data
-part_weight_pref_4 <- part_smc_pref_4 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_4 <- count_splits(part_plans_pref_4, part_map_4$code)
-
-# optimal plan for Block 4
-part_weight_pref_4 <- cbind(m, part_weight_pref_4)
-part_weight_pref_4$m[which(part_weight_pref_4$max_to_min == min(part_weight_pref_4$max_to_min))]
-#Maxmin 1.0038 #1693 1694 1695 1696 1697  ...
-redist::redist.plot.plans(part_smc_pref_4, draws = 1693, geom = part_map_4)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_block4draws.Rdata")
-
-######Block #5#############
-#find the municipalities that belong to Block 5
-part_codes_5 <- pref_block$code[which(tokyo_blocks == 5)] #文京区　豊島区　北区
-largest_two_5 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_5))$code[1:3]
-#13121 足立区 #13119 板橋区 #13117北区
-
-#filter out Block 5
-pref_part_5 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_5), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_5) & code %in% part_codes_5))
-
-#adjacency list for Block 5
-part_adj_5 <- redist::redist.adjacency(shp = pref_part_5)
-
-#define map
-part_map_5 <- redist::redist_map(pref_part_5,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_5)
-###save(list=ls(all=TRUE), file="13_tokyo_data_block5.Rdata")
-
-#run smc
-init_plan_5 <- redist::redist_smc(map = part_map_5,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_5 <- redist::get_plans_matrix(init_plan_5)[,1]
-
-#shortburst
-part_smc_pref_5 <- redist::redist_shortburst(map = part_map_5,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_5) +
-                                               redist::scorer_splits(part_map_5, pref_part_5$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_5$code,
-                                             init_plan = init_plan_vec_5)
-
-# save it
-saveRDS(part_smc_pref_5, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_5",
-                               ".Rds",
-                               sep = ""))
-
-# get plans, remove init
-part_plans_pref_5 <- redist::get_plans_matrix(part_smc_pref_5)
-
-# get disparity data
-part_weight_pref_5 <- part_smc_pref_5 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_5 <- count_splits(part_plans_pref_5, part_map_5$code)
-
-# optimal plan for Block 5
-part_weight_pref_5 <- cbind(m, part_weight_pref_5)
-part_weight_pref_5$m[which(part_weight_pref_5$max_to_min == min(part_weight_pref_5$max_to_min))]
-#Maxmin  1.0033 #1065 1066 1067 1068 1069  ...
-redist::redist.plot.plans(part_smc_pref_5, draws = 1065, geom = part_map_5)
-
-###save(list=ls(all=TRUE), file="13_tokyo_data_block5draws.Rdata")
-
-######Block #6#############
-#find the municipalities that belong to Block 6
-part_codes_6 <- pref_block$code[which(tokyo_blocks == 6)] #千代田区中央区
-largest_two_6 <- (pref_block[order(-pref_block$pop),] %>%
-                    dplyr::filter(code %in% part_codes_6))$code[1:2]
-#13123 江戸川区 #13108 江東区
-
-#filter out Block 6
-pref_part_6 <- dplyr::bind_rows(small_units %>%
-                                  dplyr::filter(code %in% largest_two_6), pref_block %>%
-                                  dplyr::filter(!(code %in% largest_two_6) & code %in% part_codes_6))
-
-#adjacency list for Block 6
-part_adj_6 <- redist::redist.adjacency(shp = pref_part_6)
-
-#define map
-part_map_6 <- redist::redist_map(pref_part_6,
-                                 ndists = ndists_new/n_blocks, #5 seats per block
-                                 pop_tol = 0.27,
-                                 total_pop = pop,
-                                 adj = part_adj_6)
-
-#run smc
-init_plan_6 <- redist::redist_smc(map = part_map_6,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-init_plan_vec_6 <- redist::get_plans_matrix(init_plan_6)[,1]
-
-#shortburst
-part_smc_pref_6 <- redist::redist_shortburst(map = part_map_6,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map_6) +
-                                               redist::scorer_splits(part_map_6, pref_part_6$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 2500,
-                                             counties = pref_part_6$code,
-                                             init_plan = init_plan_vec_6)
-
-# save it
-saveRDS(part_smc_pref_6, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_6",
-                               ".Rds",
-                               sep = ""))
-
-# get plans, remove init
-part_plans_pref_6 <- redist::get_plans_matrix(part_smc_pref_6)
-
-# get disparity data
-part_weight_pref_6 <- part_smc_pref_6 %>%
-  dplyr::select("draw", "total_pop") %>%
-  simulation_weight_disparity_table()
-
-# get splits
-part_splits_6 <- count_splits(part_plans_pref_6, part_map_6$code)
-
-# optimal plan for Block 6
-part_weight_pref_6 <- cbind(m, part_weight_pref_6)
-part_weight_pref_6$m[which(part_weight_pref_6$max_to_min == min(part_weight_pref_6$max_to_min))]
-#Maxmin 1.0035 #2377 2378 2379 2380 2381  ...
-redist::redist.plot.plans(part_smc_pref_6, draws = 2377, geom = part_map_6)
-
-###Save RESULTS
-save(list=ls(all=TRUE), file="13_tokyo_data_block6draws.Rdata")
-
-########Check intra-prefecture maxmin ratio################
-pop_by_district <- dplyr::bind_rows(part_smc_pref_1 %>% filter(draw %in% "2500"),
-                                    part_smc_pref_2 %>% filter(draw %in% "2500"),
-                                    part_smc_pref_3 %>% filter(draw %in% "2500"),
-                                    part_smc_pref_4 %>% filter(draw %in% "2500"),
-                                    part_smc_pref_5 %>% filter(draw %in% "2500"),
-                                    part_smc_pref_6 %>% filter(draw %in% "2500"))
-
-redis_maxmin <- max(pop_by_district$total_pop)/min(pop_by_district$total_pop)
-#1.0209
-#sq_maxmin <- 573969 / 482077 #1.190617
-
-#########Results##########
-pref_results <- data.frame(matrix(ncol = 0, nrow = n_blocks*nrow(part_weight_pref_1)))
-pref_results$block <- c(rep(1, nrow(part_weight_pref_1)),
-                        rep(2, nrow(part_weight_pref_2)),
-                        rep(3, nrow(part_weight_pref_3)),
-                        rep(4, nrow(part_weight_pref_4)),
-                        rep(5, nrow(part_weight_pref_5)),
-                        rep(6, nrow(part_weight_pref_6)))
-pref_results$index <- rep(1:nrow(part_weight_pref_1), n_blocks)
-pref_results$max_to_min <- c(part_weight_pref_1$max_to_min,
-                             part_weight_pref_2$max_to_min,
-                             part_weight_pref_3$max_to_min,
-                             part_weight_pref_4$max_to_min,
-                             part_weight_pref_5$max_to_min,
-                             part_weight_pref_6$max_to_min)
-pref_results$splits <- c(part_splits_1,
-                         part_splits_2,
-                         part_splits_3,
-                         part_splits_4,
-                         part_splits_5,
-                         part_splits_6)
-
-pref_uniques <- pref_results %>%
-  dplyr::group_by(block, splits) %>%
-  dplyr::summarize(max_to_min = min(max_to_min))
-
-###Save RESULTS
-save(list=ls(all=TRUE), file="13_tokyo_data_results_6.Rdata")
-
-############Loop#######################
-#------------- set up map ----------------#
-for (j in 1:n_blocks) {
-
-  part_codes <- pref_block$code[which(tokyo_blocks == j)]
-  largest_two <- (pref_block[order(-pref_block$pop),] %>% dplyr::filter(code %in% part_codes))$code[1:2]
-
-  pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_two), pref_block %>% dplyr::filter(!(code %in% largest_two) & code %in% part_codes))
-
-  part_adj <- redist::redist.adjacency(shp = pref_part) # Adjacency list
-
-   if(check_ferries(pref_code) == TRUE){
-      # add ferries
-      ferries <- add_ferries(pref_part)
-
-      if(nrow(ferries) > 0) {
-        part_adj <- geomander::add_edge(part_adj,
-                                       ferries[, 1],
-                                       ferries[, 2],
-                                       zero = TRUE)
-      }
-
-    }
-
-  neighbor <- geomander::suggest_neighbors(shp = pref_part,
-                                           adjacency = part_adj)
-
-  if(nrow(neighbor) > 0) {
-
-    part_adj <- geomander::add_edge(part_adj,
-                                    neighbor$x,
-                                    neighbor$y,
-                                    zero = TRUE)
-  }
-
-  if(length(unique((geomander::check_contiguity(part_adj))$component)) > 1) {
-
-    suggest <- geomander::suggest_component_connection(shp = pref_part,
-                                                       adjacency = part_adj,
-                                                       group = match(pref_part$code, unique(pref_part$code)))
-
-    part_adj <- geomander::add_edge(part_adj,
-                                    suggest$x,
-                                    suggest$y,
-                                    zero = TRUE)
-
-  }
-
-  part_map <- redist::redist_map(pref_part,
-                                 ndists = ndists_new/n_blocks,
-                                 pop_tol = 0.30,
-                                 total_pop = pop,
-                                 adj = part_adj)
-
-  init_plan <- redist::redist_smc(map = part_map,
-                                  nsims = 1,
-                                  pop_temper = 0.05)
-
-  init_plan_vec <- redist::get_plans_matrix(init_plan)[,1]
-
-  part_smc_pref <- redist::redist_shortburst(map = part_map,
-                                             score_fn = 10*redist::scorer_pop_dev(part_map) + redist::scorer_splits(part_map, pref_part$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 1000,
-                                             counties = pref_part$code,
-                                             init_plan = init_plan_vec)
-
-  # save it
-  saveRDS(part_smc_pref, paste("simulation/",
-                               sprintf("%02d", pref_code),
-                               "_",
-                               as.character(pref_name),
-                               "_",
-                               as.character(sim_type),
-                               "_",
-                               as.character(nsims),
-                               "_",
-                               "block_",
-                               as.character(j),
-                               ".Rds",
-                               sep = ""))
-
-  # get plans, remove init
-  part_plans_pref <- redist::get_plans_matrix(part_smc_pref)
-
-  # get disparity data
-  part_weight_pref <- simulation_weight_disparity_table(part_smc_pref)
-
-  # get splits
-  part_splits <- count_splits(part_plans_pref, part_map$code)
-
-  # rename elements to be used
-  assign(paste(pref_name, pref_code, "block", j, sep = "_"),
-         pref_part)
-  assign(paste(pref_name, pref_code, "adj", "block", j, sep = "_"),
-         part_adj)
-  assign(paste(pref_name, pref_code, "map", "block", j, sep = "_"),
-         part_map)
-  assign(paste(pref_name, pref_code, "sim", sim_type, "block", j, sep = "_"),
-         part_smc_pref)
-  assign(paste(pref_name, pref_code, sim_type, "plans", "block", j, sep = "_"),
-         part_plans_pref)
-  assign(paste(pref_name, pref_code, sim_type, "weight", "block", j, sep = "_"),
-         part_weight_pref)
-  assign(paste(pref_name, pref_code, sim_type, "splits", "block", j, sep = "_"),
-         part_splits)
-
-  rm(list= ls()[(ls() %in% c("pref_part",
-                             "part_adj",
-                             "part_map",
-                             "part_smc_pref",
-                             "part_plans_pref",
-                             "part_weight_pref",
-                             "ferries",
-                             "suggest",
-                             "port_data",
-                             "route_data",
-                             "part_splits"
-  )
-  )])
-
-}
