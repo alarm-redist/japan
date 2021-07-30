@@ -13,7 +13,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-sim_type <- "smc"
+sim_type <- "ms"
 nsims <- 25000
 pref_code <- 13
 pref_name <- "tokyo"
@@ -93,7 +93,7 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
                               "_",
                               as.character(pref_name),
                               "_",
-                              as.character(sim_type),
+                              "smc",
                               "_",
                               as.character(nsims),
                               "_0",
@@ -177,7 +177,7 @@ saveRDS(smc_block, paste("simulation/",
                          "_",
                          as.character(pref_name),
                          "_",
-                         as.character(sim_type),
+                         "smc",
                          "_",
                          as.character(nsims),
                          "_blocks",
