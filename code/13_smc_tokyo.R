@@ -674,6 +674,213 @@ plans_pref_12 <- redist::get_plans_matrix(sim_smc_pref_12)
 splits_12 <- count_splits(plans_pref_12, pref_map_12$code)
 #33 splits?
 
+
+##########13 splits#################
+#find the municipality codes of the 1st ~ 13th largest municipalities
+largest_13 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:13]
+
+#filter out the municipalities to keep treat as one unit, without dividing them
+pref_intact_13 <- pref_0 %>% dplyr::filter(code %in% largest_13 == FALSE ) %>%
+  merge_gun()
+#run merge at this stage
+pref_intact_13$subcode <- "0000"
+
+#filter out the municipalities to split and estimate the population as of 2020
+pref_split_13 <- pref %>%
+  dplyr::filter(code %in% largest_13) %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref_split_13 <- calc_kokumin(pref_split_13, dem_pops)
+pref_split_13 <- estimate_2020_pop(pref_split_13, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+pref_13 <- dplyr::bind_rows(pref_intact_13, pref_split_13)
+
+#Ferries
+ferries_13 <- add_ferries(pref_13)
+
+# -------- set up for simulation ------------#
+# Adjacency list
+prefadj_13 <- redist::redist.adjacency(pref_13)
+#add edge
+prefadj_13 <- geomander::add_edge(prefadj_13, ferries_13$V1, ferries_13$V2)
+
+#manually add adjacency
+prefadj_13 <- geomander::add_edge(prefadj_13, 111, 104)
+prefadj_13 <- geomander::add_edge(prefadj_13, 111, 102)
+prefadj_13 <- geomander::add_edge(prefadj_13, 111, 90)
+prefadj_13 <- geomander::add_edge(prefadj_13, 171, 172)
+prefadj_13 <- geomander::add_edge(prefadj_13, 401, 402)
+
+#connect [111]品川区八潮 13109 250 to [104]品川区東品川180;[102]品川区東大井160 [90]品川区勝島40
+#connect [171]大田区東海 13111 580 to [172]東京都大田区城南島590
+#[401] 練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to [402]練馬区西大泉(６丁目) 0430
+
+pref_map_13 <- redist::redist_map(pref_13,
+                                  ndists = ndists_new,
+                                  pop_tol= 0.165,
+                                  total_pop = pop,
+                                  adj = prefadj_13)
+
+###save(list=ls(all=TRUE), file="13_smc_tokyo_data_13split.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_13 <- redist::redist_smc(pref_map_13,
+                                      nsims = nsims,
+                                      pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_13, paste("simulation/",
+                               as.character(pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_",
+                               as.character(sim_type),
+                               "_",
+                               as.character(nsims),
+                               "_13",
+                               ".Rds",
+                               sep = ""))
+
+#pop disparity
+wgt_smc_13 <- simulation_weight_disparity_table(sim_smc_pref_13)
+#n <- c(1:25000)
+#wgt_smc_13 <- cbind(n, wgt_smc_13)
+#wgt_smc_13$n[which(wgt_smc_13$max_to_min == min(wgt_smc_13$max_to_min))]
+#Maxmin 1.3445 # 31,  91   102   112   128   190...
+#redist::redist.plot.plans(sim_smc_pref_13, draws = 31, geom = pref_map_13)
+
+#county splits
+plans_pref_13 <- redist::get_plans_matrix(sim_smc_pref_13)
+# get splits
+splits_13 <- count_splits(plans_pref_13, pref_map_13$code)
+#40 splits?
+
+
+##########14 splits#################
+#find the municipality codes of the 1st ~ 14th largest municipalities
+largest_14 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:14]
+
+#filter out the municipalities to keep treat as one unit, without dividing them
+pref_intact_14 <- pref_0 %>% dplyr::filter(code %in% largest_14 == FALSE ) %>%
+  merge_gun()
+#run merge at this stage
+pref_intact_14$subcode <- "0000"
+
+#filter out the municipalities to split and estimate the population as of 2020
+pref_split_14 <- pref %>%
+  dplyr::filter(code %in% largest_14) %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref_split_14 <- calc_kokumin(pref_split_14, dem_pops)
+pref_split_14 <- estimate_2020_pop(pref_split_14, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+pref_14 <- dplyr::bind_rows(pref_intact_14, pref_split_14)
+
+#Ferries
+ferries_14 <- add_ferries(pref_14)
+
+# -------- set up for simulation ------------#
+# Adjacency list
+prefadj_14 <- redist::redist.adjacency(pref_14)
+#add edge
+prefadj_14 <- geomander::add_edge(prefadj_14, ferries_14$V1, ferries_14$V2)
+
+#manually add adjacency
+prefadj_14 <- geomander::add_edge(prefadj_14, 110, 103)
+prefadj_14 <- geomander::add_edge(prefadj_14, 110, 101)
+prefadj_14 <- geomander::add_edge(prefadj_14, 110, 89)
+prefadj_14 <- geomander::add_edge(prefadj_14, 170, 171)
+prefadj_14 <- geomander::add_edge(prefadj_14, 419, 420)
+
+#connect [110]品川区八潮 13109 250 to [103]品川区東品川180;[101]品川区東大井160 [89]品川区勝島40
+#connect [170]大田区東海 13111 580 to [171]東京都大田区城南島590
+#[419] 練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to [420]練馬区西大泉(６丁目) 0430
+
+#########14 splits no.1###############
+pref_map_14 <- redist::redist_map(pref_14,
+                                  ndists = ndists_new,
+                                  pop_tol= 0.10,
+                                  total_pop = pop,
+                                  adj = prefadj_14)
+
+###save(list=ls(all=TRUE), file="13_smc_tokyo_data_14split.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_14 <- redist::redist_smc(pref_map_14,
+                                      nsims = nsims,
+                                      pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_14, paste("simulation/",
+                               as.character(pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_",
+                               as.character(sim_type),
+                               "_",
+                               as.character(nsims),
+                               "_14",
+                               ".Rds",
+                               sep = ""))
+
+#pop disparity
+wgt_smc_14 <- simulation_weight_disparity_table(sim_smc_pref_14)
+#n <- c(1:25000)
+#wgt_smc_14 <- cbind(n, wgt_smc_14)
+#wgt_smc_14$n[which(wgt_smc_14$max_to_min == min(wgt_smc_14$max_to_min))]
+#Maxmin 1.1725 # 15  5735  6892 10655 11743...
+#redist::redist.plot.plans(sim_smc_pref_14, draws = 15, geom = pref_map_14)
+
+#county splits
+plans_pref_14 <- redist::get_plans_matrix(sim_smc_pref_14)
+# get splits
+splits_14 <- count_splits(plans_pref_14, pref_map_14$code)
+#40 splits
+
+#########14 splits no.2###############
+pref_map_14_2 <- redist::redist_map(pref_14,
+                                   ndists = ndists_new,
+                                   pop_tol= 0.08,
+                                   total_pop = pop,
+                                   adj = prefadj_14)
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_14_2 <- redist::redist_smc(pref_map_14_2,
+                                        nsims = nsims,
+                                        pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_14_2, paste("simulation/",
+                               as.character(pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_",
+                               as.character(sim_type),
+                               "_",
+                               as.character(nsims),
+                               "_14_2",
+                               ".Rds",
+                               sep = ""))
+
+#pop disparity
+wgt_smc_14_2 <- simulation_weight_disparity_table(sim_smc_pref_14_2)
+#n <- c(1:25000)
+#wgt_smc_14_2 <- cbind(n, wgt_smc_14_2)
+#wgt_smc_14_2$n[which(wgt_smc_14_2$max_to_min == min(wgt_smc_14_2$max_to_min))]
+#Maxmin 1.1309 #9496 19397...
+#redist::redist.plot.plans(sim_smc_pref_14_2, draws = 9496, geom = pref_map_14)
+
+#county splits
+plans_pref_14_2 <- redist::get_plans_matrix(sim_smc_pref_14_2)
+# get splits
+splits_14_2 <- count_splits(plans_pref_14_2, pref_map_14$code)
+#40 splits
+
 ##########17 splits#################
 #find the municipality codes of the 1st ~ 17th largest municipalities
 largest_17 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:17]
