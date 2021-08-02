@@ -14,7 +14,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-sim_type <- "ms"
+sim_type <- "smc"
 nsims <- 25000
 pref_code <- 14
 pref_name <- "kanagawa"
@@ -54,19 +54,15 @@ pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
 ####### Simulation by number of splits#######
 
-intact_codes <- c()
-
-nsplit <- length(split_codes)
-
-n_blocks <- 4
-
 pref_block <- pref %>%
-    dplyr::group_by(code, CITY_NAME) %>%
-    dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-    dplyr::left_join(census2020, by = c('code')) %>%
-    dplyr::rename(pop = pop_national) %>%
-    dplyr::select(code, pop, geometry)
-  pref_block$subcode = "0000"
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+
+pref_block <- merge_gun(pref_block)
+pref_block$subcode = "0000"
 
 ###### simulation ######
 small_units <- pref %>% dplyr::select(code, KIHON1, JINKO, geometry)
@@ -75,31 +71,16 @@ small_units <- estimate_2020_pop(small_units, census2020) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 
-small_units <- sf::st_as_sf(small_units)
-
 #------------- set up map ----------------
 
 for (j in 1:1) {
 
-  largest_x <- small_units$code
+  part_codes <- pref_block$code
+
+  largest_x <- pref_block$code[which(pref_block$pop >= 1/2 * sum(pref_block$pop)/ndists_new)]
 
   pref_part <- dplyr::bind_rows(small_units %>% dplyr::filter(code %in% largest_x), pref_block %>% dplyr::filter(!(code %in% largest_x) & code %in% part_codes))
-
   part_adj <- redist::redist.adjacency(shp = pref_part) # Adjacency list
-
-    " add ferry if applicable
-    if(check_ferries(pref_code) == TRUE){
-      # add ferries
-      # ferries <- add_ferries(pref_part)
-
-      if(nrow(ferries) > 0) {
-        part_adj <- geomander::add_edge(part_adj,
-                                       ferries[, 1],
-                                       ferries[, 2],
-                                       zero = TRUE)
-      }
-
-    }"
 
   neighbor <- geomander::suggest_neighbors(shp = pref_part,
                                              adjacency = part_adj)
@@ -126,34 +107,42 @@ for (j in 1:1) {
 
   part_map <- redist::redist_map(pref_part,
                                   ndists = ndists_new,
-                                  pop_tol = 0.30,
+                                  pop_tol = 0.20,
                                   total_pop = pop,
                                   adj = part_adj)
 
-  init_plan <- redist::redist_smc(map = part_map,
-                                  nsims = 10,
-                                  pop_temper = 0.05)
+  part_smc_pref <- redist::redist_smc(map = part_map,
+                                      nsims = 25000,
+                                      pop_temper = 0.05,
+                                      counties = pref_part$code,
+                                      constraints = list(splits = list(strength = 1000)))
 
-  init_parities <- redist::redist.parity(redist::get_plans_matrix(init_plan), pref_part$pop)
-  init_plan_vec <- redist::get_plans_matrix(init_plan)[, which(init_parities == min(init_parities))[1]]
+  part_plans_pref <- redist::get_plans_matrix(part_smc_pref)
+
+  part_weight_pref <- simulation_weight_disparity_table(part_smc_pref)
+  part_weight_pref$index <- 1:nrow(part_weight_pref)
+  part_weight_pref$counties_split <- redist::redist.splits(part_plans_pref, part_map$code)
+  part_chains <- part_plans_pref[, part_weight_pref[order(part_weight_pref$counties_split, part_weight_pref$max_to_min), ]$index [1:2500]]
 
   part_map <- redist::redist_map(pref_part,
                                  ndists = ndists_new,
-                                 pop_tol = 0.10,
+                                 pop_tol = 0.20,
                                  total_pop = pop,
                                  adj = part_adj)
 
-  multiple <- length(unique(pref_part$code))
-  part_smc_pref <- redist::redist_shortburst(map = part_map,
-                                             score_fn = redist::scorer_pop_dev(part_map) + multiple*redist::scorer_splits(part_map, pref_part$code),
-                                             maximize = FALSE,
-                                             burst_size = 10,
-                                             max_bursts = 5000,
-                                             counties = pref_part$code,
-                                             init_plan = init_plan_vec)
+  part_parallel_pref <- redist::redist_mergesplit_parallel(
+    map = part_map,
+    nsims = 200,
+    chains = ncol(part_chains),
+    warmup = 199,
+    init_plan = part_chains,
+    counties = pref_part$code,
+    constraints = list(splits = list(strength = 1000)),
+    silent = TRUE
+  )
 
   # save it
-  saveRDS(part_smc_pref, paste("simulation/",
+  saveRDS(part_parallel_pref, paste("simulation/",
                               sprintf("%02d", pref_code),
                               "_",
                               as.character(pref_name),
@@ -162,34 +151,41 @@ for (j in 1:1) {
                               "_",
                               as.character(nsims),
                               "_",
-                              "block_",
-                              as.character(j),
-                              ".Rds",
+                              "parallel.Rds",
                               sep = ""))
 
-  # get plans, remove init
-  part_plans_pref <- redist::get_plans_matrix(part_smc_pref)
-
   # get disparity data
-  part_weight_pref <- simulation_weight_disparity_table(part_smc_pref)
+  part_parallel_weight_pref <- simulation_weight_disparity_table(part_parallel_pref)
+  part_parallel_plans_pref <- redist::get_plans_matrix(part_parallel_pref)
 
   # get splits
-  part_splits <- count_splits(part_plans_pref, part_map$code)
+  part_parallel_splits <- count_splits(part_parallel_plans_pref, part_map$code)
+  part_parallel_countiessplit <- redist::redist.splits(part_parallel_plans_pref, part_map$code)
+
+  parallel_results <- data.frame(matrix(ncol = 0, nrow = nrow(part_parallel_weight_pref)))
+  parallel_results$max_to_min <- part_parallel_weight_pref$max_to_min
+  parallel_results$splits <- part_parallel_splits
+  parallel_results$counties_split <- part_parallel_countiessplit
+  parallel_results$index <- 1:nrow(part_parallel_weight_pref)
+
+  parallel_results <- parallel_results %>%
+    dplyr::group_by(max_to_min, splits, counties_split) %>%
+    dplyr::summarise(index = first(index))
 
   # rename elements to be used
-  assign(paste(pref_name, pref_code, "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, "full", sep = "_"),
            pref_part)
-  assign(paste(pref_name, pref_code, "adj", "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, "adj", "full", sep = "_"),
            part_adj)
-  assign(paste(pref_name, pref_code, "map", "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, "map", "full", sep = "_"),
            part_map)
-  assign(paste(pref_name, pref_code, "sim", sim_type, "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, "sim", sim_type, "full", sep = "_"),
            part_smc_pref)
-  assign(paste(pref_name, pref_code, sim_type, "plans", "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, sim_type, "plans", "full", sep = "_"),
            part_plans_pref)
-  assign(paste(pref_name, pref_code, sim_type, "weight", "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, sim_type, "weight", "full", sep = "_"),
            part_weight_pref)
-  assign(paste(pref_name, pref_code, sim_type, "splits", "block", j, sep = "_"),
+  assign(paste(pref_name, pref_code, sim_type, "splits", "full", sep = "_"),
            part_splits)
 
   rm(list= ls()[(ls() %in% c("pref_part",
@@ -208,7 +204,20 @@ for (j in 1:1) {
 
 }
 
-kanagawa_14_results <- data.frame(matrix(ncol = 0, nrow = n_blocks*nrow(kanagawa_14_ms_weight_block_1)))
+
+
+min_index <- which(kanagawa_14_smc_weight_full$max_to_min == min(kanagawa_14_smc_weight_full$max_to_min))[1]
+mi_pops <- kanagawa_14_sim_smc_full %>% dplyr::filter(draw == min_index)
+dpop_min <- vector(length = length(kanagawa_14_smc_plans_full[, min_index]))
+
+
+for (i in 1:length(kanagawa_14_smc_plans_full[, min_index])) {
+  dpop_min[i] <- mi_pops$total_pop[kanagawa_14_smc_plans_full[i, min_index]]
+}
+
+kanagawa_14_sim_smc_full %>% dplyr::filter(draw == min_index)
+
+kanagawa_14_results <- data.frame(matrix(ncol = 0, nrow = nrow(kanagawa_14_smc_weight_full)))
 kanagawa_14_results$block <- c(rep(1, nrow(kanagawa_14_ms_weight_block_1)),
                                rep(2, nrow(kanagawa_14_ms_weight_block_2)),
                                rep(3, nrow(kanagawa_14_ms_weight_block_3)),
