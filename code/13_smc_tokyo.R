@@ -437,9 +437,6 @@ plans_pref_8 <- redist::get_plans_matrix(sim_smc_pref_8)
 splits_8 <- count_splits(plans_pref_8, pref_map_8$code)
 #26 splits?
 
-
-
-
 ##########10 splits#################
 #find the municipality codes of the 1st ~ 10th largest municipalities
 largest_10 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:10]
@@ -514,6 +511,65 @@ plans_pref_10 <- redist::get_plans_matrix(sim_smc_pref_10)
 # get splits
 splits_10 <- count_splits(plans_pref_10, pref_map_10$code)
 #31 splits?
+
+##########10 splits (Chris)#############
+sim_smc_pref_10_2 <- redist::redist_smc(pref_map_10,
+                                       nsims = 25000,
+                                       pop_temper = 0.05,
+                                       counties = pref_map_10$code,
+                                       constraints = list(splits = list(strength = 1000)))
+
+plans_pref_10_2 <- redist::get_plans_matrix(sim_smc_pref_10_2)
+
+weight_pref_10_2 <- simulation_weight_disparity_table(sim_smc_pref_10_2)
+weight_pref_10_2$index <- 1:nrow(weight_pref_10_2)
+weight_pref_10_2$counties_split <- redist::redist.splits(plans_pref_10_2, pref_map_10$code)
+part_chains_10_2 <- plans_pref_10_2[, weight_pref_10_2[order(weight_pref_10_2$counties_split,
+                                                           weight_pref_10_2$max_to_min), ]$index [1:2500]]
+
+parallel_pref_10_2 <- redist_mergesplit_parallel(
+  map = pref_map_10,
+  nsims = 200,
+  chains = ncol(part_chains_10_2),
+  warmup = 199,
+  init_plan = part_chains_10_2,
+  counties = pref_map_10$code,
+  constraints = list(splits = list(strength = 1000)),
+  silent = TRUE
+)
+
+# save it
+saveRDS(parallel_pref_10_2, paste("simulation/",
+                                 sprintf("%02d", pref_code),
+                                 "_",
+                                 as.character(pref_name),
+                                 "_",
+                                 as.character(sim_type),
+                                 "_",
+                                 as.character(nsims),
+                                 "_",
+                                 "parallel_10.Rds",
+                                 sep = ""))
+
+# get disparity data
+parallel_weight_pref_10_2 <- simulation_weight_disparity_table(parallel_pref_10_2)
+parallel_plans_pref_10_2 <- redist::get_plans_matrix(parallel_pref_10_2)
+
+# get splits
+parallel_splits_10_2 <- count_splits(parallel_plans_pref_10_2, part_map_10$code)
+parallel_countiessplit_10_2 <- redist::redist.splits(parallel_plans_pref_10_2, part_map_10$code)
+
+parallel_results_10_2 <- data.frame(matrix(ncol = 0, nrow = nrow(parallel_weight_pref_10_2)))
+parallel_results_10_2$max_to_min <- parallel_weight_pref_10_2$max_to_min
+parallel_results_10_2$splits <- parallel_splits_10_2
+parallel_results_10_2$counties_split <- parallel_countiessplit_10_2
+parallel_results_10_2$index <- 1:nrow(parallel_weight_pref_10_2)
+
+parallel_results_10_2 <- parallel_results_10_2 %>%
+  dplyr::group_by(max_to_min, splits, counties_split) %>%
+  dplyr::summarise(index = first(index))
+
+
 
 ##########11 splits#################
 #find the municipality codes of the 1st ~ 11th largest municipalities
