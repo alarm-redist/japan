@@ -133,9 +133,10 @@ pref_map <- redist::redist_map(pref,
 
 # --------- MS simulation ----------------#
 sim_ms_pref <- redist::redist_mergesplit(pref_map,
-                                         nsims = nsims,
+                                         nsims = 10,
                                          counties = pref_map$code,
                                          constraints = list(splits = list(strength = 1000)))
+#constraints = list("countysplit"
 
 # save it
 saveRDS(sim_smc_pref_0, paste("simulation/",

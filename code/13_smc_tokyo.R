@@ -362,6 +362,23 @@ plans_pref_6 <- redist::get_plans_matrix(sim_smc_pref_6)
 splits_6 <- count_splits(plans_pref_6, pref_map_6$code)
 #22 splits?
 
+
+########7 splits############
+#--------By municipality----------#
+adj_total <- c(1:length(prefadj_0))
+
+for(i in 1:length(prefadj_0)){
+  adj_total[i] <- sum(pref_0$pop[prefadj_0[[i]]+1])
+}
+
+pop_by_adj <- dplyr::bind_cols(pref_0$code, adj_total)
+colnames(pop_by_adj) <- c("code", "pop")
+
+pop_by_adj <- pop_by_adj %>%
+  arrange(desc(pop))
+
+
+
 ##########8 splits#################
 #find the municipality codes of the 1st ~ 8th largest municipalities
 largest_8 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:8]
