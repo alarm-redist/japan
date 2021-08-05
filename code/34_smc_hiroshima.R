@@ -74,6 +74,21 @@ sq_max = 476612
 sq_min = 276528
 sq_maxmin = sq_max / sq_min
 
+
+##########Analysis##############
+pref_0 %>%
+  dplyr::arrange(desc(pop)) %>%
+  ggplot(aes(x = reorder(as.factor(code), -pop ), y = pop)) +
+  geom_bar(stat = "identity") +
+  geom_hline(aes(yintercept = sum(pref_0$pop)/ndists_new), color = "red") +
+  annotate("text", x = 5, y = 490000,
+           label = "Target\npop.", color = "red")+
+  labs(x = NULL,
+       y = "Population",
+       title = "Population Distribution in Hiroshima") +
+  coord_flip()
+
+
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 pref_0 <- pref %>%
