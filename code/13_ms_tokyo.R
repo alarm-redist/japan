@@ -180,89 +180,45 @@ ranking <- pref_0 %>%
   dplyr::arrange(desc(pop))
 #select municipalities whose population is less than 50% of target pop -> keep intact
 pref_small <- pref_0 %>% dplyr::filter(pop < 0.50 * sum(pref_0$pop)/ndists_new)
+pref_small$subcode <- "0000"
 
 #select municipalities whose population is more than 50% of target pop -> separate
-pref_large <- pref %>% dplyr::filter(code %in% pref_small$code == FALSE)
-pref_large$subcode <- "0000"
+large_codes <- pref_0$code[which(pref_0$code %in% pref_small$code == FALSE)]
+pref_large <- pref %>% dplyr::filter(code %in% large_codes)
 
+#bind together
 pref_50 <- dplyr::bind_rows(pref_small, pref_large)
 
 #ferries
-ferries <- add_ferries(pref)
-
-#98  1642 #1642 1648 #1648 1649 #98 1628 #1628 1633# 1633 1635 #1635 1636
-#1636 1641 #1635 1641 #1650 1655 #1657 1658 #98 1657
+ferries_50 <- add_ferries(pref_50)
 
 # -------- set up for simulation ------------#
-# simulation parameters
-prefadj <- redist::redist.adjacency(pref) # Adjacency list
-
+prefadj_50 <- redist::redist.adjacency(pref_50) # Adjacency list
 #add edge
-prefadj <- geomander::add_edge(prefadj,
-                               ferries[, 1],
-                               ferries[, 2])
+prefadj_50 <- geomander::add_edge(prefadj_50, ferries_50[, 1], ferries_50[, 2])
 
 #manually edit adjacency list
-#[92]13102 0340 中央区佃
-#[93]13102 0350 中央区月島 #[94]13012 0360 中央区勝どき 　#[95]13102 0370 中央区豊海町
-#[96]13102 0380 中央区晴海
-prefadj <- geomander::add_edge(prefadj, 92, 70) #[70] 13102 110 中央区新川
-prefadj <- geomander::add_edge(prefadj, 92, 66) #[66] 13102 0070 中央区明石町
-prefadj <- geomander::add_edge(prefadj, 92, 93)
-prefadj <- geomander::add_edge(prefadj, 93, 94)
-prefadj <- geomander::add_edge(prefadj, 94, 67)  #[67] 13102 0080 中央区築地
-prefadj <- geomander::add_edge(prefadj, 94, 95)
+#[270]13109 0250 品川区八潮
+#[357]13111 0580 大田区東海
+#[358]13111 0590 大田区城南島
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 263) #[263]品川区東品川180
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 261) #[261]品川区東大井160
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 249) #[249]品川区勝島40
+prefadj_50 <- geomander::add_edge(prefadj_50, 357, 358)
+prefadj_50 <- geomander::add_edge(prefadj_50, 357, 308) #[308] 13111 0090大田区平和島
 
-prefadj <- geomander::add_edge(prefadj, 96, 93)
-prefadj <- geomander::add_edge(prefadj, 96, 94)
-prefadj <- geomander::add_edge(prefadj, 96, 320) #[320] 13108 210 江東区　豊洲
-
-#[369]13109 0250 品川区八潮
-#[456]13111 0580 大田区東海
-#[457]13111 0590 大田区城南島
-prefadj <- geomander::add_edge(prefadj, 369, 362) #[362]品川区東品川180
-prefadj <- geomander::add_edge(prefadj, 369, 360) #[360]品川区東大井160
-prefadj <- geomander::add_edge(prefadj, 369, 348) #[348]品川区勝島40
-prefadj <- geomander::add_edge(prefadj, 456, 457)
-prefadj <- geomander::add_edge(prefadj, 456, 407) #[407] 13111 0090大田区平和島
-
-#[764]13120 0420 練馬区西大泉町
-prefadj <- geomander::add_edge(prefadj, 764, 765) #connect to [765]練馬区西大泉(６丁目) 0430
-
-#[1638]13363 0040 新島村鵜渡根島
-#[1639]13363 0050 新島村地内島
-#[1640]13363 0060 新島村早島
-#connect to mainland 新島 [1635]
-prefadj <- geomander::add_edge(prefadj, 1635, 1638)
-prefadj <- geomander::add_edge(prefadj, 1635, 1639)
-prefadj <- geomander::add_edge(prefadj, 1635, 1640)
+#[658]13120 0420 練馬区西大泉町
+prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬区西大泉(６丁目) 0430
 
 
-#[1654]13401 0060　八丈町八丈小島 #connect to mainland 八丈島 [1650]
-prefadj <- geomander::add_edge(prefadj, 1650, 1654)
-
-#[1656]13402 0020 青ヶ島村NA #connect to mainland 青ヶ島 [1655]
-prefadj <- geomander::add_edge(prefadj, 1656, 1655)
-
-#[1659]13421 0030 小笠原村聟島
-prefadj <- geomander::add_edge(prefadj, 1659, 1657) #connect to 小笠原島父島[1657]
-
-#[1660]13421 0040 小笠原村硫黄島
-prefadj <- geomander::add_edge(prefadj, 1660, 1658) #connect to 小笠原島母島[1658]
-
-#[1661]13421 0050 小笠原村沖ノ鳥島
-#[1662]13421 0060 小笠原村南鳥島
-prefadj <- geomander::add_edge(prefadj, 1661, 98) #[98] connect to 港区
-prefadj <- geomander::add_edge(prefadj, 1662, 98) #[98] connect to 港区
-
-pref_map <- redist::redist_map(pref,
-                               ndists = ndists_new,
-                               pop_tol= 0.15,
-                               total_pop = pop,
-                               adj = prefadj)
+pref_map_50 <- redist::redist_map(pref_50,
+                                  ndists = ndists_new,
+                                  pop_tol= 1.00,
+                                  total_pop = pop,
+                                  adj = prefadj_50)
 
 # --------- MS simulation ----------------#
-sim_ms_pref <- redist::redist_mergesplit(pref_map,
+sim_ms_pref_50 <- redist::redist_mergesplit(pref_map_50,
                                          nsims = 10,
                                          counties = pref_map$code,
                                          constraints = list(splits = list(strength = 1000)))
