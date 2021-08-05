@@ -45,6 +45,18 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
+##########Analysis##############
+pref_0 %>%
+  dplyr::arrange(desc(pop)) %>%
+  ggplot(aes(x = reorder(as.factor(code), -pop ), y = pop)) +
+  geom_bar(stat = "identity") +
+  geom_hline(aes(yintercept = sum(pref_0$pop)/ndists_new), color = "red") +
+  annotate("text", x = 50, y = 500000,
+           label = "Target\npop.", color = "red")+
+  labs(x = NULL,
+       y = "Population",
+       title = "Population Distribution in Tokyo") +
+  coord_flip()
 
 ##########Simple MS#################
 #clean pref_raw
@@ -213,7 +225,7 @@ prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬�
 
 pref_map_50 <- redist::redist_map(pref_50,
                                   ndists = ndists_new,
-                                  pop_tol= 0.80,
+                                  pop_tol= 0.12,
                                   total_pop = pop,
                                   adj = prefadj_50)
 
@@ -244,7 +256,7 @@ wgt_ms_50 <- simulation_weight_disparity_table(sim_ms_pref_50)
 #m <- c(1:51)
 #wgt_ms_50 <- cbind(m, wgt_ms_50)
 #optimal <- wgt_ms_50$m[which(wgt_ms_50$max_to_min == min(wgt_ms_50$max_to_min))][1]
-#Maxmin 2.3938 #2...
+#Maxmin 1.6361
 #redist::redist.plot.plans(sim_ms_pref_50, draws = optimal, geom = pref_map_50)
 
 #county splits
