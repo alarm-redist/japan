@@ -541,6 +541,83 @@ splits_8_2 <- count_splits(plans_pref_8_2, pref_map_8_2$code)
 #28 splits?
 
 
+
+##########9 splits#################
+#find the municipality codes of the 1st ~ 9th largest municipalities
+largest_9 <- (pref_0 %>% dplyr::arrange(desc(pop)))$code[1:9]
+
+#filter out the municipalities to keep treat as one unit, without dividing them
+pref_intact_9 <- pref_0 %>% dplyr::filter(code %in% largest_9 == FALSE ) %>%
+  merge_gun()
+#run merge at this stage
+pref_intact_9$subcode <- "0000"
+
+#filter out the municipalities to split and estimate the population as of 2020
+pref_split_9 <- pref %>%
+  dplyr::filter(code %in% largest_9) %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref_split_9 <- calc_kokumin(pref_split_9, dem_pops)
+pref_split_9 <- estimate_2020_pop(pref_split_9, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+pref_9 <- dplyr::bind_rows(pref_intact_9, pref_split_9)
+
+#Ferries
+ferries_9 <- add_ferries(pref_9)
+
+# -------- set up for simulation ------------#
+# Adjacency list
+prefadj_9 <- redist::redist.adjacency(pref_9)
+#add edge
+prefadj_9 <- geomander::add_edge(prefadj_9, ferries_9$V1, ferries_9$V2)
+
+#manually add adjacency
+prefadj_9 <- geomander::add_edge(prefadj_9, 348, 349)
+#[348] 練馬区西大泉町13120 0420  is an enclave within 埼玉県新座市-> connect to [349]練馬区西大泉(６丁目) 0430
+
+pref_map_9 <- redist::redist_map(pref_9,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.17,
+                                 total_pop = pop,
+                                 adj = prefadj_9)
+
+###save(list=ls(all=TRUE), file="13_smc_tokyo_data_9split.Rdata")
+
+# --------- SMC simulation ----------------#
+# simulation
+sim_smc_pref_9 <- redist::redist_smc(pref_map_9,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+
+# save it
+saveRDS(sim_smc_pref_9, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_9",
+                              ".Rds",
+                              sep = ""))
+
+#pop disparity
+wgt_smc_9 <- simulation_weight_disparity_table(sim_smc_pref_9)
+#n <- c(1:25000)
+#wgt_smc_9 <- cbind(n, wgt_smc_9)
+#wgt_smc_9$n[which(wgt_smc_9$max_to_min == min(wgt_smc_9$max_to_min))]
+#Maxmin 1.3523 #2    4    6    8    9 ...
+#redist::redist.plot.plans(sim_smc_pref_9, draws = 2, geom = pref_map_9)
+
+#county splits
+plans_pref_9 <- redist::get_plans_matrix(sim_smc_pref_9)
+# get splits
+splits_9 <- count_splits(plans_pref_9, pref_map_9$code)
+#26 splits?
+
+
 ########9 splits (in order of total pop. of adjacent municipalities) ############
 #--------Raw data----------#
 #0 split
