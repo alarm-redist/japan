@@ -46,7 +46,18 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
-
+#########Analysis################
+pref_0 %>%
+  dplyr::arrange(desc(pop)) %>%
+  ggplot(aes(x = reorder(as.factor(code), -pop ), y = pop)) +
+  geom_bar(stat = "identity") +
+  geom_hline(aes(yintercept = sum(pref_0$pop)/ndists_new), color = "red") +
+  annotate("text", x = 5, y = 490000,
+           label = "Target\npop.", color = "red")+
+  labs(x = NULL,
+       y = "Population",
+       title = "Population Distribution in Ehime") +
+  coord_flip()
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 pref_0 <- pref
