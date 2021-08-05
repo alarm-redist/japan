@@ -213,19 +213,20 @@ prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬�
 
 pref_map_50 <- redist::redist_map(pref_50,
                                   ndists = ndists_new,
-                                  pop_tol= 1.00,
+                                  pop_tol= 0.80,
                                   total_pop = pop,
                                   adj = prefadj_50)
 
+###save(list=ls(all=TRUE), file="13_ms_tokyo_data_50.Rdata")
+
 # --------- MS simulation ----------------#
 sim_ms_pref_50 <- redist::redist_mergesplit(pref_map_50,
-                                         nsims = 10,
-                                         counties = pref_map$code,
-                                         constraints = list(splits = list(strength = 1000)))
-#constraints = list("countysplit"
+                                            nsims = 100,
+                                            counties = pref_map_50$code,
+                                            constraints = "splits")
 
 # save it
-saveRDS(sim_smc_pref_0, paste("simulation/",
+saveRDS(sim_ms_pref_50, paste("simulation/",
                               as.character(pref_code),
                               "_",
                               as.character(pref_name),
@@ -233,10 +234,27 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
                               "smc",
                               "_",
                               as.character(nsims),
-                              "_0",
+                              "_50",
                               ".Rds",
                               sep = ""))
 
+
+##########MS (Only split large counties) Analysis #################
+wgt_ms_50 <- simulation_weight_disparity_table(sim_ms_pref_50)
+#m <- c(1:51)
+#wgt_ms_50 <- cbind(m, wgt_ms_50)
+#optimal <- wgt_ms_50$m[which(wgt_ms_50$max_to_min == min(wgt_ms_50$max_to_min))][1]
+#Maxmin 2.3938 #2...
+#redist::redist.plot.plans(sim_ms_pref_50, draws = optimal, geom = pref_map_50)
+
+#county splits
+plans_pref_50 <- redist::get_plans_matrix(sim_ms_pref_50)
+# get splits
+splits_50 <- count_splits(plans_pref_50, pref_map_50$code)
+splits_50[optimal]
+
+csplits_50 <- redist::redist.splits(plans_pref_50, pref_50$code)
+csplits_50[optimal]
 
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
