@@ -165,6 +165,119 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 
 
 
+
+##########"Fractures"###################
+#clean pref_raw
+pref <- pref_raw %>%
+  clean_jcdf()
+pref <- pref %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref <- calc_kokumin(pref, dem_pops)
+#Estimate 2020 pop.
+pref <- estimate_2020_pop(pref, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+#check 0 split data (match with 2020 census data)
+pref_0 <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+#treat gun as one municipality
+pref_0 <- merge_gun(pref_0)
+
+ranking <- pref_0 %>%
+  dplyr::arrange(desc(pop))
+#select municipalities whose population is less than 50% of target pop -> keep intact
+pref_small <- pref_0 %>% dplyr::filter(pop < 0.50 * sum(pref_0$pop)/ndists_new)
+pref_small$subcode <- "0000"
+
+#select municipalities whose population is more than 50% of target pop -> separate
+large_codes <- pref_0$code[which(pref_0$code %in% pref_small$code == FALSE)]
+pref_large <- pref %>% dplyr::filter(code %in% large_codes)
+
+#bind together
+pref_50 <- dplyr::bind_rows(pref_small, pref_large)
+
+#ferries
+ferries_50 <- add_ferries(pref_50)
+
+# -------- set up for simulation ------------#
+prefadj_50 <- redist::redist.adjacency(pref_50) # Adjacency list
+#add edge
+prefadj_50 <- geomander::add_edge(prefadj_50, ferries_50[, 1], ferries_50[, 2])
+
+#manually edit adjacency list
+#[270]13109 0250 品川区八潮
+#[357]13111 0580 大田区東海
+#[358]13111 0590 大田区城南島
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 263) #[263]品川区東品川180
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 261) #[261]品川区東大井160
+prefadj_50 <- geomander::add_edge(prefadj_50, 270, 249) #[249]品川区勝島40
+prefadj_50 <- geomander::add_edge(prefadj_50, 357, 358)
+prefadj_50 <- geomander::add_edge(prefadj_50, 357, 308) #[308] 13111 0090大田区平和島
+
+#[658]13120 0420 練馬区西大泉町
+prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬区西大泉(６丁目) 0430
+
+
+pref_map_50 <- redist::redist_map(pref_50,
+                                  ndists = ndists_new,
+                                  pop_tol= 0.99,
+                                  total_pop = pop,
+                                  adj = prefadj_50)
+
+###save(list=ls(all=TRUE), file="13_ms_tokyo_data_50.Rdata")
+
+# --------- MS simulation ----------------#
+sim_ms_pref_50 <- redist::redist_mergesplit(pref_map_50,
+                                            nsims = 100,
+                                            counties = pref_50$code,
+                                            constraints = "splits")
+
+sim_ms_pref_50 <- redist_mergesplit(
+  map = pref_map_50,
+  warmup = 0,
+  nsims = 100,
+  counties = pref_map_50$code,
+  #constraints = list(fractures = list(strength = 0.5), splits = list(strength = 0.5))
+)
+
+
+# save it
+saveRDS(sim_ms_pref_50, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              "smc",
+                              "_",
+                              as.character(nsims),
+                              "_50",
+                              ".Rds",
+                              sep = ""))
+
+
+##########MS (Only split large counties) Analysis #################
+wgt_ms_50 <- simulation_weight_disparity_table(sim_ms_pref_50)
+#m <- c(1:51)
+#wgt_ms_50 <- cbind(m, wgt_ms_50)
+#optimal <- wgt_ms_50$m[which(wgt_ms_50$max_to_min == min(wgt_ms_50$max_to_min))][1]
+#Maxmin 1.6361
+#redist::redist.plot.plans(sim_ms_pref_50, draws = optimal, geom = pref_map_50)
+
+#county splits
+plans_pref_50 <- redist::get_plans_matrix(sim_ms_pref_50)
+# get splits
+splits_50 <- count_splits(plans_pref_50, pref_map_50$code)
+splits_50[optimal]
+
+csplits_50 <- redist::redist.splits(plans_pref_50, pref_50$code)
+csplits_50[optimal]
+
 ##########MS (Only split large counties)#################
 #clean pref_raw
 pref <- pref_raw %>%
