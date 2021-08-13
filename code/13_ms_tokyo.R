@@ -243,7 +243,7 @@ sim_ms_pref_50 <- redist_mergesplit(
   warmup = 0,
   nsims = 100,
   counties = pref_map_50$code,
-  #constraints = list(fractures = list(strength = 0.5), splits = list(strength = 0.5))
+  constraints = list(fractures = list(strength = 4), splits = list(strength = 4))
 )
 
 
