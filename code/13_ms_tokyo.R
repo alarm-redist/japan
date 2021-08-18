@@ -53,6 +53,12 @@ pref_0 %>%
   geom_hline(aes(yintercept = sum(pref_0$pop)/ndists_new), color = "red") +
   annotate("text", x = 50, y = 500000,
            label = "Target\npop.", color = "red")+
+  geom_hline(aes(yintercept = (1/2) * sum(pref_0$pop)/ndists_new), color = "darkgreen") +
+  annotate("text", x = 40, y = 300000,
+           label = "1/2*Target\npop.", color = "darkgreen")+
+  geom_hline(aes(yintercept = (2/3) * sum(pref_0$pop)/ndists_new), color = "blue") +
+  annotate("text", x = 45, y = 380000,
+           label = "2/3*Target\npop.", color = "blue")+
   labs(x = NULL,
        y = "Population",
        title = "Population Distribution in Tokyo") +
