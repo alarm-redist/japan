@@ -172,7 +172,7 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 
 
 
-##########"Fractures 50"###################
+##########[Important]"Fractures 50"###################
 #clean pref_raw
 pref <- pref_raw %>%
   clean_jcdf()
@@ -229,46 +229,79 @@ prefadj_50 <- geomander::add_edge(prefadj_50, 357, 308) #[308] 13111 0090大田�
 #[658]13120 0420 練馬区西大泉町
 prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬区西大泉(６丁目) 0430
 
-
+#define map
 pref_map_50 <- redist::redist_map(pref_50,
                                   ndists = ndists_new,
-                                  pop_tol= 0.99,
+                                  pop_tol= 0.07,
                                   total_pop = pop,
                                   adj = prefadj_50)
 
 ###save(list=ls(all=TRUE), file="13_ms_tokyo_data_50.Rdata")
 
 # --------- MS simulation ----------------#
+#run simulation
 sim_ms_pref_50 <- redist::redist_mergesplit(pref_map_50,
-                                            nsims = 100,
+                                            nsims = 500000,
                                             counties = pref_50$code,
-                                            constraints = "splits")
-
-sim_ms_pref_50 <- redist_mergesplit(
-  map = pref_map_50,
-  warmup = 0,
-  nsims = 100,
-  counties = pref_map_50$code,
-  constraints = list(fractures = list(strength = 4), splits = list(strength = 4))
+                                            warmup = 0,
+                                            constraints = list(fractures = list(strength = 150),
+                                                               splits = list(strength = 4))
 )
 
-
 # save it
-saveRDS(sim_ms_pref_50, paste("simulation/",
-                              as.character(pref_code),
+saveRDS(sim_ms_pref_50, paste(as.character(pref_code),
                               "_",
                               as.character(pref_name),
                               "_",
-                              "smc",
+                              "ms",
                               "_",
-                              as.character(nsims),
+                              "500000",
                               "_50",
                               ".Rds",
                               sep = ""))
 
+##########[Important]"Fractures Analysis"###################
+#max:min ratio (disparity score)
+wgt_ms_50 <- simulation_weight_disparity_table(sim_ms_pref_50)
+m <- c(1:500001)
+wgt_ms_50 <- cbind(m, wgt_ms_50)
+#minimum
+min(wgt_ms_50$max_to_min)
+#the code of the plan with the minimum max:min ratio
+minimum_maxmin <- wgt_ms_50$m[which(wgt_ms_50$max_to_min == min(wgt_ms_50$max_to_min))][1]
+
+#count total splits of the plan with the minimum max:min ratio
+plans_pref_50 <- redist::get_plans_matrix(sim_ms_pref_50)
+splits_50 <- count_splits(plans_pref_50, pref_map_50$code)
+splits_50[minimum_maxmin]
+
+#count total county splits of the plan with the minimum max:min ratio
+csplits_50 <- redist::redist.splits(plans_pref_50, pref_50$code)
+csplits_50[minimum_maxmin]
+
+#minimum of county split, split
+min(splits_50)
+min(csplits_50)
+
+#compile results
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms_50)))
+results$max_to_min <- wgt_ms_50$max_to_min
+results$splits <- splits_50
+results$counties_split <- csplits_50
+results$index <- 1:nrow(wgt_ms_50)
+
+#find plan with the lowest maxmin ratio out of all plans that follow the shingikai guidelines regarding fractures
+#min(results$max_to_min[which(results$splits == results$counties_split)])
+#optimal <-results$index[which(results$max_to_min == min(results$max_to_min[which(results$splits == results$counties_split)]))]
 
 
-##########[IMPORTANT]"Fractures 67"###################
+redist::redist.plot.plans(sim_ms_pref_50, draws = 5957, geom = pref_map_50)
+#5957: 16 splits, 14 municipality splits
+
+
+
+
+##########"Fractures 67"###################
 #clean pref_raw
 pref <- pref_raw %>%
   clean_jcdf()
