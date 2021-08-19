@@ -172,7 +172,7 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 
 
 
-##########"Fractures"###################
+##########[Important]"Fractures 50"###################
 #clean pref_raw
 pref <- pref_raw %>%
   clean_jcdf()
@@ -229,27 +229,151 @@ prefadj_50 <- geomander::add_edge(prefadj_50, 357, 308) #[308] 13111 0090大田�
 #[658]13120 0420 練馬区西大泉町
 prefadj_50 <- geomander::add_edge(prefadj_50, 658, 659) #connect to [659]練馬区西大泉(６丁目) 0430
 
-
+#define map
 pref_map_50 <- redist::redist_map(pref_50,
                                   ndists = ndists_new,
-                                  pop_tol= 0.99,
+                                  pop_tol= 0.07,
                                   total_pop = pop,
                                   adj = prefadj_50)
 
 ###save(list=ls(all=TRUE), file="13_ms_tokyo_data_50.Rdata")
 
 # --------- MS simulation ----------------#
+#run simulation
 sim_ms_pref_50 <- redist::redist_mergesplit(pref_map_50,
-                                            nsims = 100,
+                                            nsims = 500000,
                                             counties = pref_50$code,
-                                            constraints = "splits")
+                                            warmup = 0,
+                                            constraints = list(fractures = list(strength = 150),
+                                                               splits = list(strength = 4))
+)
 
-sim_ms_pref_50 <- redist_mergesplit(
-  map = pref_map_50,
-  warmup = 0,
-  nsims = 100,
-  counties = pref_map_50$code,
-  constraints = list(fractures = list(strength = 4), splits = list(strength = 4))
+# save it
+saveRDS(sim_ms_pref_50, paste(as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              "ms",
+                              "_",
+                              "500000",
+                              "_50",
+                              ".Rds",
+                              sep = ""))
+
+##########[Important]"Fractures Analysis"###################
+#max:min ratio (disparity score)
+wgt_ms_50 <- simulation_weight_disparity_table(sim_ms_pref_50)
+m <- c(1:500001)
+wgt_ms_50 <- cbind(m, wgt_ms_50)
+#minimum
+min(wgt_ms_50$max_to_min)
+#the code of the plan with the minimum max:min ratio
+minimum_maxmin <- wgt_ms_50$m[which(wgt_ms_50$max_to_min == min(wgt_ms_50$max_to_min))][1]
+
+#count total splits of the plan with the minimum max:min ratio
+plans_pref_50 <- redist::get_plans_matrix(sim_ms_pref_50)
+splits_50 <- count_splits(plans_pref_50, pref_map_50$code)
+splits_50[minimum_maxmin]
+
+#count total county splits of the plan with the minimum max:min ratio
+csplits_50 <- redist::redist.splits(plans_pref_50, pref_50$code)
+csplits_50[minimum_maxmin]
+
+#minimum of county split, split
+min(splits_50)
+min(csplits_50)
+
+#compile results
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms_50)))
+results$max_to_min <- wgt_ms_50$max_to_min
+results$splits <- splits_50
+results$counties_split <- csplits_50
+results$index <- 1:nrow(wgt_ms_50)
+
+#find plan with the lowest maxmin ratio out of all plans that follow the shingikai guidelines regarding fractures
+#min(results$max_to_min[which(results$splits == results$counties_split)])
+#optimal <-results$index[which(results$max_to_min == min(results$max_to_min[which(results$splits == results$counties_split)]))]
+
+
+redist::redist.plot.plans(sim_ms_pref_50, draws = 5957, geom = pref_map_50)
+#5957: 16 splits, 14 municipality splits
+
+
+
+
+##########"Fractures 67"###################
+#clean pref_raw
+pref <- pref_raw %>%
+  clean_jcdf()
+pref <- pref %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref <- calc_kokumin(pref, dem_pops)
+#Estimate 2020 pop.
+pref <- estimate_2020_pop(pref, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+#check 0 split data (match with 2020 census data)
+pref_0 <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+#treat gun as one municipality
+pref_0 <- merge_gun(pref_0)
+
+ranking_67 <- pref_0 %>%
+  dplyr::arrange(desc(pop))
+#select municipalities whose population is less than 2/3 of target pop -> keep intact
+pref_small_67 <- pref_0 %>% dplyr::filter(pop < (2/3) * sum(pref_0$pop)/ndists_new)
+pref_small_67$subcode <- "0000"
+
+#select municipalities whose population is more than 50% of target pop -> separate
+large_codes_67 <- pref_0$code[which(pref_0$code %in% pref_small_67$code == FALSE)]
+pref_large_67 <- pref %>% dplyr::filter(code %in% large_codes_67)
+
+#bind together
+pref_67 <- dplyr::bind_rows(pref_small_67, pref_large_67)
+
+#ferries
+ferries_67 <- add_ferries(pref_67)
+
+# -------- set up for simulation ------------#
+prefadj_67 <- redist::redist.adjacency(pref_67) # Adjacency list
+#add edge
+prefadj_67 <- geomander::add_edge(prefadj_67, ferries_67[, 1], ferries_67[, 2])
+
+#manually edit adjacency list
+#[203]13109 0250 品川区八潮
+#[263]13111 0580 大田区東海
+#[264]13111 0590 大田区城南島
+prefadj_67 <- geomander::add_edge(prefadj_67, 203, 196) #[196]品川区東品川180
+prefadj_67 <- geomander::add_edge(prefadj_67, 203, 194) #[194]品川区東大井160
+prefadj_67 <- geomander::add_edge(prefadj_67, 203, 182) #[182]品川区勝島40
+prefadj_67 <- geomander::add_edge(prefadj_67, 263, 264)
+prefadj_67 <- geomander::add_edge(prefadj_67, 263, 214) #[214] 13111 0090大田区平和島
+
+#[512]13120 0420 練馬区西大泉町
+prefadj_67 <- geomander::add_edge(prefadj_67, 512, 513) #connect to [513]練馬区西大泉(６丁目) 0430
+
+
+pref_map_67 <- redist::redist_map(pref_67,
+                                  ndists = ndists_new,
+                                  pop_tol= 0.50,
+                                  total_pop = pop,
+                                  adj = prefadj_67)
+
+###save(list=ls(all=TRUE), file="13_ms_tokyo_data_67.Rdata")
+
+# --------- MS simulation ----------------#
+sim_ms_pref_67 <- redist::redist_mergesplit(pref_map_67,
+                                            nsims = 2,
+                                            counties = pref_67$code,
+                                            warmup = 0,
+                                            constraints = list(fractures = list(strength = 4),
+                                                               splits = list(strength = 4))
 )
 
 
