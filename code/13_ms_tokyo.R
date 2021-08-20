@@ -288,8 +288,7 @@ results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms_50)))
 results$max_to_min <- wgt_ms_50$max_to_min
 results$splits <- splits_50
 results$counties_split <- csplits_50
-results$index <- 1:nrow(wgt_ms_50)
-
+results$dif <- results$splits - results$counties_split
 #find plan with the lowest maxmin ratio out of all plans that follow the shingikai guidelines regarding fractures
 #min(results$max_to_min[which(results$splits == results$counties_split)])
 #optimal <-results$index[which(results$max_to_min == min(results$max_to_min[which(results$splits == results$counties_split)]))]
@@ -298,6 +297,26 @@ results$index <- 1:nrow(wgt_ms_50)
 redist::redist.plot.plans(sim_ms_pref_50, draws = 5957, geom = pref_map_50)
 #5957: 16 splits, 14 municipality splits
 
+#add status quo data
+sq <- data.frame(max_to_min = 1.163, splits = 17, counties_split = 17, index = 0, dif = 0)
+results_pres <- dplyr::bind_rows(results, sq)
+
+#plot that shows number of splits vs number of municipalities that were split
+results %>%
+  dplyr::distinct() %>% #4657 unique plans
+  ggplot(mapping = aes (x = counties_split, y = splits)) +
+    geom_point() +
+    labs(title = "Number of Splits & County\nSplits in Tokyo",
+         x = "Number of Counties that Are Split",
+         y = "Total Number of Splits") +
+  scale_x_continuous(limits = c(10, 20),
+                     breaks = seq(10, 20, by = 1)) +
+  scale_y_continuous(limits = c(10, 30),
+                     minor_breaks = seq(10, 30, 1)) +
+  geom_abline(intercept = 0, slope = 1, color = "blue") +
+  geom_point(aes(x= 17 , y = 17), colour="red",size=1.5) +
+  geom_label(aes(x= 18, y = 16, label = "Status Quo"), size = 3.0, color = "red") +
+  geom_label(aes(x= 16, y = 13, label = "Municipality is Broken Up\ninto 2 Districts"), size = 3.0, color = "blue")
 
 
 
