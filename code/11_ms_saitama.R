@@ -22,7 +22,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 # set number of district (check external information)
 ndists_new <- 16
 ndists_old <- 15
-
+sq_maxmin <- 1.444
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -84,7 +84,11 @@ block_codes <- list(part_codes[which(part_codes <= 11110)],
 largest_x <- intersect(pref_block$code[which(pref_block$pop >= 1/3 * sum(pref_block$pop)/ndists_new)], muni_codes)
 
 
-for(i in 1:1){
+save(list=ls(all=TRUE), file="code/saitama_functions.Rdata")
+
+
+
+i <- 1
 
   pref_part <- dplyr::bind_rows(small_units %>%
                                   dplyr::filter(code %in% largest_x &
@@ -119,7 +123,7 @@ for(i in 1:1){
 
   part_map <- redist::redist_map(pref_part,
                                  ndists = round(sum(pref_part$pop)/(sum(pref_block$pop)/ndists_new)),
-                                 pop_tol = 0.15,
+                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                  total_pop = pop,
                                  adj = part_adj)
 
@@ -145,10 +149,11 @@ for(i in 1:1){
 
   part_parallel_pref <- redist::redist_mergesplit(
     map = part_map,
-    nsims = 100000,
+    nsims = 250000,
     counties = pref_part$code,
     warmup = 0,
-    constraints = list(fractures = list(strength = 4), splits = list(strength = 4))
+    constraints = list(fractures = list(strength = 4),
+                       splits = list(strength = 4))
   )
 
   # save it
@@ -222,5 +227,7 @@ for(i in 1:1){
                              "route_data",
                              "part_splits"
   ))])
-}
-saveRDS(parallel_results, file = "saitama_parallel_results.rds")
+
+
+  min(parallel_results$max_to_min[which(parallel_results$splits == parallel_results$counties_split)])
+
