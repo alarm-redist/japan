@@ -45,6 +45,156 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 # populations based on historical boundaries
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 
+
+#########[By region] SMC with fractures constraint################
+#clean data
+pref <- pref_raw %>%
+  clean_jcdf()
+pref <- pref %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref <- calc_kokumin(pref, dem_pops)
+#Estimate 2020 pop.
+pref <- estimate_2020_pop(pref, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+#---------Setagaya-----------------#
+setagaya <- pref %>%
+  dplyr::filter(code == 13112)
+
+#adjacency list
+setagaya_adj <- redist::redist.adjacency(setagaya)
+
+#set up map
+setagaya_map <- redist::redist_map(setagaya,
+                                   ndists = 2,
+                                   pop_tol= 0.03,
+                                   total_pop = pop,
+                                   adj = setagaya_adj)
+
+#smc simulation
+setagaya_smc <- redist::redist_smc(setagaya_map,
+                                   nsims = nsims,
+                                   pop_temper = 0.05)
+
+#save
+saveRDS(setagaya_smc, paste("simulation/",
+                            as.character(pref_code),
+                            "_",
+                            "setagaya",
+                            "_",
+                            as.character(sim_type),
+                            "_",
+                            as.character(nsims),
+                            ".Rds",
+                            sep = ""))
+
+setagaya_wgt_smc <- simulation_weight_disparity_table(setagaya_smc)
+
+#---------0 split data----------------#
+#check 0 split data (match with 2020 census data)
+pref_0 <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+#treat gun as one municipality
+pref_0 <- merge_gun(pref_0)
+
+ranking <- pref_0 %>%
+  dplyr::arrange(desc(pop))
+#select municipalities whose population is less than 50% of target pop -> keep intact
+pref_small <- pref_0 %>% dplyr::filter(pop < 0.50 * sum(pref_0$pop)/ndists_new)
+pref_small$subcode <- "0000"
+
+#select municipalities whose population is more than 50% of target pop -> separate
+large_codes <- pref_0$code[which(pref_0$code %in% pref_small$code == FALSE)]
+pref_large <- pref %>% dplyr::filter(code %in% large_codes)
+
+pref_50 <- dplyr::bind_rows(pref_small, pref_large)
+
+#------23-ku Simulation Prep-------------#
+urban <- pref_50 %>%
+  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
+                     "13106", "13107", "13108", "13109", "13110",
+                     "13111",          "13113", "13114", "13115", #skip Setagaya
+                     "13116", "13117", "13118", "13119", "13120",
+                     "13121", "13122", "13123",
+                     "13360", "13380", "13400", "13420")) #Islands are considered part of Minato-ku
+
+#adjacency list
+urbanadj <- redist::redist.adjacency(urban)
+
+#ferries
+ferries_urban <- add_ferries(urban)
+
+#edit adjacency list
+urbanadj <- geomander::add_edge(urbanadj, ferries_urban$V1, ferries_urban$V2)
+#manually edit adjacency list
+#[247]13109 0250 品川区八潮
+#[334]13111 0580 大田区東海
+#[335]13111 0590 大田区城南島
+urbanadj <- geomander::add_edge(urbanadj, 247, 240) #[240]品川区東品川180
+urbanadj <- geomander::add_edge(urbanadj, 247, 238) #[238]品川区東大井160
+urbanadj <- geomander::add_edge(urbanadj, 247, 226) #[226]品川区勝島40
+urbanadj <- geomander::add_edge(urbanadj, 334, 335)
+urbanadj <- geomander::add_edge(urbanadj, 334, 285) #[285] 13111 0090大田区平和島
+#[574]13120 0420 練馬区西大泉町
+urbanadj <- geomander::add_edge(urbanadj, 574, 575) #connect to [575]練馬区西大泉(６丁目) 0430
+
+#map
+urban_map <- redist::redist_map(urban,
+                                ndists = ndists_new,
+                                pop_tol= 0.20,
+                                total_pop = pop,
+                                adj = urbanadj)
+
+#------Tama Region Simulation Prep-------------#
+rural <-  pref_50 %>%
+  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
+                     "13106", "13107", "13108", "13109", "13110",
+                     "13111", "13112", "13113", "13114", "13115",
+                     "13116", "13117", "13118", "13119", "13120",
+                     "13121", "13122", "13123",
+                     "13360", "13380", "13400", "13420") == FALSE)
+
+#adjacency list
+ruraladj <- redist::redist.adjacency(rural)
+
+#map
+rural_map <- redist::redist_map(rural,
+                                ndists = ndists_new,
+                                pop_tol= 0.20,
+                                total_pop = pop,
+                                adj = ruraladj)
+
+
+#save(list=ls(all=TRUE), file="13_smc_tokyo_data_by_region.Rdata")
+
+#urban map
+urban_map <- redist::redist_map(urban,
+                                ndists = 19,
+                                pop_tol= 0.05,
+                                total_pop = pop,
+                                adj = urbanadj)
+
+#rural map
+rural_map <- redist::redist_map(rural,
+                                ndists = 9,
+                                pop_tol= 0.20,
+                                total_pop = pop,
+                                adj = ruraladj)
+
+urban_smc <- redist::redist_smc(urban_map,
+                                nsims = 25000,
+                                counties = urban_map$code,
+                                constraints = list(multisplits = list(strength = 4)),
+                                pop_temper = 0.05
+)
+
+
 ########Pref: pref_raw############
 pref <- clean_jcdf(pref_raw)
 pref_0 <- pref %>%
@@ -53,7 +203,6 @@ pref_0 <- pref %>%
   dplyr::left_join(census2020, by = c('code')) %>%
   dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, pop, geometry)
-
 ##########0 split###################
 #-------- Use 2020 census data at the municipality level (0 splits)-----------#
 pref_0 <- pref_raw %>%
