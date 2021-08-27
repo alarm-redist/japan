@@ -103,6 +103,7 @@ pref_ms <- redist::redist_mergesplit(
   constraints = list(fractures = list(strength = 4),
                      splits = list(strength = 4))
   )
+
 i <- 1
 # save it
 saveRDS(pref_ms, paste("simulation/",
@@ -127,26 +128,17 @@ weight_pref <- simulation_weight_disparity_table(pref_ms)
 plans_pref <- redist::get_plans_matrix(pref_ms)
 
 # get splits
-pref_ms_splits <- count_splits(pref_ms_plans_pref, part_map$code)
-pref_ms_countiessplit <- redist::redist.splits(pref_ms_plans_pref, part_map$code)
+pref_ms_splits <- count_splits(plans_pref, pref_map$code)
+pref_ms_countiessplit <- redist::redist.splits(plans_pref, pref_map$code)
 
-pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(pref_ms_weight_pref)))
-pref_ms_results$max_to_min <- pref_ms_weight_pref$max_to_min
+pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref)))
+pref_ms_results$max_to_min <- weight_pref$max_to_min
 pref_ms_results$splits <- pref_ms_splits
 pref_ms_results$counties_split <- pref_ms_countiessplit
-pref_ms_results$index <- 1:nrow(pref_ms_weight_pref)
-
-### fix this one!!!
-block_codes <- c(rep(1, length(which(part_codes <= 11110))),
-                 rep(2, length(which(part_codes > 11110))))
-
-block_div <- block_codes[match(part_map$code, pref_block$code)]
-
-#### Check this!!!!!
-pref_ms_results$cross <- count_overlap(pref_ms_plans_pref, block_div)
+pref_ms_results$index <- 1:nrow(weight_pref)
 
 pref_ms_results <- pref_ms_results %>%
-  dplyr::group_by(max_to_min, splits, counties_split, cross) %>%
+  dplyr::group_by(max_to_min, splits, counties_split) %>%
   dplyr::summarise(index = first(index)) %>%
   dplyr::arrange(splits)
 
