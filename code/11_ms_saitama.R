@@ -15,7 +15,7 @@ setwd("..")
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "ms"
-nsims <- 25000
+nsims <- 100000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -97,7 +97,7 @@ pref_map <- redist::redist_map(pref_50,
 
 pref_ms <- redist::redist_mergesplit(
   map = pref_map,
-  nsims = 250000,
+  nsims = 100000,
   counties = pref_50$code,
   warmup = 0,
   constraints = list(fractures = list(strength = 4),
@@ -106,35 +106,35 @@ pref_ms <- redist::redist_mergesplit(
 i <- 1
 # save it
 saveRDS(pref_ms, paste("simulation/",
-                                  sprintf("%02d", pref_code),
-                                  "_",
-                                  as.character(pref_name),
-                                  "_",
-                                  as.character(sim_type),
-                                  "_",
-                                  as.character(nsims),
-                                  "_",
-                                  "block",
-                                  i,
-                                  "_",
-                                  "parallel.Rds",
-                                  sep = ""))
+                        sprintf("%02d", pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        "block",
+                        i,
+                        "_",
+                        "pref_ms.Rds",
+                        sep = ""))
 
 
 
 # get disparity data
-weight_pref <- simulation_weight_disparity_table(part_parallel_pref)
-plans_pref <- redist::get_plans_matrix(part_parallel_pref)
+weight_pref <- simulation_weight_disparity_table(pref_ms)
+plans_pref <- redist::get_plans_matrix(pref_ms)
 
 # get splits
-part_parallel_splits <- count_splits(part_parallel_plans_pref, part_map$code)
-part_parallel_countiessplit <- redist::redist.splits(part_parallel_plans_pref, part_map$code)
+pref_ms_splits <- count_splits(pref_ms_plans_pref, part_map$code)
+pref_ms_countiessplit <- redist::redist.splits(pref_ms_plans_pref, part_map$code)
 
-parallel_results <- data.frame(matrix(ncol = 0, nrow = nrow(part_parallel_weight_pref)))
-parallel_results$max_to_min <- part_parallel_weight_pref$max_to_min
-parallel_results$splits <- part_parallel_splits
-parallel_results$counties_split <- part_parallel_countiessplit
-parallel_results$index <- 1:nrow(part_parallel_weight_pref)
+pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(pref_ms_weight_pref)))
+pref_ms_results$max_to_min <- pref_ms_weight_pref$max_to_min
+pref_ms_results$splits <- pref_ms_splits
+pref_ms_results$counties_split <- pref_ms_countiessplit
+pref_ms_results$index <- 1:nrow(pref_ms_weight_pref)
 
 ### fix this one!!!
 block_codes <- c(rep(1, length(which(part_codes <= 11110))),
@@ -143,9 +143,9 @@ block_codes <- c(rep(1, length(which(part_codes <= 11110))),
 block_div <- block_codes[match(part_map$code, pref_block$code)]
 
 #### Check this!!!!!
-parallel_results$cross <- count_overlap(part_parallel_plans_pref, block_div)
+pref_ms_results$cross <- count_overlap(pref_ms_plans_pref, block_div)
 
-parallel_results <- parallel_results %>%
+pref_ms_results <- pref_ms_results %>%
   dplyr::group_by(max_to_min, splits, counties_split, cross) %>%
   dplyr::summarise(index = first(index)) %>%
   dplyr::arrange(splits)
@@ -158,11 +158,11 @@ assign(paste(pref_name, pref_code, "adj", "full", i, sep = "_"),
 assign(paste(pref_name, pref_code, "map", "full", i, sep = "_"),
        part_map)
 assign(paste(pref_name, pref_code, "sim", sim_type, "full", i, sep = "_"),
-       part_parallel_pref)
+       pref_ms_pref)
 assign(paste(pref_name, pref_code, sim_type, "plans", "full", i, sep = "_"),
-       part_parallel_plans_pref)
+       pref_ms_plans_pref)
 assign(paste(pref_name, pref_code, sim_type, "results", "full", i, sep = "_"),
-       parallel_results)
+       pref_ms_results)
 
 
 rm(list= ls()[(ls() %in% c("pref_part",
@@ -179,5 +179,5 @@ rm(list= ls()[(ls() %in% c("pref_part",
 ))])
 
 
-min(parallel_results$max_to_min[which(parallel_results$splits == parallel_results$counties_split)])
+min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
