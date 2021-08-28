@@ -15,7 +15,7 @@ setwd("..")
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "ms"
-nsims <- 100000
+nsims <- 500000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -68,11 +68,13 @@ pref_0 <- merge_gun(pref_0,
 ranking <- pref_0 %>%
   dplyr::arrange(desc(pop))
 #select municipalities whose population is less than 50% of target pop -> keep intact
-pref_small <- pref_0 %>% dplyr::filter(pop < 0.50 * sum(pref_0$pop)/ndists_new)
+pref_small <- pref_0 %>%
+  dplyr::filter(pop < 0.50 * sum(pref_0$pop)/ndists_new)
 pref_small$subcode <- "0000"
 #select municipalities whose population is more than 50% of target pop -> separate
 large_codes <- pref_0$code[which(pref_0$code %in% pref_small$code == FALSE)]
-pref_large <- pref %>% dplyr::filter(code %in% large_codes)
+pref_large <- pref %>%
+  dplyr::filter(code %in% large_codes)
 #bind together
 pref_50 <- dplyr::bind_rows(pref_small, pref_large)
 
@@ -97,7 +99,7 @@ pref_map <- redist::redist_map(pref_50,
 
 pref_ms <- redist::redist_mergesplit(
   map = pref_map,
-  nsims = 100000,
+  nsims = nsims,
   counties = pref_50$code,
   warmup = 0,
   constraints = list(fractures = list(strength = 4),
@@ -173,3 +175,7 @@ rm(list= ls()[(ls() %in% c("pref_part",
 
 min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
+saitama_11_ms_results_full_1 %>%
+  dplyr::filter(splits <= 8) %>%
+  dplyr::filter(splits == counties_split) %>%
+  dplyr::arrange(desc(counties_split))
