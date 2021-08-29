@@ -178,11 +178,11 @@ saveRDS(urban_ms, paste("~/R/Tokyo/by_region/",
                         ".Rds",
                         sep = "")) #saved in Azure -> downloaded as "13_urban_ms_250000.Rds"
 
-urban_ms <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/[0.05-15-4]13_urban_ms_250000.Rds")
+urban_ms <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/0.09-20-20/[0.09-20-20]13_urban_ms_400000.Rds")
 
 #########diagonistics:urban#########
 wgt_ms_urban <- simulation_weight_disparity_table(urban_ms)
-m <- c(1:250001)
+m <- c(1:400001)
 wgt_ms_urban <- cbind(m, wgt_ms_urban)
 
 #minimum max:min ratio
@@ -215,7 +215,11 @@ results_urban$dif <-  results_urban$splits - results_urban$counties_split
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_ms, draws = 2, geom = urban_map)
+redist::redist.plot.plans(urban_ms, draws = 329906, geom = urban_map)
 
-#draw: 2; maxmin 1.073158; splits 19; csplits 17; dif 2
+#[0.05-15-4]index: 2; maxmin 1.073158; splits 19; csplits 17; dif 2
 
+#[0.06-15-1]index 2; maxmin 1.096884; splits 19; csplits 16; dif 3
+
+#[0.09-20-20]index 329907; maxmin 1.190827; splits 14; csplits 10; dif 4
+#-----------> draw 329906
