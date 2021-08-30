@@ -178,7 +178,7 @@ saveRDS(urban_ms, paste("~/R/Tokyo/by_region/",
                         ".Rds",
                         sep = "")) #saved in Azure -> downloaded as "13_urban_ms_250000.Rds"
 
-urban_ms <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/0.09-20-20/[0.09-20-20]13_urban_ms_400000.Rds")
+urban_ms <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/0.085-60-15/[0.085-60-15]13_urban_ms_400000.Rds")
 
 #########diagonistics:urban#########
 wgt_ms_urban <- simulation_weight_disparity_table(urban_ms)
@@ -194,11 +194,11 @@ minimum_maxmin <- wgt_ms_urban$m[which(wgt_ms_urban$max_to_min == min(wgt_ms_urb
 plans_pref_urban <- redist::get_plans_matrix(urban_ms)
 
 #count the number of splits
-splits_urban <- count_splits(plans_pref_urban, urban$code)
+splits_urban <- count_splits(plans_pref_urban, urban_map$code)
 splits_urban[minimum_maxmin]
 
 #count the number of municipalities that are split
-csplits_urban <- redist::redist.splits(plans_pref_urban, urban$code)
+csplits_urban <- redist::redist.splits(plans_pref_urban, urban_map$code)
 csplits_urban[minimum_maxmin]
 
 #minimum number of splits; county splits
@@ -215,7 +215,7 @@ results_urban$dif <-  results_urban$splits - results_urban$counties_split
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_ms, draws = 329906, geom = urban_map)
+redist::redist.plot.plans(urban_ms, draws = 72335, geom = urban_map)
 
 #[0.05-15-4]index: 2; maxmin 1.073158; splits 19; csplits 17; dif 2
 
@@ -223,3 +223,6 @@ redist::redist.plot.plans(urban_ms, draws = 329906, geom = urban_map)
 
 #[0.09-20-20]index 329907; maxmin 1.190827; splits 14; csplits 10; dif 4
 #-----------> draw 329906
+
+#[0.085-60-20] index 72336; maxmin 1.111402; splits 15; csplits 12; dif 3
+
