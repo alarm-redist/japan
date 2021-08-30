@@ -179,3 +179,8 @@ saitama_11_ms_results_full_1 %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
+
+redist::redist.plot.plans(pref_ms,
+                          draws = 364388,
+                          geom = pref_map)
+
