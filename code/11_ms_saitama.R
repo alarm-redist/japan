@@ -178,4 +178,4 @@ min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$c
 saitama_11_ms_results_full_1 %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
-  dplyr::arrange(desc(counties_split))
+  dplyr::arrange(max_to_min)
