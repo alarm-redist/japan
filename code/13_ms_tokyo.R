@@ -215,7 +215,7 @@ results_urban$dif <-  results_urban$splits - results_urban$counties_split
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_ms, draws = 329906, geom = urban_map)
+redist::redist.plot.plans(urban_ms, draws = 72335, geom = urban_map)
 
 #[0.05-15-4]index: 2; maxmin 1.073158; splits 19; csplits 17; dif 2
 
