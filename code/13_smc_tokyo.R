@@ -170,9 +170,9 @@ urban_map <- redist::redist_map(urban,
 # --------- SMC simulation ----------------#
 #run simulation
 urban_smc <- redist::redist_smc(urban_map,
-                                nsims = 25000,
+                                nsims = 250000,
                                 counties = urban_map$code,
-                                constraints = list(multisplits = list(strength = 4)),
+                                constraints = list(multisplits = list(strength = 60)),
                                 pop_temper = 0.05
 )
 
@@ -189,8 +189,10 @@ saveRDS(urban_smc, paste("~/R/Tokyo/by_region/",
                          sep = ""))
 
 #########diagonistics:urban#########
+# urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/0.10-60/13_urban_smc_25000.Rds")
+
 wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
-m <- c(1:400001)
+m <- c(1:25000)
 wgt_smc_urban <- cbind(m, wgt_smc_urban)
 
 #minimum max:min ratio
@@ -223,7 +225,7 @@ results_urban$dif <-  results_urban$splits - results_urban$counties_split
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_smc, draws = 72335, geom = urban_map)
+redist::redist.plot.plans(urban_smc, draws = 1, geom = urban_map)
 
 
 
