@@ -248,10 +248,10 @@ saveRDS(urban_smc, paste("~/R/Tokyo/by_region/",
                          sep = ""))
 
 #########diagonistics:urban#########
-# urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/0.10-60/13_urban_smc_25000.Rds")
+urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/0.09-5000-1000/[0.09-5000]13_urban_smc_1000.Rds")
 
 wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
-m <- c(1:25000)
+m <- c(1:1000)
 wgt_smc_urban <- cbind(m, wgt_smc_urban)
 
 #minimum max:min ratio
@@ -272,6 +272,7 @@ csplits_urban[minimum_maxmin]
 
 #minimum number of splits; county splits
 min(splits_urban)
+max(csplits_urban)
 min(csplits_urban)
 
 results_urban <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_urban)))
@@ -280,6 +281,8 @@ results_urban$splits <- splits_urban
 results_urban$counties_split <- csplits_urban
 results_urban$index <- 1:nrow(wgt_smc_urban)
 results_urban$dif <-  results_urban$splits - results_urban$counties_split
+min(results_urban$dif)
+View(results_urban)
 
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
