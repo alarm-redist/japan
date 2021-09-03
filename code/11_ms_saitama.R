@@ -103,7 +103,7 @@ pref_ms <- redist::redist_mergesplit(
   counties = pref_50$code,
   warmup = 0,
   constraints = list(multissplits = list(strength = 14),
-                     splits = list(strength = 2))
+                     splits = list(strength = 4))
   )
 
 i <- 1
