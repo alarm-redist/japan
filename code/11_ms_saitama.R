@@ -103,7 +103,7 @@ pref_ms <- redist::redist_mergesplit(
   counties = pref_50$code,
   warmup = 0,
   constraints = list(multissplits = list(strength = 14),
-                     splits = list(strength = 4))
+                     splits = list(strength = 2))
   )
 
 i <- 1
@@ -184,3 +184,6 @@ redist::redist.plot.plans(pref_ms,
                           draws = 364388,
                           geom = pref_map)
 
+redist::redist.plot.plans(pref_ms,
+                          draws = 364387,
+                          geom = pref_map)
