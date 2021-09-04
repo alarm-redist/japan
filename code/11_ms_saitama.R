@@ -184,3 +184,6 @@ redist::redist.plot.plans(pref_ms,
                           draws = 364388,
                           geom = pref_map)
 
+redist::redist.plot.plans(pref_ms,
+                          draws = 364387,
+                          geom = pref_map)
