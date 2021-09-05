@@ -287,7 +287,7 @@ View(results_urban)
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_smc, draws = 1, geom = urban_map)
+redist::redist.plot.plans(urban_smc, draws = 479, geom = urban_map)
 
 
 
