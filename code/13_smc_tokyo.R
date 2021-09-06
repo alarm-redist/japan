@@ -248,7 +248,8 @@ saveRDS(urban_smc, paste("~/R/Tokyo/by_region/",
                          sep = ""))
 
 #########diagonistics:urban#########
-urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/0.09-5000-1000/[0.09-5000]13_urban_smc_1000.Rds")
+load("~/Desktop/ALARM Project/jcdf/13_smc_tokyo_data_by_region_0_freeze.Rdata")
+urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/SamePlan?/0.09-9000-1000/[0.09-9000]13_urban_smc_1000.Rds")
 
 wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
 m <- c(1:1000)
@@ -287,7 +288,7 @@ View(results_urban)
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_smc, draws = 479, geom = urban_map)
+redist::redist.plot.plans(urban_smc, draws = 114, geom = urban_map)
 
 
 
