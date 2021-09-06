@@ -31,6 +31,7 @@ status_quo_match <- function(pref){
   # re-projecting sf_district to match pref's CRS.
   sf::st_crs(district_data) <- sf::st_crs(pref)
 
+  district_data <- district_data[which(sf::st_is_empty(district_data) != 1), ]
   pref_points <- sf::st_centroid(pref)
 
   # find intersection to label the districts
