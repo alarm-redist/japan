@@ -248,7 +248,8 @@ saveRDS(urban_smc, paste("~/R/Tokyo/by_region/",
                          sep = ""))
 
 #########diagonistics:urban#########
-urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/0.09-5000-1000/[0.09-5000]13_urban_smc_1000.Rds")
+load("~/Desktop/ALARM Project/jcdf/13_smc_tokyo_data_by_region_0_freeze.Rdata")
+urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/SamePlan?/0.09-9000-1000/[0.09-9000]13_urban_smc_1000.Rds")
 
 wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
 m <- c(1:1000)
@@ -287,7 +288,81 @@ View(results_urban)
 min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
 results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
-redist::redist.plot.plans(urban_smc, draws = 479, geom = urban_map)
+redist::redist.plot.plans(urban_smc, draws = 114, geom = urban_map)
 
+##########rural simulation###########
+#maps
+rural_map <- redist::redist_map(rural,
+                                ndists = 9,
+                                pop_tol= 0.07,
+                                total_pop = pop,
+                                adj = ruraladj)
 
+# --------- SMC simulation ----------------#
+#run simulation
+rural_smc <- redist::redist_smc(rural_map,
+                                nsims = 1000,
+                                counties = rural_map$code,
+                                constraints = list(multisplits = list(strength = 100000)),
+                                pop_temper = 0.05
+)
+
+#save results
+saveRDS(rural_smc, paste("~/R/Tokyo/by_region/rural/smc/",
+                         "13",
+                         "_",
+                         "rural",
+                         "_",
+                         "smc",
+                         "_",
+                         "25000",
+                         ".Rds",
+                         sep = ""))
+
+#########diagonistics:rural#########
+load("~/Desktop/ALARM Project/jcdf/13_smc_tokyo_data_by_region_0_freeze.Rdata")
+rural_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/Rural/0.08-100000-25000/[0.08-100000]13_rural_smc_25000.Rds")
+
+wgt_smc_rural <- simulation_weight_disparity_table(rural_smc)
+m <- c(1:25000)
+wgt_smc_rural <- cbind(m, wgt_smc_rural)
+
+#minimum max:min ratio
+min(wgt_smc_rural$max_to_min) #1.149731
+
+#code for optimal plan
+minimum_maxmin <- wgt_smc_rural$m[which(wgt_smc_rural$max_to_min == min(wgt_smc_rural$max_to_min))][1]
+
+plans_pref_rural <- redist::get_plans_matrix(rural_smc)
+
+#count the number of splits
+splits_rural <- count_splits(plans_pref_rural, rural_map$code)
+splits_rural[minimum_maxmin]
+
+#count the number of municipalities that are split
+csplits_rural <- redist::redist.splits(plans_pref_rural, rural_map$code)
+csplits_rural[minimum_maxmin]
+
+#minimum number of splits; county splits
+min(splits_rural)
+max(csplits_rural)
+min(csplits_rural)
+
+results_rural <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_rural)))
+results_rural$max_to_min <- wgt_smc_rural$max_to_min
+results_rural$splits <- splits_rural
+results_rural$counties_split <- csplits_rural
+results_rural$index <- 1:nrow(wgt_smc_rural)
+results_rural$dif <-  results_rural$splits - results_rural$counties_split
+min(results_rural$dif)
+View(results_rural)
+
+min(results_rural$max_to_min[which(results_rural$splits == results_rural$counties_split)])
+results_rural$index[which(results_rural$splits == results_rural$counties_split)]
+
+redist::redist.plot.plans(rural_smc, draws = 7, geom = rural_map)
+
+redist.plot.map(shp =  rural %>% filter(code == 13207)) +
+ theme_map() +
+  theme(legend.position = 'none')
 
