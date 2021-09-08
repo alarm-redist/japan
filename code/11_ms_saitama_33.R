@@ -102,11 +102,11 @@ pref_ms <- redist::redist_mergesplit(
   nsims = nsims,
   counties = pref_33$code,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 14),
+  constraints = list(multissplits = list(strength = 30),
                      splits = list(strength = 4))
 )
 
-i <- 1
+i <- 33
 # save it
 saveRDS(pref_ms, paste("simulation/",
                        sprintf("%02d", pref_code),
@@ -117,8 +117,8 @@ saveRDS(pref_ms, paste("simulation/",
                        "_",
                        as.character(nsims),
                        "_",
-                       "block",
                        i,
+                       "percent",
                        "_",
                        "pref_ms.Rds",
                        sep = ""))
@@ -180,10 +180,3 @@ saitama_11_ms_results_full_1 %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
 
-redist::redist.plot.plans(pref_ms,
-                          draws = 364388,
-                          geom = pref_map)
-
-redist::redist.plot.plans(pref_ms,
-                          draws = 364387,
-                          geom = pref_map)

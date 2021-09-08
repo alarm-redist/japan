@@ -106,7 +106,7 @@ pref_ms <- redist::redist_mergesplit(
                      splits = list(strength = 4))
   )
 
-i <- 1
+i <- 50
 # save it
 saveRDS(pref_ms, paste("simulation/",
                         sprintf("%02d", pref_code),
@@ -117,8 +117,8 @@ saveRDS(pref_ms, paste("simulation/",
                         "_",
                         as.character(nsims),
                         "_",
-                        "block",
                         i,
+                       "percent",
                         "_",
                         "pref_ms.Rds",
                         sep = ""))
