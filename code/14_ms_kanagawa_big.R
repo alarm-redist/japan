@@ -353,11 +353,26 @@ pref_map_0 %>%
 
 overlap_vec <- overlap_vector(part_parallel_plans_pref[, good_num_0], block_div)
 overlap_rowSums <- rowSums(overlap_vec)
+overlap_str <- rep("", length = ncol(overlap_vec))
+
+for (i in 1:ncol(overlap_vec)) {
+  for (j in 1:nrow(overlap_vec)){
+    overlap_str[i] <- paste(overlap_str[i], as.character(overlap_vec[j, i]), sep = "")
+  }
+}
+
+overlap_hash <- openssl::sha1(overlap_str)
+overlap_table <- table(overlap_hash)
+overlap_counts <- as.data.frame(overlap_table)[order(-as.data.frame(overlap_table)$Freq), ]
+row.names(overlap_counts) <- NULL
+
+
 
 redist::redist.plot.map(
   pref_part,
-  fill = overlap_rowSums,
-  plan = block_div
+  fill = overlap_vec[, which(overlap_hash == overlap_counts$overlap_hash[4])[1]],
+  plan = block_div,
+  title = paste("Average Max-Min Ratio:", round(mean(part_parallel_weight_pref[good_num_0[which(overlap_hash == overlap_counts$overlap_hash[4])], ]$max_to_min), digits = 3))
 )
 
 # Dissimilarity
@@ -380,12 +395,57 @@ for(i in 1:nrow(mapping)){
 
 }
 
-mapped_plans <- redist::get_plans_matrix(sim_smc_pref_0_good)[mapping$index, ]
 
-best_weights <- part_parallel_weight_pref[good_num_0, ]
-best_weights$splits <- part_parallel_splits[good_num_0]
+best_weights <- wgt_smc_0 %>% dplyr::group_by(max_to_min, Gini, LH, HH) %>% dplyr::summarize(n = min(n))
+best_weights$splits <- part_parallel_splits[best_weights$n]
 
-orig_plan <- status_quo_match(pref)
+mapped_plans <- part_parallel_plans_pref[mapping$index, best_weights$n]
 
+regions <- dplyr::bind_rows(small_units %>% dplyr::filter(code <= 14200),
+                            small_units %>% dplyr::filter(code >= 14200))
+orig_plan <- status_quo_match(regions)
+orig_adj <- redist::redist.adjacency(shp = sf::st_make_valid(small_units))  # Adjacency list
 
+orig_neighbor <- geomander::suggest_neighbors(shp = regions, adj = orig_adj)
 
+if(nrow(orig_neighbor) > 0) {
+
+  part_adj <- geomander::add_edge(orig_adj,
+                                  orig_neighbor$x,
+                                  orig_neighbor$y,
+                                  zero = TRUE)
+}
+
+while(length(unique((geomander::check_contiguity(orig_adj))$component)) > 1) {
+
+  orig_suggest <- geomander::suggest_component_connection(shp = regions,
+                                                     adjacency = orig_adj,
+                                                     group = match(regions$code, unique(regions$code)))
+
+  orig_adj <- geomander::add_edge(orig_adj,
+                                  orig_suggest$x,
+                                  orig_suggest$y,
+                                  zero = TRUE)
+
+}
+
+part_map <- redist::redist_map(regions,
+                               ndists = 18,
+                               pop_tol = 0.15,
+                               total_pop = pop,
+                               adj = part_adj)
+
+region_dissimilarity <- vector(length = ncol(mapped_plans))
+for (i in 1:ncol(mapped_plans)) {
+
+  region_dissimilarity[i] <- redist::redist.prec.pop.overlap(as.matrix(orig_plan$ku), mapped_plans[, i], part_map$pop,
+                                                          weighting = "s", index_only = TRUE)
+
+}
+
+best_weights$dissimilarity <- region_dissimilarity
+best_weights$splits <- as.character(best_weights$splits)
+
+plot_ms <- ggplot(best_weights, aes(dissimilarity, max_to_min, colour = splits)) +
+  geom_point(size = 1, alpha = 0.3) + ggplot2::ggtitle("Nagasaki Dissimilarity vs Max-Min")
+ggExtra::ggMarginal(plot_ms, groupColour = TRUE, groupFill = TRUE)
