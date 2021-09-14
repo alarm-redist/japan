@@ -1,5 +1,4 @@
 ############# set up ###############
-#-------------- functions set up ---------------#
 library(tidyverse)
 set.seed(12345)
 
@@ -23,7 +22,6 @@ ndists_old <- 25
 # download census shp
 pref_raw <- download_shp(pref_code)
 dem_pops <- download_pop_demographics(pref_code)
-
 # download 2020 census data
 total <- download_2020_census(type = "total")
 foreigner <- download_2020_census(type = "foreigner")
@@ -145,17 +143,15 @@ wgt_rural_block_smc <- simulation_weight_disparity_table(rural_block_smc)
 #Maxmin 1.002011 #863  1675  2348  3144 ...
 #redist::redist.plot.plans(rural_block_smc, draws = 863, geom = rural_block_map)
 
-#######Clean data: 23-ku (7 blocks)###############
+#######Create 7 blocks in 23-ku###############
 urban_block <- urban %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry)) #27 administrative units
 
 #adjacency list
 urban_block_adj <- redist::redist.adjacency(urban_block)
-
 #ferries
 ferries_urban_block <- add_ferries(urban_block)
-
 #edit adjacency list
 urban_block_adj <- geomander::add_edge(urban_block_adj, ferries_urban_block$V1, ferries_urban_block$V2)
 
@@ -196,8 +192,6 @@ urban_block_6 <- urban %>%
 urban_block_7 <- urban %>%
   filter(code %in% c("13119", "13120"))
 
-redist.plot.map(shp = urban_block_5) + theme_map()
-
 ##########Separate Rural Blocks################
 rural_block_1 <- rural %>%
   filter(code %in% c("13221", "13213", "13220",
@@ -213,8 +207,8 @@ rural_block_3 <- rural %>%
                      "13204",
                      "13209", "13224", "13201", "13212", "13228")  == FALSE)
 
-
 ########Create Map Objects##############
+# --------- Urban Block no. 1 ----------------#
 urban_block_1_adj <- redist::redist.adjacency(urban_block_1)
 #manually edit adjacency list
 #[33] 13102 0340 中央区佃
@@ -237,6 +231,7 @@ urban_block_1_map <- redist::redist_map(urban_block_1,
                                         total_pop = pop,
                                         adj = urban_block_1_adj)
 
+# --------- Urban Block no. 2 ----------------#
 urban_block_2_adj <- redist::redist.adjacency(urban_block_2)
 urban_block_2_map <- redist::redist_map(urban_block_2,
                                         ndists = 3,
@@ -244,6 +239,7 @@ urban_block_2_map <- redist::redist_map(urban_block_2,
                                         total_pop = pop,
                                         adj = urban_block_2_adj)
 
+# --------- Urban Block no. 3 ----------------#
 urban_block_3_adj <- redist::redist.adjacency(urban_block_3)
 urban_block_3_map <- redist::redist_map(urban_block_3,
                                         ndists = 3,
@@ -251,6 +247,7 @@ urban_block_3_map <- redist::redist_map(urban_block_3,
                                         total_pop = pop,
                                         adj = urban_block_3_adj)
 
+# --------- Urban Block no. 4 ----------------#
 urban_block_4_adj <- redist::redist.adjacency(urban_block_4)
 #[ 25 ]13109 0250 品川区八潮
 #[ 27 ]13109 0250 品川区東八潮
@@ -269,6 +266,7 @@ urban_block_4_map <- redist::redist_map(urban_block_4,
                                         total_pop = pop,
                                         adj = urban_block_4_adj)
 
+# --------- Urban Block no. 5 ----------------#
 urban_block_5_adj <- redist::redist.adjacency(urban_block_5)
 urban_block_5_ferries <- add_ferries(urban_block_5)
 urban_block_5_adj <- geomander::add_edge(urban_block_5_adj,
@@ -281,6 +279,7 @@ urban_block_5_map <- redist::redist_map(urban_block_5,
                                         total_pop = pop,
                                         adj = urban_block_5_adj)
 
+# --------- Urban Block no. 6 ----------------#
 urban_block_6_adj <- redist::redist.adjacency(urban_block_6)
 urban_block_6_map <- redist::redist_map(urban_block_6,
                                         ndists = 3,
@@ -288,6 +287,7 @@ urban_block_6_map <- redist::redist_map(urban_block_6,
                                         total_pop = pop,
                                         adj = urban_block_6_adj)
 
+# --------- Urban Block no. 7 ----------------#
 urban_block_7_adj <- redist::redist.adjacency(urban_block_7)
 #[99]13120 0420 練馬区西大泉町
 urban_block_7_adj <- geomander::add_edge(urban_block_7_adj, 99, 100) #connect to [100]練馬区西大泉(６丁目) 0430
@@ -297,6 +297,7 @@ urban_block_7_map <- redist::redist_map(urban_block_7,
                                         total_pop = pop,
                                         adj = urban_block_7_adj)
 
+# --------- Rural Block no. 1 ----------------#
 rural_block_1_adj <- redist::redist.adjacency(rural_block_1)
 rural_block_1_map <- redist::redist_map(rural_block_1,
                                         ndists = 3,
@@ -304,6 +305,7 @@ rural_block_1_map <- redist::redist_map(rural_block_1,
                                         total_pop = pop,
                                         adj = rural_block_1_adj)
 
+# --------- Rural Block no. 2 ----------------#
 rural_block_2_adj <- redist::redist.adjacency(rural_block_2)
 rural_block_2_map <- redist::redist_map(rural_block_2,
                                         ndists = 3,
@@ -311,15 +313,281 @@ rural_block_2_map <- redist::redist_map(rural_block_2,
                                         total_pop = pop,
                                         adj = rural_block_2_adj)
 
+# --------- Rural Block no. 3 ----------------#
 rural_block_3_adj <- redist::redist.adjacency(rural_block_3)
 rural_block_3_map <- redist::redist_map(rural_block_3,
                                         ndists = 3,
                                         pop_tol= 0.08,
                                         total_pop = pop,
                                         adj = rural_block_3_adj)
-
 #save(list=ls(all=TRUE), file="13_smc_tokyo_block_separated_maps.Rdata")
 
+########Check Results#############
+# --------- Urban Block no. 1 ----------------#
+plan_urban_block_1 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block1/13_urban_Block1_25000.Rds")
+#Optimal Plan: 18524; 1.000162; 2; 2
+redist::redist.plot.plans(plan_urban_block_1, draws = 18524, geom = urban_block_1_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_1 <- redist::get_plans_matrix(plan_urban_block_1 %>% filter(draw == 18524))
+colnames(matrix_plan_urban_block_1) <- "district"
+optimal_boundary_1 <- cbind(urban_block_1, as_tibble(matrix_plan_urban_block_1))
+
+#get data on municipality boundary
+block_1_boundaries <- urban_block_1 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
+  geom_sf(data = block_1_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 2 ----------------#
+plan_urban_block_2 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block2/13_urban_Block2_25000.Rds")
+#Optimal Plan: 8527; 1.000769; 1; 1
+redist::redist.plot.plans(plan_urban_block_2, draws = 8527, geom = urban_block_2_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_2 <- redist::get_plans_matrix(plan_urban_block_2 %>% filter(draw == 8527))
+colnames(matrix_plan_urban_block_2) <- "district"
+optimal_boundary_2 <- cbind(urban_block_2, as_tibble(matrix_plan_urban_block_2))
+
+#get data on municipality boundary
+block_2_boundaries <- urban_block_2 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_2, aes(fill = factor(district))) +
+  geom_sf(data = block_2_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 3 ----------------#
+plan_urban_block_3 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block3/13_urban_Block3_25000.Rds")
+#Optimal Plan: 7633; 1.002268; 2; 2
+redist::redist.plot.plans(plan_urban_block_3, draws = 7633, geom = urban_block_3_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_3 <- redist::get_plans_matrix(plan_urban_block_3 %>% filter(draw == 7633))
+colnames(matrix_plan_urban_block_3) <- "district"
+optimal_boundary_3 <- cbind(urban_block_3, as_tibble(matrix_plan_urban_block_3))
+
+#get data on municipality boundary
+block_3_boundaries <- urban_block_3 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_3, aes(fill = factor(district))) +
+  geom_sf(data = block_3_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 4 ----------------#
+plan_urban_block_4 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block4/13_urban_Block4_25000.Rds")
+#Optimal Plan: 2896; 1.000208; 2; 2
+redist::redist.plot.plans(plan_urban_block_4, draws = 2896, geom = urban_block_4_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_4 <- redist::get_plans_matrix(plan_urban_block_4 %>% filter(draw == 2896))
+colnames(matrix_plan_urban_block_4) <- "district"
+optimal_boundary_4 <- cbind(urban_block_4, as_tibble(matrix_plan_urban_block_4))
+
+#get data on municipality boundary
+block_4_boundaries <- urban_block_4 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_4, aes(fill = factor(district))) +
+  geom_sf(data = block_4_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 5 ----------------#
+plan_urban_block_5 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block5/13_urban_Block5_25000.Rds")
+#Optimal Plan 8748; 1.002717; 2; 2
+redist::redist.plot.plans(plan_urban_block_5, draws = 8748, geom = urban_block_5_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_5 <- redist::get_plans_matrix(plan_urban_block_5 %>% filter(draw == 8748))
+colnames(matrix_plan_urban_block_5) <- "district"
+optimal_boundary_5 <- cbind(urban_block_5, as_tibble(matrix_plan_urban_block_5))
+
+#get data on municipality boundary
+block_5_boundaries <- urban_block_5 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_5, aes(fill = factor(district))) +
+  geom_sf(data = block_5_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 6 ----------------#
+plan_urban_block_6 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block6/13_urban_Block6_25000.Rds")
+#Optimal Plan 11179; 1.001117; 2; 2
+redist::redist.plot.plans(plan_urban_block_6, draws = 11179, geom = urban_block_6_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_6 <- redist::get_plans_matrix(plan_urban_block_6 %>% filter(draw == 11179))
+colnames(matrix_plan_urban_block_6) <- "district"
+optimal_boundary_6 <- cbind(urban_block_6, as_tibble(matrix_plan_urban_block_6))
+
+#get data on municipality boundary
+block_6_boundaries <- urban_block_6 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_6, aes(fill = factor(district))) +
+  geom_sf(data = block_6_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Urban Block no. 7 ----------------#
+plan_urban_block_7 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Urban/Block7/13_urban_Block7_25000.Rds")
+#Optimal Plan 11755; 1.001735; 2; 2
+redist::redist.plot.plans(plan_urban_block_7, draws = 11755, geom = urban_block_7_map)
+
+#get data on optimal plan
+matrix_plan_urban_block_7 <- redist::get_plans_matrix(plan_urban_block_7 %>% filter(draw == 11755))
+colnames(matrix_plan_urban_block_7) <- "district"
+optimal_boundary_7 <- cbind(urban_block_7, as_tibble(matrix_plan_urban_block_7))
+
+#get data on municipality boundary
+block_7_boundaries <- urban_block_7 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_7, aes(fill = factor(district))) +
+  geom_sf(data = block_7_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Rural Block no. 1 ----------------#
+plan_rural_block_1 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Rural/Block1/13_rural_Block1_25000.Rds")
+#Optimal Plan 15671; 1.000989; 2; 2
+redist::redist.plot.plans(plan_rural_block_1, draws = 15671, geom = rural_block_1_map)
+
+#get data on optimal plan
+matrix_plan_rural_block_1 <- redist::get_plans_matrix(plan_rural_block_1 %>% filter(draw == 15671))
+colnames(matrix_plan_rural_block_1) <- "district"
+optimal_boundary_r1 <- cbind(rural_block_1, as_tibble(matrix_plan_rural_block_1))
+
+#get data on municipality boundary
+block_r1_boundaries <- rural_block_1 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_r1, aes(fill = factor(district))) +
+  geom_sf(data = block_r1_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Rural Block no. 2 ----------------#
+plan_rural_block_2 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Rural/Block2/13_rural_Block2_25000.Rds")
+#Optimal Plan 12601; 1.000366; 2; 2
+redist::redist.plot.plans(plan_rural_block_2, draws = 12601, geom = rural_block_2_map)
+
+#get data on optimal plan
+matrix_plan_rural_block_2 <- redist::get_plans_matrix(plan_rural_block_2 %>% filter(draw == 12601))
+colnames(matrix_plan_rural_block_2) <- "district"
+optimal_boundary_r2 <- cbind(rural_block_2, as_tibble(matrix_plan_rural_block_2))
+
+#get data on municipality boundary
+block_r2_boundaries <- rural_block_2 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_r2, aes(fill = factor(district))) +
+  geom_sf(data = block_r2_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+# --------- Rural Block no. 1 ----------------#
+plan_rural_block_3 <- readRDS("~/Desktop/ALARM Project/Tokyo Results/ByRegionxBlocks/Rural/Block3/13_rural_Block3_25000.Rds")
+#Optimal Plan 468; 1.001393; 2; 2
+redist::redist.plot.plans(plan_rural_block_3, draws = 468, geom = rural_block_3_map)
+
+#get data on optimal plan
+matrix_plan_rural_block_3 <- redist::get_plans_matrix(plan_rural_block_3 %>% filter(draw == 468))
+colnames(matrix_plan_rural_block_3) <- "district"
+optimal_boundary_r3 <- cbind(rural_block_3, as_tibble(matrix_plan_rural_block_3))
+
+#get data on municipality boundary
+block_r3_boundaries <- rural_block_3 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_r3, aes(fill = factor(district))) +
+  geom_sf(data = block_r3_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
+
+#########diagnostics###############
+wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
+m <- c(1:25000)
+wgt_smc_urban <- cbind(m, wgt_smc_urban)
+#minimum max:min ratio
+min(wgt_smc_urban$max_to_min)
+#code for optimal plan
+minimum_maxmin <- wgt_smc_urban$m[which(wgt_smc_urban$max_to_min == min(wgt_smc_urban$max_to_min))][1]
+
+plans_pref_urban <- redist::get_plans_matrix(urban_smc)
+#count the number of splits
+splits_urban <- count_splits(plans_pref_urban, rural_block_3_map$code)
+splits_urban[minimum_maxmin]
+
+#count the number of municipalities that are split
+csplits_urban <- redist::redist.splits(plans_pref_urban, rural_block_3_map$code)
+csplits_urban[minimum_maxmin]
+
+#minimum number of splits; county splits
+min(splits_urban)
+max(csplits_urban)
+min(csplits_urban)
+
+results_urban <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_urban)))
+results_urban$max_to_min <- wgt_smc_urban$max_to_min
+results_urban$splits <- splits_urban
+results_urban$counties_split <- csplits_urban
+results_urban$index <- 1:nrow(wgt_smc_urban)
+results_urban$dif <-  results_urban$splits - results_urban$counties_split
+min(results_urban$dif)
+View(results_urban)
+
+
+min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
+results_urban$index[which(results_urban$splits == results_urban$counties_split)]
 
 
 
