@@ -12,20 +12,12 @@ sapply(files.sources, source)
 setwd("..")
 
 #-------- information set-up -----------#
-# prefectural information
 sim_type <- "smc"
 nsims <- 25000
 pref_code <- 13
 pref_name <- "tokyo"
-lakes_removed <- c() # enter `c()` if not applicable
-# set number of district (check external information)
 ndists_new <- 30
 ndists_old <- 25
-
-#------- Specify municipality splits -------------#
-# number of splits
-nsplit <- 0
-merge_gun_exception <- c() #西多摩郡, 大島支庁,三宅支庁, 八丈支庁, 小笠原支庁 are treated as gun
 
 ######### Download and Clean Data ############
 # download census shp
@@ -38,57 +30,15 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-# download historical boundary data
-old_boundary <- download_old_shp(pref_code = pref_code)
-# populations based on historical boundaries
-pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
-
 #########Clean data: pref################
-#clean data
 pref <- pref_raw %>%
-  clean_jcdf()
-pref <- pref %>%
+  clean_jcdf() %>%
   dplyr::select(code, KIHON1, JINKO, geometry)
 pref <- calc_kokumin(pref, dem_pops)
 #Estimate 2020 pop.
 pref <- estimate_2020_pop(pref, census2020) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
-
-#######Setagaya###############
-setagaya <- pref %>%
-  dplyr::filter(code == 13112)
-
-#adjacency list
-setagaya_adj <- redist::redist.adjacency(setagaya)
-
-#set up map
-setagaya_map <- redist::redist_map(setagaya,
-                                   ndists = 2,
-                                   pop_tol= 0.03,
-                                   total_pop = pop,
-                                   adj = setagaya_adj)
-
-#smc simulation
-setagaya_smc <- redist::redist_smc(setagaya_map,
-                                   nsims = nsims,
-                                   pop_temper = 0.05)
-
-#save
-saveRDS(setagaya_smc, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            "setagaya",
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
-
-setagaya_wgt_smc <- simulation_weight_disparity_table(setagaya_smc)
-
-
 
 #######Merge Gun#########
 #merge nishitama
@@ -143,65 +93,11 @@ pref_non_gun <- pref %>%
                             "13381", "13382",
                             "13401", "13402",
                             "13421") == FALSE)
-
 #now pref is an object with 0 gun splits
 pref <- dplyr::bind_rows(pref_non_gun, nishitama, oshima,
                          miyake, hachijyo, ogasawara)
 
-#######Clean data: 23-ku###############
-urban <- pref %>%
-  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
-                     "13106", "13107", "13108", "13109", "13110",
-                     "13111",          "13113", "13114", "13115", #skip Setagaya
-                     "13116", "13117", "13118", "13119", "13120",
-                     "13121", "13122", "13123",
-                     "13360", "13380", "13400", "13420")) #Islands are considered part of Minato-ku
-
-#adjacency list
-urbanadj <- redist::redist.adjacency(urban)
-
-#ferries
-ferries_urban <- add_ferries(urban)
-
-#edit adjacency list
-urbanadj <- geomander::add_edge(urbanadj, ferries_urban$V1, ferries_urban$V2)
-#manually edit adjacency list
-#[92] 13102 0340 中央区佃
-#[93] 13102 0350 中央区月島
-#[94] 13102 0360 中央区勝どき
-#[95] 13102 0370 中央区豊海町
-urbanadj <- geomander::add_edge(urbanadj, 92, 70) #[70] 13102 110 中央区新川
-urbanadj <- geomander::add_edge(urbanadj, 92, 66) #[66] 13102 0070 中央区明石町
-urbanadj <- geomander::add_edge(urbanadj, 92, 93)
-urbanadj <- geomander::add_edge(urbanadj, 93, 94)
-urbanadj <- geomander::add_edge(urbanadj, 94, 67)  #[67] 13102 0080 中央区築地
-urbanadj <- geomander::add_edge(urbanadj, 94, 95)
-
-#[96] 13102 0380 中央区晴海
-urbanadj <- geomander::add_edge(urbanadj, 96, 93)
-urbanadj <- geomander::add_edge(urbanadj, 96, 94)
-urbanadj <- geomander::add_edge(urbanadj, 96, 320) #[320] 13108 210 江東区　豊洲
-
-
-#[369]13109 0250 品川区八潮
-#[456]13111 0580 大田区東海
-#[457]13111 0590 大田区城南島
-urbanadj <- geomander::add_edge(urbanadj, 369, 362) #[362]品川区東品川180
-urbanadj <- geomander::add_edge(urbanadj, 369, 360) #[360]品川区東大井160
-urbanadj <- geomander::add_edge(urbanadj, 369, 348) #[348]品川区勝島40
-urbanadj <- geomander::add_edge(urbanadj, 456, 457)
-urbanadj <- geomander::add_edge(urbanadj, 456, 407) #[407] 13111 0090大田区平和島
-
-#[703]13120 0420 練馬区西大泉町
-urbanadj <- geomander::add_edge(urbanadj, 703, 704) #connect to [704]練馬区西大泉(６丁目) 0430
-
-urban_map <- redist::redist_map(urban,
-                                ndists = 19,
-                                pop_tol= 0.09,
-                                total_pop = pop,
-                                adj = urbanadj)
-
-#######Clean data: Tama###############
+#######Separat Tama from 23ku###############
 rural <-  pref %>%
   filter(code %in% c("13101", "13102", "13103", "13104", "13105",
                      "13106", "13107", "13108", "13109", "13110",
@@ -210,159 +106,220 @@ rural <-  pref %>%
                      "13121", "13122", "13123",
                      "13360", "13380", "13400", "13420") == FALSE)
 
+urban <- pref %>%
+  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
+                     "13106", "13107", "13108", "13109", "13110",
+                     "13111", "13112", "13113", "13114", "13115", #with Setagaya
+                     "13116", "13117", "13118", "13119", "13120",
+                     "13121", "13122", "13123",
+                     "13360", "13380", "13400", "13420")) #Islands are considered connected to Minato-ku
+#save(list=ls(all=TRUE), file="13_smc_tokyo_basic_data_by_region.Rdata")
+
+######Create 3 blocks in Tama################
+rural_block <- rural %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry)) #27 administrative units
+
 #adjacency list
-ruraladj <- redist::redist.adjacency(rural)
+rural_block_adj <- redist::redist.adjacency(rural_block)
 
-#save(list=ls(all=TRUE), file="13_smc_tokyo_data_by_region_0_freeze.Rdata")
-
-################23-ku simulation############################
-#load data
-load("~/R/Tokyo/by_region/13_smc_tokyo_data_by_region.Rdata")
-
-#maps
-urban_map <- redist::redist_map(urban,
-                                ndists = 19,
-                                pop_tol= 0.05,
-                                total_pop = pop,
-                                adj = urbanadj)
+#block map
+rural_block_map <- redist::redist_map(rural_block,
+                                      ndists = 3,
+                                      pop_tol= 0.10,
+                                      total_pop = pop,
+                                      adj = rural_block_adj)
 
 # --------- SMC simulation ----------------#
-#run simulation
-urban_smc <- redist::redist_smc(urban_map,
-                                nsims = 250000,
-                                counties = urban_map$code,
-                                constraints = list(multisplits = list(strength = 60)),
-                                pop_temper = 0.05
-)
+rural_block_smc <- redist::redist_smc(rural_block_map,
+                                      nsims = 25000,
+                                      pop_temper = 0.05)
+#save(list=ls(all=TRUE), file="13_smc_tokyo_block_rural.Rdata")
 
-#save results
-saveRDS(urban_smc, paste("~/R/Tokyo/by_region/",
-                         "13",
-                         "_",
-                         "urban",
-                         "_",
-                         "smc",
-                         "_",
-                         "25000",
-                         ".Rds",
-                         sep = ""))
+# --------- Diagnostics ----------------#
+wgt_rural_block_smc <- simulation_weight_disparity_table(rural_block_smc)
+#n <- c(1:25000)
+#n <- as.data.frame(n)
+#wgt_rural_block_smc <- cbind(n, wgt_rural_block_smc)
+#wgt_rural_block_smc$n[which(wgt_rural_block_smc$max_to_min == min(wgt_rural_block_smc$max_to_min))]
+#Maxmin 1.002011 #863  1675  2348  3144 ...
+#redist::redist.plot.plans(rural_block_smc, draws = 863, geom = rural_block_map)
 
-#########diagonistics:urban#########
-load("~/Desktop/ALARM Project/jcdf/13_smc_tokyo_data_by_region_0_freeze.Rdata")
-urban_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/SMC/SamePlan?/0.09-9000-1000/[0.09-9000]13_urban_smc_1000.Rds")
+#######Clean data: 23-ku (7 blocks)###############
+urban_block <- urban %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry)) #27 administrative units
 
-wgt_smc_urban <- simulation_weight_disparity_table(urban_smc)
-m <- c(1:1000)
-wgt_smc_urban <- cbind(m, wgt_smc_urban)
+#adjacency list
+urban_block_adj <- redist::redist.adjacency(urban_block)
 
-#minimum max:min ratio
-min(wgt_smc_urban$max_to_min)
+#ferries
+ferries_urban_block <- add_ferries(urban_block)
 
-#code for optimal plan
-minimum_maxmin <- wgt_smc_urban$m[which(wgt_smc_urban$max_to_min == min(wgt_smc_urban$max_to_min))][1]
+#edit adjacency list
+urban_block_adj <- geomander::add_edge(urban_block_adj, ferries_urban_block$V1, ferries_urban_block$V2)
 
-plans_pref_urban <- redist::get_plans_matrix(urban_smc)
-
-#count the number of splits
-splits_urban <- count_splits(plans_pref_urban, urban_map$code)
-splits_urban[minimum_maxmin]
-
-#count the number of municipalities that are split
-csplits_urban <- redist::redist.splits(plans_pref_urban, urban_map$code)
-csplits_urban[minimum_maxmin]
-
-#minimum number of splits; county splits
-min(splits_urban)
-max(csplits_urban)
-min(csplits_urban)
-
-results_urban <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_urban)))
-results_urban$max_to_min <- wgt_smc_urban$max_to_min
-results_urban$splits <- splits_urban
-results_urban$counties_split <- csplits_urban
-results_urban$index <- 1:nrow(wgt_smc_urban)
-results_urban$dif <-  results_urban$splits - results_urban$counties_split
-min(results_urban$dif)
-View(results_urban)
-
-min(results_urban$max_to_min[which(results_urban$splits == results_urban$counties_split)])
-results_urban$index[which(results_urban$splits == results_urban$counties_split)]
-
-redist::redist.plot.plans(urban_smc, draws = 114, geom = urban_map)
-
-##########rural simulation###########
-#maps
-rural_map <- redist::redist_map(rural,
-                                ndists = 9,
-                                pop_tol= 0.07,
-                                total_pop = pop,
-                                adj = ruraladj)
+urban_block_map <- redist::redist_map(urban_block,
+                                      ndists = 7,
+                                      pop_tol= 0.08,
+                                      total_pop = pop,
+                                      adj = urban_block_adj)
 
 # --------- SMC simulation ----------------#
-#run simulation
-rural_smc <- redist::redist_smc(rural_map,
-                                nsims = 1000,
-                                counties = rural_map$code,
-                                constraints = list(multisplits = list(strength = 100000)),
-                                pop_temper = 0.05
-)
+urban_block_smc <- redist::redist_smc(urban_block_map,
+                                      nsims = 25000,
+                                      pop_temper = 0.05)
+#save(list=ls(all=TRUE), file="13_smc_tokyo_block_urban.Rdata")
 
-#save results
-saveRDS(rural_smc, paste("~/R/Tokyo/by_region/rural/smc/",
-                         "13",
-                         "_",
-                         "rural",
-                         "_",
-                         "smc",
-                         "_",
-                         "25000",
-                         ".Rds",
-                         sep = ""))
+# --------- Diagnostics ----------------#
+wgt_urban_block_smc <- simulation_weight_disparity_table(urban_block_smc)
+#n <- c(1:25000)
+#n <- as.data.frame(n)
+#wgt_urban_block_smc <- cbind(n, wgt_urban_block_smc)
+#wgt_urban_block_smc$n[which(wgt_urban_block_smc$max_to_min == min(wgt_urban_block_smc$max_to_min))]
+#Maxmin 1.114643 # 1    15    27 ...
+#redist::redist.plot.plans(urban_block_smc, draws = 1, geom = urban_block_map)
 
-#########diagonistics:rural#########
-load("~/Desktop/ALARM Project/jcdf/13_smc_tokyo_data_by_region_0_freeze.Rdata")
-rural_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/tmux/Rural/0.08-100000-25000/[0.08-100000]13_rural_smc_25000.Rds")
+##########Separate Urban Blocks################
+urban_block_1 <- urban %>%
+  filter(code %in% c("13102", "13108", "13123"))
+urban_block_2 <- urban %>%
+  filter(code %in% c("13118", "13121", "13122"))
+urban_block_3 <- urban %>%
+  filter(code %in% c("13107", "13106", "13105", "13116", "13117"))
+urban_block_4 <- urban %>%
+  filter(code %in% c("13109", "13110", "13111"))
+urban_block_5 <- urban %>%
+  filter(code %in% c("13113","13103", "13112", "13360", "13380", "13400", "13420"))
+urban_block_6 <- urban %>%
+  filter(code %in% c("13101", "13104", "13114", "13115"))
+urban_block_7 <- urban %>%
+  filter(code %in% c("13119", "13120"))
 
-wgt_smc_rural <- simulation_weight_disparity_table(rural_smc)
-m <- c(1:25000)
-wgt_smc_rural <- cbind(m, wgt_smc_rural)
+redist.plot.map(shp = urban_block_5) + theme_map()
 
-#minimum max:min ratio
-min(wgt_smc_rural$max_to_min) #1.149731
+##########Separate Rural Blocks################
+rural_block_1 <- rural %>%
+  filter(code %in% c("13221", "13213", "13220",
+                     "13222", "13229", "13211",
+                     "13203", "13210", "13214",
+                     "13204"))
+rural_block_2 <- rural %>%
+  filter(code %in% c("13209", "13224", "13201", "13212", "13228"))
+rural_block_3 <- rural %>%
+  filter(code %in% c("13221", "13213", "13220",
+                     "13222", "13229", "13211",
+                     "13203", "13210", "13214",
+                     "13204",
+                     "13209", "13224", "13201", "13212", "13228")  == FALSE)
 
-#code for optimal plan
-minimum_maxmin <- wgt_smc_rural$m[which(wgt_smc_rural$max_to_min == min(wgt_smc_rural$max_to_min))][1]
 
-plans_pref_rural <- redist::get_plans_matrix(rural_smc)
+########Create Map Objects##############
+urban_block_1_adj <- redist::redist.adjacency(urban_block_1)
+#manually edit adjacency list
+#[33] 13102 0340 中央区佃
+#[34] 13102 0350 中央区月島
+#[35] 13102 0360 中央区勝どき
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 33, 11) #[11] 13102 110 中央区新川
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 33, 7) #[7] 13102 70 中央区明石町
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 33, 34)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 34, 35)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 35, 8)  #[8] 13102 0080 中央区築地
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 35, 36) #[36] 13102 0370 中央区豊海町
+#[37] 13102 0380 中央区晴海
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 37, 34)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 37, 35)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 38, 58) #[58] 13108 210 江東区　豊洲
 
-#count the number of splits
-splits_rural <- count_splits(plans_pref_rural, rural_map$code)
-splits_rural[minimum_maxmin]
+urban_block_1_map <- redist::redist_map(urban_block_1,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_1_adj)
 
-#count the number of municipalities that are split
-csplits_rural <- redist::redist.splits(plans_pref_rural, rural_map$code)
-csplits_rural[minimum_maxmin]
+urban_block_2_adj <- redist::redist.adjacency(urban_block_2)
+urban_block_2_map <- redist::redist_map(urban_block_2,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_2_adj)
 
-#minimum number of splits; county splits
-min(splits_rural)
-max(csplits_rural)
-min(csplits_rural)
+urban_block_3_adj <- redist::redist.adjacency(urban_block_3)
+urban_block_3_map <- redist::redist_map(urban_block_3,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_3_adj)
 
-results_rural <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_rural)))
-results_rural$max_to_min <- wgt_smc_rural$max_to_min
-results_rural$splits <- splits_rural
-results_rural$counties_split <- csplits_rural
-results_rural$index <- 1:nrow(wgt_smc_rural)
-results_rural$dif <-  results_rural$splits - results_rural$counties_split
-min(results_rural$dif)
-View(results_rural)
+urban_block_4_adj <- redist::redist.adjacency(urban_block_4)
+#[ 25 ]13109 0250 品川区八潮
+#[ 27 ]13109 0250 品川区東八潮
+#[ 112 ]13111 0580 大田区東海
+#[ 113 ]13111 0590 大田区城南島
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  25 ,  27 )
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  25 ,  18 ) #[ 18 ]品川区東品川180
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  25 ,  16 ) #[ 16 ]品川区東大井160
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  25 ,  4 ) #[ 4 ]品川区勝島40
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  112 , 113 )
+urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  112 , 63) #[63] 13111 0090大田区平和島
 
-min(results_rural$max_to_min[which(results_rural$splits == results_rural$counties_split)])
-results_rural$index[which(results_rural$splits == results_rural$counties_split)]
+urban_block_4_map <- redist::redist_map(urban_block_4,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_4_adj)
 
-redist::redist.plot.plans(rural_smc, draws = 7, geom = rural_map)
+urban_block_5_adj <- redist::redist.adjacency(urban_block_5)
+urban_block_5_ferries <- add_ferries(urban_block_5)
+urban_block_5_adj <- geomander::add_edge(urban_block_5_adj,
+                                         urban_block_5_ferries$V1, urban_block_5_ferries$V2)
+#[30]13103 0300港区台場
+urban_block_5_adj <- geomander::add_edge(urban_block_5_adj, 30 , 2) #[2]13103 020港区海岸
+urban_block_5_map <- redist::redist_map(urban_block_5,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_5_adj)
 
-redist.plot.map(shp =  rural %>% filter(code == 13207)) +
- theme_map() +
-  theme(legend.position = 'none')
+urban_block_6_adj <- redist::redist.adjacency(urban_block_6)
+urban_block_6_map <- redist::redist_map(urban_block_6,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_6_adj)
+
+urban_block_7_adj <- redist::redist.adjacency(urban_block_7)
+#[99]13120 0420 練馬区西大泉町
+urban_block_7_adj <- geomander::add_edge(urban_block_7_adj, 99, 100) #connect to [100]練馬区西大泉(６丁目) 0430
+urban_block_7_map <- redist::redist_map(urban_block_7,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_7_adj)
+
+rural_block_1_adj <- redist::redist.adjacency(rural_block_1)
+rural_block_1_map <- redist::redist_map(rural_block_1,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = rural_block_1_adj)
+
+rural_block_2_adj <- redist::redist.adjacency(rural_block_2)
+rural_block_2_map <- redist::redist_map(rural_block_2,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = rural_block_2_adj)
+
+rural_block_3_adj <- redist::redist.adjacency(rural_block_3)
+rural_block_3_map <- redist::redist_map(rural_block_3,
+                                        ndists = 3,
+                                        pop_tol= 0.08,
+                                        total_pop = pop,
+                                        adj = rural_block_3_adj)
+
+#save(list=ls(all=TRUE), file="13_smc_tokyo_block_separated_maps.Rdata")
+
+
+
 
