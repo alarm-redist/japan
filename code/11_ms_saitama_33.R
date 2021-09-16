@@ -102,11 +102,11 @@ pref_ms <- redist::redist_mergesplit(
   nsims = nsims,
   counties = pref_33$code,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 14),
-                     splits = list(strength = 4))
+  constraints = list(multissplits = list(strength = 30),
+                     splits = list(strength = 7))
 )
 
-i <- 1
+i <- 33
 # save it
 saveRDS(pref_ms, paste("simulation/",
                        sprintf("%02d", pref_code),
@@ -117,8 +117,8 @@ saveRDS(pref_ms, paste("simulation/",
                        "_",
                        as.character(nsims),
                        "_",
-                       "block",
                        i,
+                       "percent",
                        "_",
                        "pref_ms.Rds",
                        sep = ""))
@@ -146,15 +146,15 @@ pref_ms_results <- pref_ms_results %>%
 
 # rename elements to be used
 assign(paste(pref_name, pref_code, "full", i, sep = "_"),
-       pref_part)
+       pref_33)
 assign(paste(pref_name, pref_code, "adj", "full", i, sep = "_"),
-       part_adj)
+       prefadj)
 assign(paste(pref_name, pref_code, "map", "full", i, sep = "_"),
-       part_map)
+       pref_map)
 assign(paste(pref_name, pref_code, "sim", sim_type, "full", i, sep = "_"),
-       pref_ms_pref)
+       pref_ms)
 assign(paste(pref_name, pref_code, sim_type, "plans", "full", i, sep = "_"),
-       pref_ms_plans_pref)
+       plans_pref)
 assign(paste(pref_name, pref_code, sim_type, "results", "full", i, sep = "_"),
        pref_ms_results)
 
@@ -175,15 +175,8 @@ rm(list= ls()[(ls() %in% c("pref_part",
 
 min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
-saitama_11_ms_results_full_1 %>%
+saitama_11_ms_results_full_33 %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
 
-redist::redist.plot.plans(pref_ms,
-                          draws = 364388,
-                          geom = pref_map)
-
-redist::redist.plot.plans(pref_ms,
-                          draws = 364387,
-                          geom = pref_map)
