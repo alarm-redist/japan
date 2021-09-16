@@ -180,3 +180,21 @@ saitama_11_ms_results_full_33 %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
 
+###### Draw Map#########
+# 32712 -> 1.29 max_min
+optimal_matrix_plan <- redist::get_plans_matrix(saitama_11_ms_plans_full_33 %>%
+                                                  filter(draw == 32711))
+colnames(optimal_matrix_plan) <- "district"
+optimal_boundary <- cbind(pref_33, as_tibble(optimal_matrix_plan))
+
+saitama_boundaries <- pref %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  geom_sf(data = saitama_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
