@@ -175,15 +175,8 @@ rm(list= ls()[(ls() %in% c("pref_part",
 
 min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
-saitama_11_ms_results_full_1 %>%
+saitama_11_ms_results_full_50 %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
 
-redist::redist.plot.plans(pref_ms,
-                          draws = 364388,
-                          geom = pref_map)
-
-redist::redist.plot.plans(pref_ms,
-                          draws = 364387,
-                          geom = pref_map)

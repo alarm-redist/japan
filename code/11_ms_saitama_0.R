@@ -103,7 +103,7 @@ pref_ms <- redist::redist_mergesplit(
   counties = pref_0$code,
   warmup = 0,
   constraints = list(multissplits = list(strength = 30),
-                     splits = list(strength = 4))
+                     splits = list(strength = 14))
 )
 
 i <- 0
@@ -175,7 +175,7 @@ rm(list= ls()[(ls() %in% c("pref_part",
 
 min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
-saitama_11_ms_results_full_1 %>%
+saitama_11_ms_results_full_0 %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
