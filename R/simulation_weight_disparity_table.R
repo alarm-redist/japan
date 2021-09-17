@@ -40,13 +40,17 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
     HH <- NA
     HH <- sum(init^2)/sum(init)^2
 
+    # n_draw
+    draw <- 0
+
     # create table output
     init_weight_disparity_table <- NA
     init_weight_disparity_table <- dplyr::tibble(
       `max_to_min` = max_to_min,
       `Gini` = Gini,
       `LH` = LH,
-      `HH` = HH
+      `HH` = HH,
+      `draw` = draw
     )
   }
 
@@ -93,6 +97,9 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
     # Hirshman Herfindahl index
     HH[k] <- sum(total_pop^2)/sum(total_pop)^2
 
+    # n_draw
+    draw[k] <- k
+
   }
 
   # Integrate those n_sims of vectors to table
@@ -100,7 +107,8 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
     `max_to_min` = max_to_min,
     `Gini` = Gini,
     `LH` = LH,
-    `HH` = HH
+    `HH` = HH,
+    `draw` = draw
   )
 
   ### Combine if there is `<init>` ###
