@@ -227,7 +227,7 @@ urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 38, 58) #[58] 13108 
 
 urban_block_1_map <- redist::redist_map(urban_block_1,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_1_adj)
 
@@ -235,7 +235,7 @@ urban_block_1_map <- redist::redist_map(urban_block_1,
 urban_block_2_adj <- redist::redist.adjacency(urban_block_2)
 urban_block_2_map <- redist::redist_map(urban_block_2,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_2_adj)
 
@@ -243,7 +243,7 @@ urban_block_2_map <- redist::redist_map(urban_block_2,
 urban_block_3_adj <- redist::redist.adjacency(urban_block_3)
 urban_block_3_map <- redist::redist_map(urban_block_3,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_3_adj)
 
@@ -262,7 +262,7 @@ urban_block_4_adj <- geomander::add_edge(urban_block_4_adj,  112 , 63) #[63] 131
 
 urban_block_4_map <- redist::redist_map(urban_block_4,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_4_adj)
 
@@ -275,7 +275,7 @@ urban_block_5_adj <- geomander::add_edge(urban_block_5_adj,
 urban_block_5_adj <- geomander::add_edge(urban_block_5_adj, 30 , 2) #[2]13103 020港区海岸
 urban_block_5_map <- redist::redist_map(urban_block_5,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_5_adj)
 
@@ -283,7 +283,7 @@ urban_block_5_map <- redist::redist_map(urban_block_5,
 urban_block_6_adj <- redist::redist.adjacency(urban_block_6)
 urban_block_6_map <- redist::redist_map(urban_block_6,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_6_adj)
 
@@ -293,7 +293,7 @@ urban_block_7_adj <- redist::redist.adjacency(urban_block_7)
 urban_block_7_adj <- geomander::add_edge(urban_block_7_adj, 99, 100) #connect to [100]練馬区西大泉(６丁目) 0430
 urban_block_7_map <- redist::redist_map(urban_block_7,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = urban_block_7_adj)
 
@@ -301,7 +301,7 @@ urban_block_7_map <- redist::redist_map(urban_block_7,
 rural_block_1_adj <- redist::redist.adjacency(rural_block_1)
 rural_block_1_map <- redist::redist_map(rural_block_1,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = rural_block_1_adj)
 
@@ -309,7 +309,7 @@ rural_block_1_map <- redist::redist_map(rural_block_1,
 rural_block_2_adj <- redist::redist.adjacency(rural_block_2)
 rural_block_2_map <- redist::redist_map(rural_block_2,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = rural_block_2_adj)
 
@@ -317,10 +317,88 @@ rural_block_2_map <- redist::redist_map(rural_block_2,
 rural_block_3_adj <- redist::redist.adjacency(rural_block_3)
 rural_block_3_map <- redist::redist_map(rural_block_3,
                                         ndists = 3,
-                                        pop_tol= 0.08,
+                                        pop_tol= 0.05,
                                         total_pop = pop,
                                         adj = rural_block_3_adj)
 #save(list=ls(all=TRUE), file="13_smc_tokyo_block_separated_maps.Rdata")
+
+
+########Run SMC with multisplit constraint for each block############
+urban_block_1_smc <- redist::redist_smc(urban_block_1_map,
+                                        nsims = 25000,
+                                        counties = urban_block_1_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+urban_block_2_smc <- redist::redist_smc(urban_block_2_map,
+                                        nsims = 25000,
+                                        counties = urban_block_2_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+urban_block_3_smc <- redist::redist_smc(urban_block_3_map,
+                                        nsims = 25000,
+                                        counties = urban_block_3_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+urban_block_4_smc <- redist::redist_smc(urban_block_4_map,
+                                        nsims = 25000,
+                                        counties = urban_block_4_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+urban_block_5_smc <- redist::redist_smc(urban_block_5_map,
+                                        nsims = 25000,
+                                        counties = urban_block_5_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+urban_block_6_smc <- redist::redist_smc(urban_block_6_map,
+                                        nsims = 25000,
+                                        counties = urban_block_6_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+urban_block_7_smc <- redist::redist_smc(urban_block_7_map,
+                                        nsims = 25000,
+                                        counties = urban_block_7_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+rural_block_1_smc <- redist::redist_smc(rural_block_1_map,
+                                        nsims = 25000,
+                                        counties = rural_block_1_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+rural_block_2_smc <- redist::redist_smc(rural_block_2_map,
+                                        nsims = 25000,
+                                        counties = rural_block_2_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
+
+
+rural_block_3_smc <- redist::redist_smc(rural_block_3_map,
+                                        nsims = 25000,
+                                        counties = rural_block_3_map$code,
+                                        constraints = list(multisplits = list(strength = 5000)),
+                                        pop_temper = 0.05
+)
 
 ########Check Results#############
 # --------- Urban Block no. 1 ----------------#
