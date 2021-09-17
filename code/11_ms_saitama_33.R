@@ -103,7 +103,7 @@ pref_ms <- redist::redist_mergesplit(
   counties = pref_33$code,
   warmup = 0,
   constraints = list(multissplits = list(strength = 30),
-                     splits = list(strength = 7))
+                     splits = list(strength = 14))
 )
 
 i <- 33
@@ -124,7 +124,6 @@ saveRDS(pref_ms, paste("simulation/",
                        sep = ""))
 
 
-
 # get disparity data
 weight_pref <- simulation_weight_disparity_table(pref_ms)
 plans_pref <- redist::get_plans_matrix(pref_ms)
@@ -137,64 +136,38 @@ pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref)))
 pref_ms_results$max_to_min <- weight_pref$max_to_min
 pref_ms_results$splits <- pref_ms_splits
 pref_ms_results$counties_split <- pref_ms_countiessplit
-pref_ms_results$index <- 1:nrow(weight_pref)
+pref_ms_results$draw <- weight_pref$draw
 
 pref_ms_results <- pref_ms_results %>%
   dplyr::group_by(max_to_min, splits, counties_split) %>%
-  dplyr::summarise(index = first(index)) %>%
+  dplyr::summarise(draw = first(draw)) %>%
   dplyr::arrange(splits)
-
-# rename elements to be used
-assign(paste(pref_name, pref_code, "full", i, sep = "_"),
-       pref_33)
-assign(paste(pref_name, pref_code, "adj", "full", i, sep = "_"),
-       prefadj)
-assign(paste(pref_name, pref_code, "map", "full", i, sep = "_"),
-       pref_map)
-assign(paste(pref_name, pref_code, "sim", sim_type, "full", i, sep = "_"),
-       pref_ms)
-assign(paste(pref_name, pref_code, sim_type, "plans", "full", i, sep = "_"),
-       plans_pref)
-assign(paste(pref_name, pref_code, sim_type, "results", "full", i, sep = "_"),
-       pref_ms_results)
-
-
-rm(list= ls()[(ls() %in% c("pref_part",
-                           "part_adj",
-                           "part_map",
-                           "part_smc_pref",
-                           "part_plans_pref",
-                           "part_weight_pref",
-                           "ferries",
-                           "suggest",
-                           "port_data",
-                           "route_data",
-                           "part_splits"
-))])
-
 
 min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$counties_split)])
 
-saitama_11_ms_results_full_33 %>%
+pref_ms_results %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
 
 ###### Draw Map#########
-# 32712 -> 1.29 max_min
-optimal_matrix_plan <- redist::get_plans_matrix(saitama_11_ms_plans_full_33 %>%
-                                                  filter(draw == 32711))
+# (481298) -> 1.20 max_min
+optimal_matrix_plan <- redist::get_plans_matrix(pref_ms %>%
+                                                  filter(draw == 481298))
 colnames(optimal_matrix_plan) <- "district"
 optimal_boundary <- cbind(pref_33, as_tibble(optimal_matrix_plan))
 
-saitama_boundaries <- pref %>%
+pref_boundaries <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #map with district data + municipality boundary
 ggplot() +
   geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
-  geom_sf(data = saitama_boundaries, fill = NA, color = "black", lwd = 1) +
+  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
-        panel.background = element_blank(), legend.position = "None")
+        panel.background = element_blank(), legend.position = "None")+
+  scale_fill_brewer(palette="Spectral")
+
+
