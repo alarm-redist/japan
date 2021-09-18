@@ -113,3 +113,57 @@ urban <- pref %>%
                      "13360", "13380", "13400", "13420")) #Islands are considered connected to Minato-ku
 
 #save(list=ls(all=TRUE), file="13_smc_tokyo_basic_data_by_region.Rdata")
+
+##########Group by municipalities############
+rural_by_mun <- rural %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+
+urban_by_mun <- urban %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+
+#######maps set-up##########
+urban_by_mun_edge <- add_ferries(urban_by_mun)
+
+# simulation parameters
+urban_by_mun_edge_adj <- redist::redist.adjacency(urban_by_mun) # Adjacency list
+#add ferries
+urban_by_mun_edge_adj <- geomander::add_edge(urban_by_mun_edge_adj,
+                                             urban_by_mun_edge$V1,
+                                             urban_by_mun_edge$V2)
+
+urban_group_map <- redist::redist_map(urban_by_mun,
+                                      ndists = 7, #starting with 7; try 8 or 9 if necessary
+                                      pop_tol= 0.08, #consider lowering pop_tol if necessary
+                                      total_pop = pop,
+                                      adj = urban_by_mun_edge_adj)
+
+#########enumeration set-up##############
+makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
+makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
+writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
+
+# simulation
+if(TRUE){ # change to TRUE if you need to init
+  redist::redist.init.enumpart()
+}
+
+########enumerate########################
+urban_enum_plans <- redist::redist.enumpart(adj = urban_by_mun_edge_adj,
+                                       unordered_path = here::here('simulation/unord_tokyo_urban'),
+                                       ordered_path = here::here('simulation/ord_tokyo_urban'),
+                                       out_path = here::here('simulation/enum_tokyo_urban'),
+                                       ndists = 7, #starting with 7; try 8 or 9 if necessary
+                                       all = TRUE,
+                                       total_pop = urban_group_map[[attr(urban_group_map, 'pop_col')]])
+
+#check result
+urban_enum_plans_result <- redist.read.enumpart(out_path = 'simulation/enum_tokyo_urban')
+urban_enum_plans_result_matrix <- redist::redist_plans(urban_enum_plans_result,
+                                                       urban_group_map,
+                                                       algorithm = 'enumpart')
+
+save(urban_enum_plans_result_matrix, file = "13_enum_tokyo_urban_muns.Rdata")
+
+
