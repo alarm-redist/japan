@@ -168,4 +168,4 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         panel.background = element_blank(), legend.position = "None")+
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
-  ggtitle(paste("#", satisfying_plan$draw[1],"_maxmin"))
+  ggtitle(paste("#", satisfying_plan$draw[1]," max/min=", satisfying_plan$max_to_min[1], "splits=", satisfying_plan$splits[1]))
