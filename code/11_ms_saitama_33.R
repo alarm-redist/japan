@@ -169,3 +169,40 @@ ggplot() +
         panel.background = element_blank(), legend.position = "None")+
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
   ggtitle(paste("#", satisfying_plan$draw[1]," max/min=", satisfying_plan$max_to_min[1], "splits=", satisfying_plan$splits[1]))
+
+########### Shortburst ###########
+pref_sb <- redist::redist_shortburst(
+  map = pref_map,
+  score_fn = redist::scorer_pop_dev(pref_map) * redist::scorer_splits(pref_map, pref_33$code),
+  maximize = FALSE,
+  burst_size = 10,
+  max_bursts = 1000,
+  counties = pref_33$code,
+  init_plan = "sample"
+  )
+
+# get disparity data
+weight_pref_sb <- simulation_weight_disparity_table(pref_sb)
+plans_pref_sb <- redist::get_plans_matrix(pref_sb)
+
+# get splits
+pref_sb_splits <- count_splits(plans_pref_sb, pref_map$code)
+pref_sb_countiessplit <- redist::redist.splits(plans_pref_sb, pref_map$code)
+
+pref_sb_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_sb)))
+pref_sb_results$max_to_min <- weight_pref_sb$max_to_min
+pref_sb_results$splits <- pref_sb_splits
+pref_sb_results$counties_split <- pref_sb_countiessplit
+pref_sb_results$draw <- weight_pref_sb$draw
+
+pref_sb_results <- pref_sb_results %>%
+  dplyr::group_by(max_to_min, splits, counties_split) %>%
+  dplyr::summarise(draw = first(draw)) %>%
+  dplyr::arrange(splits)
+
+min(pref_sb_results$max_to_min[which(pref_sb_results$splits == pref_sb_results$counties_split)])
+
+satisfying_plan_sb <- pref_sb_results %>%
+  dplyr::filter(splits <= 8) %>%
+  dplyr::filter(splits == counties_split) %>%
+  dplyr::arrange(max_to_min)
