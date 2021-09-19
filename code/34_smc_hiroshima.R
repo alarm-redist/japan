@@ -758,3 +758,16 @@ hiroshima_marginal <- ggplot(improved_plans, aes(Dissimilarity, max_to_min, colo
   ggplot2::ggtitle("Hiroshima Dissimilarity vs Max-Min")
 ggExtra::ggMarginal(hiroshima_marginal, groupColour = TRUE, groupFill = TRUE)
 
+
+##########checking whether there are multisplits##############
+#get data on optimal plan
+matrix_plan_4 <- redist::get_plans_matrix(sim_smc_pref_4 %>% filter(draw == 8866))
+colnames(matrix_plan_4) <- "district"
+optimal_boundary_4 <- cbind(pref_4, as_tibble(matrix_plan_4))
+
+ggplot() +
+  geom_sf(data = optimal_boundary_4, aes(fill = factor(district))) +
+  geom_sf(data = pref_0, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")
