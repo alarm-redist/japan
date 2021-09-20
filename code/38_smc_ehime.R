@@ -104,7 +104,6 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
                               ".Rds",
                               sep = ""))
 
-
 ###############1 split##################
 pref_1 <- pref
 
@@ -193,6 +192,42 @@ ehime_38_optimalmap_1 <- redist::redist.plot.map(shp = pref_1,
 
 
 ###save(list=ls(all=TRUE), file="38_smc_ehime_data_0to1split.Rdata")
+
+############measuring compactness#################
+#------status quo---------#
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+ferries <- add_ferries(pref)
+prefadj <- redist::redist.adjacency(pref)
+prefadj <- geomander::add_edge(prefadj, ferries$V1, ferries$V2)
+
+nedge <- as.numeric(length(unlist(prefadj)))
+
+pref_cd <- status_quo_match(pref)
+n_rem_orig <- redist::redist.compactness(shp = pref,
+                                         plans = pref_cd$ku, #####???#####
+                                         measure = c("EdgesRemoved"),
+                                         adj = prefadj)[1, ]$EdgesRemoved
+ecc_orig <- n_rem_orig/nedge
+
+#------simulated plans---------#
+sim_smc_pref_0_plans <- redist::get_plans_matrix(sim_smc_pref_0)
+nedge_0 <- as.numeric(length(unlist(prefadj_0)))
+n_rem_0 <- (redist::redist.compactness(shp = pref_0,
+                                        plans = sim_smc_pref_0_plans,
+                                        measure = c("EdgesRemoved"),
+                                        adj = prefadj_0) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_0 <- n_rem_0/nedge_0
+
+sim_smc_pref_1_plans <- redist::get_plans_matrix(sim_smc_pref_1)
+nedge_1 <- as.numeric(length(unlist(prefadj_1)))
+n_rem_1 <- (redist::redist.compactness(shp = pref_1,
+                                       plans = sim_smc_pref_1_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_1) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_1 <- n_rem_1/nedge_1
+
 
 ##########Co-occurrence ############
 #load packages
