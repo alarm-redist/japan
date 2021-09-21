@@ -177,7 +177,7 @@ pref_sb <- redist::redist_shortburst(
   score_fn = redist::scorer_multisplits(map = pref_map, counties = pref_map$code) +
     redist::scorer_pop_dev(pref_map) * redist::scorer_splits(pref_map, pref_map$code),
   maximize = FALSE,
-  burst_size = 1000,
+  burst_size = 100,
   max_bursts = 10000,
   counties = pref_33$code,
   init_plan = "sample"
