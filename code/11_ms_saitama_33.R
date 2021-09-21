@@ -3,11 +3,12 @@
 library(tidyverse)
 set.seed(12345)
 #remotes::install_github("alarm-redist/redist@dev")
+#install.packages("redist")
 library(redist)
 # pull functions from jcdf
 # set working directory to the function folder
-setwd("R")
-files.sources = list.files()
+setwd("./R")
+files.sources <-  list.files()
 sapply(files.sources, source)
 # set working directory back to `jcdf`
 setwd("..")
@@ -168,15 +169,16 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         panel.background = element_blank(), legend.position = "None")+
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
-  ggtitle(paste("#", satisfying_plan$draw[1]," max/min=", satisfying_plan$max_to_min[1], "splits=", satisfying_plan$splits[1]))
+  ggtitle(paste("Mergesplit #", satisfying_plan$draw[1]," max/min=", satisfying_plan$max_to_min[1], "splits=", satisfying_plan$splits[1]))
 
 ########### Shortburst ###########
 pref_sb <- redist::redist_shortburst(
   map = pref_map,
-  score_fn = redist::scorer_pop_dev(pref_map) * redist::scorer_splits(pref_map, pref_33$code),
+  score_fn = redist::scorer_multisplits(map = pref_map, counties = pref_map$code) +
+    redist::scorer_pop_dev(pref_map) * redist::scorer_splits(pref_map, pref_map$code),
   maximize = FALSE,
-  burst_size = 10,
-  max_bursts = 1000,
+  burst_size = 1000,
+  max_bursts = 10000,
   counties = pref_33$code,
   init_plan = "sample"
   )
@@ -206,3 +208,20 @@ satisfying_plan_sb <- pref_sb_results %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
+
+###### Draw Map#########
+# (694) -> 1.22 max_min
+optimal_matrix_plan_sb <- redist::get_plans_matrix(pref_sb %>%
+                                                  filter(draw == satisfying_plan_sb$draw[1]))
+colnames(optimal_matrix_plan_sb) <- "district"
+optimal_boundary_sb <- cbind(pref_33, as_tibble(optimal_matrix_plan_sb))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_sb, aes(fill = factor(district))) +
+  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")+
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
+  ggtitle(paste("Shortburst #", satisfying_plan_sb$draw[1]," max/min=", satisfying_plan_sb$max_to_min[1], "splits=", satisfying_plan_sb$splits[1]))
