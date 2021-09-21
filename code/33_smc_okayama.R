@@ -625,6 +625,73 @@ okayama_33_optimalmap_5 <- redist::redist.plot.map(shp = pref_5,
 
 #save(list=ls(all=TRUE), file="32_smc_okayama_data_0to5splits.Rdata")
 
+#######Compactness###################
+#------status quo---------#
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+prefadj <- redist::redist.adjacency(pref)
+ferries <- add_ferries(pref)
+prefadj <- geomander::add_edge(prefadj, ferries$V1, ferries$V2)
+
+nedge <- as.numeric(length(unlist(prefadj)))
+
+pref_cd <- status_quo_match(pref)
+n_rem_orig <- redist::redist.compactness(shp = pref,
+                                         plans = pref_cd$ku,
+                                         measure = c("EdgesRemoved"),
+                                         adj = prefadj)[1, ]$EdgesRemoved
+ecc_orig <- n_rem_orig/nedge
+
+#------simulated plans---------#
+sim_smc_pref_0_plans <- redist::get_plans_matrix(sim_smc_pref_0)
+nedge_0 <- as.numeric(length(unlist(prefadj_0)))
+n_rem_0 <- (redist::redist.compactness(shp = pref_0,
+                                       plans = sim_smc_pref_0_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_0) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_0 <- n_rem_0/nedge_0
+
+sim_smc_pref_1_plans <- redist::get_plans_matrix(sim_smc_pref_1)
+nedge_1 <- as.numeric(length(unlist(prefadj_1)))
+n_rem_1 <- (redist::redist.compactness(shp = pref_1,
+                                       plans = sim_smc_pref_1_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_1) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_1 <- n_rem_1/nedge_1
+
+sim_smc_pref_2_plans <- redist::get_plans_matrix(sim_smc_pref_2)
+nedge_2 <- as.numeric(length(unlist(prefadj_2)))
+n_rem_2 <- (redist::redist.compactness(shp = pref_2,
+                                       plans = sim_smc_pref_2_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_2) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_2 <- n_rem_2/nedge_2
+
+sim_smc_pref_3_plans <- redist::get_plans_matrix(sim_smc_pref_3)
+nedge_3 <- as.numeric(length(unlist(prefadj_3)))
+n_rem_3 <- (redist::redist.compactness(shp = pref_3,
+                                       plans = sim_smc_pref_3_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_3) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_3 <- n_rem_3/nedge_3
+
+sim_smc_pref_4_plans <- redist::get_plans_matrix(sim_smc_pref_4)
+nedge_4 <- as.numeric(length(unlist(prefadj_4)))
+n_rem_4 <- (redist::redist.compactness(shp = pref_4,
+                                       plans = sim_smc_pref_4_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_4) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_4 <- n_rem_4/nedge_4
+
+sim_smc_pref_5_plans <- redist::get_plans_matrix(sim_smc_pref_5)
+nedge_5 <- as.numeric(length(unlist(prefadj_5)))
+n_rem_5 <- (redist::redist.compactness(shp = pref_5,
+                                       plans = sim_smc_pref_5_plans,
+                                       measure = c("EdgesRemoved"),
+                                       adj = prefadj_5) %>% group_by(draw) %>% summarize(EdgesRemoved = mean(EdgesRemoved)))$EdgesRemoved
+ecc_ms_5 <- n_rem_5/nedge_5
+
 ##############Co-occcurrence###################
 #load packages
 library(cluster)
