@@ -3,11 +3,12 @@
 library(tidyverse)
 set.seed(12345)
 #remotes::install_github("alarm-redist/redist@dev")
+#install.packages("redist")
 library(redist)
 # pull functions from jcdf
 # set working directory to the function folder
-setwd("R")
-files.sources = list.files()
+setwd("./R")
+files.sources <-  list.files()
 sapply(files.sources, source)
 # set working directory back to `jcdf`
 setwd("..")
@@ -15,7 +16,7 @@ setwd("..")
 #-------- information set-up -----------#
 # prefectural information
 sim_type <- "smc"
-nsims <- 250000
+nsims <- 500000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -41,22 +42,27 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-#clean pref_raw
+######### Set Population data frame in the smaller level ###########
+#clean data and estimate population
 pref <- pref_raw %>%
-  clean_jcdf()
-pref <- pref %>%
-  dplyr::select(code, KIHON1, JINKO, geometry)
-pref <- calc_kokumin(pref, dem_pops)
-#Estimate 2020 pop.
-pref <- estimate_2020_pop(pref, census2020) %>%
+  # clean data frame
+  clean_jcdf() %>%
+  dplyr::select(code, KIHON1, JINKO, geometry) %>%
+  # calculate Japanese nationality
+  calc_kokumin(dem_pops) %>%
+  # estimate small area population
+  estimate_2020_pop(census2020) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 
+############## Set County Borders ###################
+
+
 ############Simulation Prep########################
 #adjacency list
-prefadj <- redist::redist.adjacency(pref)
+prefadj <- redist::redist.adjacency(pref_33)
 
-neighbor <- geomander::suggest_neighbors(shp = pref,
+neighbor <- geomander::suggest_neighbors(shp = pref_33,
                                          adjacency = prefadj)
 if(nrow(neighbor) > 0){
   prefadj <- geomander::add_edge(prefadj,
@@ -65,11 +71,19 @@ if(nrow(neighbor) > 0){
                                  zero = TRUE)
 }
 
-pref_map <- redist::redist_map(pref,
-                               ndists = round(sum(pref$pop)/(sum(pref$pop)/ndists_new)),
+pref_map <- redist::redist_map(pref_33,
+                               ndists = round(sum(pref_33$pop)/(sum(pref_33$pop)/ndists_new)),
                                pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                total_pop = pop,
                                adj = prefadj)
+
+pref_0 %>%
+  ggplot()+
+  geom_sf(data = pref_0 %>%
+            dplyr::filter(code >= 11300),
+          aes(fill = as.factor(code)))+
+  scale_fill_brewer(palette = "Spectral")+
+  geom_sf(fill = NA, color = "black", lwd = 1)
 
 pref_smc <- redist::redist_smc(pref_map,
                               nsims = nsims,
