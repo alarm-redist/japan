@@ -42,6 +42,11 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
+
+
+
+
+
 ######### Set Population data frame in the smaller level ###########
 #clean data and estimate population
 pref_2020 <- pref_raw %>%
