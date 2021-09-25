@@ -47,16 +47,78 @@ census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 pref <- pref_raw %>%
   # clean data frame
   clean_jcdf() %>%
-  dplyr::select(code, KIHON1, JINKO, geometry) %>%
   # calculate Japanese nationality
   calc_kokumin(dem_pops) %>%
   # estimate small area population
   estimate_2020_pop(census2020) %>%
-  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
-  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+  dplyr::select(code, pop_estimate, geometry) %>%
+  dplyr::rename(pop = pop_estimate)
 
-############## Set County Borders ###################
+############## Set County Level Data frame ###################
+# Group by municipalities (city and gun)
+pref_county <- pref %>%
+  merge_gun(., exception = merge_gun_exception) %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop),
+                   geometry = sf::st_union(geometry))
 
+# Group Iruma-gun (11326 and 11327) except Miyoshi-cho (11324) based on current plan
+iruma <- pref_county %>%
+  dplyr::filter(code == 11326 |
+                  code == 11327) %>%
+  dplyr::summarise(code = code[1],
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+# Group Chichibu City (11207) and Chichibu-gun (11360) based on Teiju-jiritsuken
+chichibu <- pref_county %>%
+  dplyr::filter(code == 11207 |
+                  code == 11360) %>%
+  dplyr::summarise(code = code[1],
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+# Group Honjo City (11211) and Kodama-gun (11380) based on Teiju-jiritsuken
+honjo <- pref_county %>%
+  dplyr::filter(code == 11211 |
+                  code == 11380) %>%
+  dplyr::summarise(code = code[1],
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+# Group Kasukabe City (11214) and KitaKatsushika-gun (11460)
+kasukabe <- pref_county %>%
+  dplyr::filter(code == 11214 |
+                  code == 11460) %>%
+  dplyr::summarise(code = code[1],
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+# Group Higashi-matsuyama City (11212) and Hiki-gun (11340)
+higashimatsuyama <- pref_county %>%
+  dplyr::filter(code == 11212 |
+                  code == 11340) %>%
+  dplyr::summarise(code = code[1],
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+pref_county_manually_edited <- pref_county %>%
+  dplyr::filter(!code %in% c(11326,
+                            11327,
+                            11207,
+                            11360,
+                            11211,
+                            11380,
+                            11214,
+                            11460,
+                            11212,
+                            11340)) %>%
+  dplyr::bind_rows(.,
+                   iruma,
+                   chichibu,
+                   honjo,
+                   kasukabe,
+                   higashimatsuyama)
 
 ############Simulation Prep########################
 #adjacency list
@@ -77,9 +139,9 @@ pref_map <- redist::redist_map(pref_33,
                                total_pop = pop,
                                adj = prefadj)
 
-pref_0 %>%
+pref %>%
   ggplot()+
-  geom_sf(data = pref_0 %>%
+  geom_sf(data = pref %>%
             dplyr::filter(code >= 11300),
           aes(fill = as.factor(code)))+
   scale_fill_brewer(palette = "Spectral")+
