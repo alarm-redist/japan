@@ -44,7 +44,7 @@ census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
 ######### Set Population data frame in the smaller level ###########
 #clean data and estimate population
-pref <- pref_raw %>%
+pref_2020 <- pref_raw %>%
   # clean data frame
   clean_jcdf() %>%
   # calculate Japanese nationality
@@ -56,7 +56,7 @@ pref <- pref_raw %>%
 
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
-pref_county <- pref %>%
+pref_county <- pref_2020 %>%
   merge_gun(., exception = merge_gun_exception) %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(pop = sum(pop),
@@ -118,7 +118,33 @@ pref_county_manually_edited <- pref_county %>%
                    chichibu,
                    honjo,
                    kasukabe,
-                   higashimatsuyama)
+                   higashimatsuyama) %>%
+  dplyr::select(code, geometry) %>%
+  dplyr::rename(county = code)
+
+########## Add `county` column to the `pref` data frame ###########
+sf::st_crs(pref) <- sf::st_crs(pref_county_manually_edited)
+pref <- sf::st_intersection(pref_2020, pref_county_manually_edited)
+
+summary(lengths(sf::st_overlaps(pref)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ############Simulation Prep########################
 #adjacency list
