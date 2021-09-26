@@ -42,11 +42,6 @@ foreigner <- download_2020_census(type = "foreigner")
 # Clean 2020 census
 census2020 <- clean_2020_census(total = total, foreigner = foreigner)
 
-
-
-
-
-
 ######### Set Population data frame in the smaller level ###########
 #clean data and estimate population
 pref_2020 <- pref_raw %>%
@@ -124,38 +119,22 @@ pref_county_manually_edited <- pref_county %>%
                    honjo,
                    kasukabe,
                    higashimatsuyama) %>%
-  dplyr::select(code, geometry) %>%
-  dplyr::rename(county = code)
+  dplyr::select(code, geometry)
 
 ########## Add `county` column to the `pref` data frame ###########
-sf::st_crs(pref) <- sf::st_crs(pref_county_manually_edited)
-pref <- sf::st_intersection(pref_2020, pref_county_manually_edited)
+county <- geomander::geo_match(from = pref_2020,
+                             to = pref_county_manually_edited,
+                             method = "center",
+                             tiebreaker = TRUE)
 
-summary(lengths(sf::st_overlaps(pref)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+pref <- pref_2020 %>%
+  dplyr::mutate(county = county)
 
 ############Simulation Prep########################
 #adjacency list
-prefadj <- redist::redist.adjacency(pref_33)
+prefadj <- redist::redist.adjacency(pref)
 
-neighbor <- geomander::suggest_neighbors(shp = pref_33,
+neighbor <- geomander::suggest_neighbors(shp = pref,
                                          adjacency = prefadj)
 if(nrow(neighbor) > 0){
   prefadj <- geomander::add_edge(prefadj,
@@ -164,23 +143,15 @@ if(nrow(neighbor) > 0){
                                  zero = TRUE)
 }
 
-pref_map <- redist::redist_map(pref_33,
-                               ndists = round(sum(pref_33$pop)/(sum(pref_33$pop)/ndists_new)),
+pref_map <- redist::redist_map(pref,
+                               ndists = round(sum(pref$pop)/(sum(pref$pop)/ndists_new)),
                                pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                total_pop = pop,
                                adj = prefadj)
 
-pref %>%
-  ggplot()+
-  geom_sf(data = pref %>%
-            dplyr::filter(code >= 11300),
-          aes(fill = as.factor(code)))+
-  scale_fill_brewer(palette = "Spectral")+
-  geom_sf(fill = NA, color = "black", lwd = 1)
-
 pref_smc <- redist::redist_smc(pref_map,
                               nsims = nsims,
-                              counties = code,
+                              counties = county,
                               constraints = list(multisplits = list(strength = 50))
                               #pop_temper = 0.05
 )
@@ -197,45 +168,36 @@ saveRDS(pref_smc, paste("simulation/",
                        ".Rds",
                        sep = ""))
 
-
 # get disparity data
-weight_pref <- simulation_weight_disparity_table(pref_smc)
-plans_pref <- redist::get_plans_matrix(pref_smc)
+weight_pref_smc <- simulation_weight_disparity_table(pref_smc)
+plans_pref_smc <- redist::get_plans_matrix(pref_smc)
 
 # get splits
-pref_smc_splits <- count_splits(plans_pref, pref_map$code)
-pref_smc_countiessplit <- redist::redist.splits(plans_pref, pref_map$code)
+pref_smc_splits <- count_splits(plans_pref_smc, pref_map$code)
+pref_smc_countiessplit <- redist::redist.splits(plans_pref_smc, pref_map$code)
 
-pref_smc_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref)))
-pref_smc_results$max_to_min <- weight_pref$max_to_min
+pref_smc_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_smc)))
+pref_smc_results$max_to_min <- weight_pref_smc$max_to_min
 pref_smc_results$splits <- pref_smc_splits
 pref_smc_results$counties_split <- pref_smc_countiessplit
-pref_smc_results$index <- 1:nrow(weight_pref)
+pref_smc_results$draw <- weight_pref_smc$draw
 
 pref_smc_results <- pref_smc_results %>%
   dplyr::group_by(max_to_min, splits, counties_split) %>%
-  dplyr::summarise(index = first(index)) %>%
+  dplyr::summarise(draw = first(draw)) %>%
   dplyr::arrange(splits)
-
-i <- 1
-
-# rename elements to be used
-assign(paste(pref_name, pref_code, "full", i, sep = "_"),
-       pref)
-assign(paste(pref_name, pref_code, "adj", "full", i, sep = "_"),
-       prefadj)
-assign(paste(pref_name, pref_code, "map", "full", i, sep = "_"),
-       pref_map)
-assign(paste(pref_name, pref_code, "sim", sim_type, "full", i, sep = "_"),
-       pref_smc)
-assign(paste(pref_name, pref_code, sim_type, "plans", "full", i, sep = "_"),
-       plans_pref)
-assign(paste(pref_name, pref_code, sim_type, "results", "full", i, sep = "_"),
-       pref_smc_results)
 
 min(pref_smc_results$max_to_min[which(pref_smc_results$splits == pref_smc_results$counties_split)])
 
-saitama_11_smc_results_full_1 %>%
+satisfying_plan_smc <- pref_smc_results %>%
   dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == counties_split) %>%
   dplyr::arrange(max_to_min)
+
+###### Draw Map#########
+# (694) -> 1.22 max_min
+optimal_matrix_plan_smc <- redist::get_plans_matrix(pref_smc %>%
+                                                     filter(draw == satisfying_plan_smc$draw[1]))
+colnames(optimal_matrix_plan_smc) <- "district"
+optimal_boundary_smc <- cbind(pref, as_tibble(optimal_matrix_plan_smc))
+
