@@ -134,8 +134,8 @@ urban_by_mun_edge_adj <- geomander::add_edge(urban_by_mun_edge_adj,
                                              urban_by_mun_edge$V2)
 
 urban_group_map <- redist::redist_map(urban_by_mun,
-                                      ndists = 7, #starting with 7; try 8 or 9 if necessary
-                                      pop_tol= 0.08, #consider lowering pop_tol if necessary
+                                      ndists = 2,
+                                      pop_tol= 0.08,
                                       total_pop = pop,
                                       adj = urban_by_mun_edge_adj)
 
@@ -154,16 +154,45 @@ urban_enum_plans <- redist::redist.enumpart(adj = urban_by_mun_edge_adj,
                                        unordered_path = here::here('simulation/unord_tokyo_urban'),
                                        ordered_path = here::here('simulation/ord_tokyo_urban'),
                                        out_path = here::here('simulation/enum_tokyo_urban'),
-                                       ndists = 7, #starting with 7; try 8 or 9 if necessary
+                                       ndists = 2,
                                        all = TRUE,
                                        total_pop = urban_group_map[[attr(urban_group_map, 'pop_col')]])
 
+save(urban_enum_plans, file = "simulation/13_enum_tokyo_urban_muns.Rdata")
+
 #check result
-urban_enum_plans_result <- redist.read.enumpart(out_path = 'simulation/enum_tokyo_urban')
+urban_enum_plans_result <- redist::redist.read.enumpart(out_path = 'simulation/enum_tokyo_urban')
 urban_enum_plans_result_matrix <- redist::redist_plans(urban_enum_plans_result,
                                                        urban_group_map,
                                                        algorithm = 'enumpart')
 
-save(urban_enum_plans_result_matrix, file = "13_enum_tokyo_urban_muns.Rdata")
+#multiple of target pop.
+target <- round(sum(urban_by_mun$pop)/21)
+#Score: 1.*target   2.round(*target) - *target   3. take absolute value
+urban_enum_plans_result_matrix$score <- abs(urban_enum_plans_result_matrix$total_pop/target -
+  round(urban_enum_plans_result_matrix$total_pop/target))
 
+#filter out best plan
+best_split <-
+urban_enum_plans_result_matrix %>%
+  filter(draw == urban_enum_plans_result_matrix$draw[which(urban_enum_plans_result_matrix$score ==
+                                                             min(urban_enum_plans_result_matrix$score))])
+#visualization
+urban_by_mun$block <- best_split
+
+#get data on optimal plan
+matrix_best_split <- redist::get_plans_matrix(best_split)
+colnames(matrix_best_split) <- "block"
+optimal_boundary <- cbind(head(urban_by_mun, 23), head(as_tibble(matrix_best_split), 23))
+
+
+#map with block data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary, aes(fill = factor(block))) +
+  scale_fill_manual(values = c("red", "yellow")) +
+  geom_sf(data = head(urban_by_mun, 23), fill = NA, color = "black", lwd = 1.5) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
 
