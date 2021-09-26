@@ -67,6 +67,7 @@ simulation_weight_disparity_table <- function(redist_simulation_output){
   Gini <- vector(length = n_sims)
   LH <- vector(length = n_sims)
   HH <- vector(length = n_sims)
+  draw <- vector(length = n_sims)
   simulation_weight_disparity_table <- NA
 
   # Calculate statistics for each iterations
