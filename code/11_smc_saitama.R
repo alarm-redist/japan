@@ -149,10 +149,14 @@ pref_map <- redist::redist_map(pref,
                                total_pop = pop,
                                adj = prefadj)
 
+
+
+
+### SMC Simulation #####
 pref_smc <- redist::redist_smc(pref_map,
                               nsims = nsims,
                               counties = county,
-                              constraints = list(multisplits = list(strength = 50))
+                              constraints = list(multisplits = list(strength = 70))
                               #pop_temper = 0.05
 )
 
@@ -168,30 +172,48 @@ saveRDS(pref_smc, paste("simulation/",
                        ".Rds",
                        sep = ""))
 
+pref_smc <- readRDS(paste("simulation/",
+                          sprintf("%02d", pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_",
+                          as.character(sim_type),
+                          "_",
+                          as.character(nsims),
+                          ".Rds",
+                          sep = ""))
+
 # get disparity data
 weight_pref_smc <- simulation_weight_disparity_table(pref_smc)
 plans_pref_smc <- redist::get_plans_matrix(pref_smc)
+redist_plans <- redist::redist_plans(plans = plans_pref_smc,
+                                     map = pref_map,
+                                     algorithm = "smc")
 
 # get splits
 pref_smc_splits <- count_splits(plans_pref_smc, pref_map$code)
-pref_smc_countiessplit <- redist::redist.splits(plans_pref_smc, pref_map$code)
+pref_smc_codesplit <- redist::redist.splits(plans_pref_smc,
+                                                pref_map$code)
+pref_smc_countiessplit <- redist::redist.splits(plans_pref_smc,
+                                                pref_map$county)
 
 pref_smc_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_smc)))
 pref_smc_results$max_to_min <- weight_pref_smc$max_to_min
 pref_smc_results$splits <- pref_smc_splits
+pref_smc_results$code_split <- pref_smc_codesplit
 pref_smc_results$counties_split <- pref_smc_countiessplit
 pref_smc_results$draw <- weight_pref_smc$draw
 
 pref_smc_results <- pref_smc_results %>%
-  dplyr::group_by(max_to_min, splits, counties_split) %>%
+  dplyr::group_by(max_to_min, splits, code_split) %>%
   dplyr::summarise(draw = first(draw)) %>%
   dplyr::arrange(splits)
 
-min(pref_smc_results$max_to_min[which(pref_smc_results$splits == pref_smc_results$counties_split)])
+min(pref_smc_results$max_to_min[which(pref_smc_results$splits == pref_smc_results$code_split)])
 
 satisfying_plan_smc <- pref_smc_results %>%
   dplyr::filter(splits <= 8) %>%
-  dplyr::filter(splits == counties_split) %>%
+  dplyr::filter(splits == code_split) %>%
   dplyr::arrange(max_to_min)
 
 ###### Draw Map#########
@@ -201,3 +223,31 @@ optimal_matrix_plan_smc <- redist::get_plans_matrix(pref_smc %>%
 colnames(optimal_matrix_plan_smc) <- "district"
 optimal_boundary_smc <- cbind(pref, as_tibble(optimal_matrix_plan_smc))
 
+
+
+
+
+####### Mergesplit Simulation ######
+
+pref_ms <- redist::redist_mergesplit(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$county,
+  warmup = 0,
+  constraints = list(multissplits = list(strength = 30),
+                     splits = list(strength = 14))
+)
+
+sim_type <- "ms"
+
+# save it
+saveRDS(pref_smc, paste("simulation/",
+                        sprintf("%02d", pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        ".Rds",
+                        sep = ""))
