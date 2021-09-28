@@ -15,8 +15,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-sim_type <- "smc"
-nsims <- 500000
+nsims <- 250000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -53,6 +52,7 @@ pref_2020 <- pref_raw %>%
   estimate_2020_pop(census2020) %>%
   dplyr::select(code, pop_estimate, geometry) %>%
   dplyr::rename(pop = pop_estimate)
+
 
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
@@ -130,6 +130,9 @@ county <- geomander::geo_match(from = pref_2020,
 pref <- pref_2020 %>%
   dplyr::mutate(county = county)
 
+pref_boundaries <- pref %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
 ############Simulation Prep########################
 #adjacency list
 prefadj <- redist::redist.adjacency(pref)
@@ -152,13 +155,92 @@ pref_map <- redist::redist_map(pref,
 
 
 
+####### Mergesplit Simulation ######
+sim_type <- "ms"
+
+pref_ms <- redist::redist_mergesplit(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$county,
+  warmup = 0,
+  constraints = list(multissplits = list(strength = 100),
+                     splits = list(strength = 10))
+)
+
+# save it
+saveRDS(pref_ms, paste("simulation/",
+                       sprintf("%02d", pref_code),
+                       "_",
+                       as.character(pref_name),
+                       "_",
+                       as.character(sim_type),
+                       "_",
+                       as.character(nsims),
+                       ".Rds",
+                       sep = ""))
+
+# get disparity data
+weight_pref_ms <- simulation_weight_disparity_table(pref_ms)
+plans_pref_ms <- redist::get_plans_matrix(pref_ms)
+redist_plans <- redist::redist_plans(plans = plans_pref_ms,
+                                     map = pref_map,
+                                     algorithm = "ms")
+
+# get splits
+pref_ms_splits <- count_splits(plans_pref_ms, pref_map$code)
+pref_ms_codesplit <- redist::redist.splits(plans_pref_ms,
+                                           pref_map$code)
+pref_ms_countiessplit <- redist::redist.splits(plans_pref_ms,
+                                               pref_map$county)
+
+pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_ms)))
+pref_ms_results$max_to_min <- weight_pref_ms$max_to_min
+pref_ms_results$splits <- pref_ms_splits
+pref_ms_results$code_split <- pref_ms_codesplit
+pref_ms_results$counties_split <- pref_ms_countiessplit
+pref_ms_results$draw <- weight_pref_ms$draw
+
+pref_ms_results <- pref_ms_results %>%
+  dplyr::group_by(max_to_min, splits, code_split) %>%
+  dplyr::summarise(draw = first(draw)) %>%
+  dplyr::arrange(splits)
+
+min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$code_split)])
+
+satisfying_plan_ms <- pref_ms_results %>%
+  dplyr::filter(splits <= 8) %>%
+  dplyr::filter(splits == code_split) %>%
+  dplyr::arrange(max_to_min)
+
+# Draw Map
+
+optimal_matrix_plan_ms <- redist::get_plans_matrix(pref_ms %>%
+                                                     filter(draw == satisfying_plan_ms$draw[1]))
+colnames(optimal_matrix_plan_ms) <- "district"
+optimal_boundary_ms <- cbind(pref, as_tibble(optimal_matrix_plan_ms))
+
+ggplot() +
+  geom_sf(data = optimal_boundary_ms, aes(fill = factor(district))) +
+  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")+
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
+  ggtitle(paste("mergeplit #", satisfying_plan_ms$draw[1]," max/min=", satisfying_plan_ms$max_to_min[1], "splits=", satisfying_plan_ms$splits[1]))
+
+
 ### SMC Simulation #####
+
+sim_type <- "smc"
+
 pref_smc <- redist::redist_smc(pref_map,
                               nsims = nsims,
                               counties = county,
-                              constraints = list(multisplits = list(strength = 70))
+                              constraints = list(multisplits = list(strength = 500)
+                                                # ,splits = list(strength = 20)
+                                                )
                               #pop_temper = 0.05
-)
+                              )
 
 # save it
 saveRDS(pref_smc, paste("simulation/",
@@ -223,31 +305,12 @@ optimal_matrix_plan_smc <- redist::get_plans_matrix(pref_smc %>%
 colnames(optimal_matrix_plan_smc) <- "district"
 optimal_boundary_smc <- cbind(pref, as_tibble(optimal_matrix_plan_smc))
 
+ggplot() +
+  geom_sf(data = optimal_boundary_smc, aes(fill = factor(district))) +
+  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank(), legend.position = "None")+
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
+  ggtitle(paste("SMC #", satisfying_plan_smc$draw[1]," max/min=", satisfying_plan_smc$max_to_min[1], "splits=", satisfying_plan_smc$splits[1]))
 
-
-
-
-####### Mergesplit Simulation ######
-
-pref_ms <- redist::redist_mergesplit(
-  map = pref_map,
-  nsims = nsims,
-  counties = pref$county,
-  warmup = 0,
-  constraints = list(multissplits = list(strength = 30),
-                     splits = list(strength = 14))
-)
-
-sim_type <- "ms"
-
-# save it
-saveRDS(pref_smc, paste("simulation/",
-                        sprintf("%02d", pref_code),
-                        "_",
-                        as.character(pref_name),
-                        "_",
-                        as.character(sim_type),
-                        "_",
-                        as.character(nsims),
-                        ".Rds",
-                        sep = ""))
