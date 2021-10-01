@@ -235,10 +235,11 @@ sim_type <- "smc"
 
 pref_smc <- redist::redist_smc(pref_map,
                               nsims = nsims,
-                              counties = county,
-                              constraints = list(multisplits = list(strength = 500)
+                              counties = county
+                              #,
+                             # constraints = list(multisplits = list(strength = 1000)
                                                 # ,splits = list(strength = 20)
-                                                )
+                              #                  )
                               #pop_temper = 0.05
                               )
 
@@ -294,7 +295,7 @@ pref_smc_results <- pref_smc_results %>%
 min(pref_smc_results$max_to_min[which(pref_smc_results$splits == pref_smc_results$code_split)])
 
 satisfying_plan_smc <- pref_smc_results %>%
-  dplyr::filter(splits <= 8) %>%
+ # dplyr::filter(splits <= 8) %>%
   dplyr::filter(splits == code_split) %>%
   dplyr::arrange(max_to_min)
 
