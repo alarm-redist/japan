@@ -147,7 +147,7 @@ if(nrow(neighbor) > 0){
 }
 
 pref_map <- redist::redist_map(pref,
-                               ndists = round(sum(pref$pop)/(sum(pref$pop)/ndists_new)),
+                               ndists = ndists_new,
                                pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
                                total_pop = pop,
                                adj = prefadj)
@@ -163,7 +163,7 @@ pref_ms <- redist::redist_mergesplit(
   nsims = nsims,
   counties = pref$county,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 100),
+  constraints = list(multissplits = list(strength = 140),
                      splits = list(strength = 10))
 )
 
