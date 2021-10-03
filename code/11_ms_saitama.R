@@ -247,10 +247,19 @@ library(viridis)
 library(network)
 library(ggnetwork)
 
-#get plans that have a low max:min ratio (Top 10%)
-good_num_0 <-  pref_ms_results %>%
+#add column "n" as an indicator of the plans
+all <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_ms)))
+all$max_to_min <- weight_pref_ms$max_to_min
+all$splits <- pref_ms_splits
+all$code_split <- pref_ms_codesplit
+all$counties_split <- pref_ms_countiessplit
+all$draw <- weight_pref_ms$draw
+
+good_num_0 <- all %>%
+  dplyr::filter(splits <= 8) %>%
+  dplyr::filter(splits == code_split) %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(floor(nrow(pref_ms_results)*0.1))) %>%
+  slice(1: as.numeric(floor(nrow(.)*0.1))) %>%
   select(draw)
 
 good_num_0 <- as.vector(t(good_num_0))
