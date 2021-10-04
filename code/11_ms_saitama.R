@@ -70,55 +70,11 @@ iruma <- pref_county %>%
                    pop = sum(pop),
                    geometry = sf::st_union(geometry))
 
-# Group Chichibu City (11207) and Chichibu-gun (11360) based on Teiju-jiritsuken
-chichibu <- pref_county %>%
-  dplyr::filter(code == 11207 |
-                  code == 11360) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-# Group Honjo City (11211) and Kodama-gun (11380) based on Teiju-jiritsuken
-honjo <- pref_county %>%
-  dplyr::filter(code == 11211 |
-                  code == 11380) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-# Group Kasukabe City (11214) and KitaKatsushika-gun (11460)
-kasukabe <- pref_county %>%
-  dplyr::filter(code == 11214 |
-                  code == 11460) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-# Group Higashi-matsuyama City (11212) and Hiki-gun (11340)
-higashimatsuyama <- pref_county %>%
-  dplyr::filter(code == 11212 |
-                  code == 11340) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
 pref_county_manually_edited <- pref_county %>%
   dplyr::filter(!code %in% c(11326,
-                             11327,
-                             11207,
-                             11360,
-                             11211,
-                             11380,
-                             11214,
-                             11460,
-                             11212,
-                             11340)) %>%
+                             11327)) %>%
   dplyr::bind_rows(.,
-                   iruma,
-                   chichibu,
-                   honjo,
-                   kasukabe,
-                   higashimatsuyama) %>%
+                   iruma) %>%
   dplyr::select(code, geometry)
 
 ########## Add `county` column to the `pref` data frame ###########
@@ -154,7 +110,9 @@ pref_map <- redist::redist_map(pref,
 
 
 
+save.image("clean_saitama.Rdata")
 
+load("clean_saitama.Rdata")
 ####### Mergesplit Simulation ######
 sim_type <- "ms"
 
@@ -179,16 +137,16 @@ saveRDS(pref_ms, paste("simulation/",
                        ".Rds",
                        sep = ""))
 
-pref_ms <- readRDS(paste("simulation/",
-                         sprintf("%02d", pref_code),
-                         "_",
-                         as.character(pref_name),
-                         "_",
-                         as.character(sim_type),
-                         "_",
-                         as.character(nsims),
-                         ".Rds",
-                         sep = ""))
+#pref_ms <- readRDS(paste("simulation/",
+#                         sprintf("%02d", pref_code),
+#                         "_",
+#                         as.character(pref_name),
+#                         "_",
+#                         as.character(sim_type),
+#                         "_",
+#                         as.character(nsims),
+#                         ".Rds",
+#                         sep = ""))
 
 # get disparity data
 weight_pref_ms <- simulation_weight_disparity_table(pref_ms)
@@ -327,7 +285,9 @@ pref_map_0 <- cbind(pref_map, pref_membership_0$membership) %>%
 #  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), subcode = "0000")
 #together$CENTROID <- sf::st_centroid(together$geometry)
 
-#pref_map_0 <- rbind(split, together)
+#pref_map_0$CENTROID <- dplyr::group_by(code, membership) %>%
+#  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), subcode = "0000") %>%
+#  sf::st_centroid(pref_map_0$geometry)
 
 pref_map_pop_centroid_0 <- pref_map_0 %>%
   as_tibble() %>%
