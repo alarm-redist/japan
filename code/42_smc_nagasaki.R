@@ -31,6 +31,8 @@ merge_gun_exception <- c()  # enter `c()` if not applicable
 
 ######### Download and Clean Census ############
 # download census shp
+getOption('timeout')
+options(timeout = 240)
 pref_raw <- download_shp(pref_code)
 dem_pops <- download_pop_demographics(pref_code) #first download data
 
@@ -100,7 +102,7 @@ for(i in 0:nsplit){
   # define map
   pref_map <- redist::redist_map(pref_n,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj)
 
@@ -227,7 +229,6 @@ for (i in 1:length(overlap_smc)){
                                                           weighting = "s", index_only = TRUE)}
 }
 
-
 nagasaki_orig_weight <- simulation_weight_disparity_table(redist::redist_plans(plans = matrix(status_quo$ku, ncol = 1), map = nagasaki_42_map_2, algorithm = "smc"))
 
 # set parameters
@@ -249,5 +250,185 @@ ggExtra::ggMarginal(plot_smc, groupColour = TRUE, groupFill = TRUE)
 unique_weights %>% dplyr::group_by(splits) %>% dplyr::summarize(min(max_to_min))
 
 redist::redist.plot.map(
-shp = nagasaki_42_2, plan = modified_smc_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))[1]]
+shp = nagasaki_42_2, plan = modified_smc_0[, which(nagasaki_42_smc_weight_0$max_to_min == min(nagasaki_42_smc_weight_0$max_to_min))[3]]
 )
+
+#load packages
+library(cluster)
+library(viridis)
+library(network)
+library(ggnetwork)
+
+part_parallel_plans_pref <- cbind(modified_smc_0, modified_smc_1, nagasaki_42_smc_plans_2)
+part_parallel_weight_pref <- dplyr::bind_rows(nagasaki_42_smc_weight_0, nagasaki_42_smc_weight_1, nagasaki_42_smc_weight_2)
+
+#add column "n" as an indicator of the plans
+n <- c(1:ncol(part_parallel_plans_pref))
+n <- as.data.frame(n)
+wgt_smc_0 <- cbind(n, part_parallel_weight_pref)
+
+#get plans that have a low max:min ratio (Top 10%)
+good_num_0 <-  wgt_smc_0 %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(floor(nrow(wgt_smc_0)*0.1))) %>%
+  select(n)
+
+good_num_0 <- as.vector(t(good_num_0))
+
+sim_smc_pref_0_good <-
+  dplyr::bind_rows(
+    redist::redist_plans(part_parallel_plans_pref, nagasaki_42_map_2, algorithm = "smc") %>% filter(draw %in% good_num_0)
+  )
+
+#obtain co-occurrence matrix
+m_co_0 <- redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+
+###calculate the centroids of each municipality/gun to plot population size
+pref_map_0 <- nagasaki_42_2
+pref_map_0$CENTROID <- sf::st_centroid(nagasaki_42_2$geometry)
+
+###Draw lines between municipalities that tend to be in the same district
+m_co_sig_0 <- m_co_0
+#extract co-occurrence > 90%
+rownames(m_co_sig_0) <- pref_map_0$code
+colnames(m_co_sig_0) <- pref_map_0$code
+m_co_sig_0 <- as_tibble(as.data.frame(as.table(m_co_sig_0)))
+m_co_sig_0$Freq <- as.numeric(m_co_sig_0$Freq)
+
+#Clean up dataframe
+m_co_sig_0 <- m_co_sig_0 %>%
+  mutate(Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
+  filter(Var1 != Var2, Freq > 0.9)
+#Only the municipalities that are in the same district more than 90% of the time are included
+
+#Creat 0 x 3 tibble
+m_co_sig_0_adj <- m_co_sig_0
+m_co_sig_0_adj <- m_co_sig_0_adj[ !(m_co_sig_0_adj$Var1 %in% m_co_sig_0$Var1), ]
+
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(nagasaki_42_2$code)){
+  p <- m_co_sig_0 %>%
+    filter(Var1 == nagasaki_42_2$code[i]) %>%
+    filter(Var2 %in% c(as.character(nagasaki_42_2$code[nagasaki_42_adj_2[[i]]+1])))
+  m_co_sig_0_adj <- dplyr::bind_rows(p, m_co_sig_0_adj)
+}
+
+#use network package to obtain network
+network_0_adj <- network(m_co_sig_0_adj, directed = FALSE, multiple = TRUE)
+
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, ndists_new) # change 6 to the number of clusters you want
+
+relcomp <- function(a, b) {
+
+  comp <- vector()
+
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+
+  return(comp)
+}
+
+pref_part <- nagasaki_42_2
+part_adj <- nagasaki_42_adj_2
+
+cooc_ratio <- vector(length = length(pref_part$code))
+
+for (i in 1:length(pref_part$code))
+{
+  cooc_ratio[i] <- 1 - sum(pref_part$pop[relcomp(part_adj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(part_adj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref_part$pop[part_adj[[i]]+1] * m_co_0[i, part_adj[[i]]+1])
+}
+
+pref_block <- merge_gun(pref_part)
+
+pref_part$cluster = prec_clusters_0
+pref_part$strength = cooc_ratio
+
+redist::redist.plot.map(pref_part, plan = pref_part$cluster, fill = pref_part$strength) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)
+
+pref_part %>%
+  ggplot() +
+  geom_sf(aes(color = cluster, alpha = strength), show.legend = FALSE) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5) +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+
+redist::redist.plot.map(pref_part, plan = prec_clusters_0, fill = cooc_ratio) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)
+
+#convert to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
+
+#match membership data with pref_map_0
+pref_map_0 <- cbind(pref_map_0, pref_membership_0$membership) %>%
+  dplyr::rename(membership = pref_membership_0.membership)
+
+counts <- as.data.frame(unique(cbind(pref_map_0$code, pref_map_0$membership)))
+
+split <- pref_map_0 %>% dplyr::filter(code == 14113)
+together <- pref_map_0 %>% dplyr::filter(code != 14113) %>%
+  dplyr::group_by(code, membership) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), subcode = "0000")
+together$CENTROID <- sf::st_centroid(together$geometry)
+
+pref_map_0 <- rbind(split, together)
+
+pref_map_pop_centroid_0 <- pref_map_0 %>%
+  as_tibble() %>%
+  dplyr::select(code, CENTROID, pop, geometry) %>%
+  separate(CENTROID, into = c("long", "lat"), sep = c(" "))
+pref_map_pop_centroid_0$long <- str_remove_all(pref_map_pop_centroid_0$long, "[c(,]")
+pref_map_pop_centroid_0$lat <- str_remove_all(pref_map_pop_centroid_0$lat, "[)]")
+pref_map_pop_centroid_0$long <- as.numeric(pref_map_pop_centroid_0$long)
+pref_map_pop_centroid_0$lat <- as.numeric(pref_map_pop_centroid_0$lat)
+
+#prepare to bind together with network dataframe
+lat <- pref_map_pop_centroid_0$lat
+names(lat) <- as.character(pref_map_pop_centroid_0$code)
+long <- pref_map_pop_centroid_0$long
+names(long) <- as.character(pref_map_pop_centroid_0$code)
+
+#Prepare geometry/edges for plotting
+geometry_0_adj <- cbind(long[ network.vertex.names(network_0_adj) ],
+                        lat[ network.vertex.names(network_0_adj) ])
+edges_0_adj <- ggnetwork(network_0_adj, layout = geometry_0_adj, scale = FALSE)
+
+###plot
+pref_map_0 %>%
+  ggplot() +
+  geom_sf(aes(fill = membership), show.legend = FALSE) +
+  #size of the circles corresponds to population size in the municipality/gun
+  #color of the edges corresponds to the strength of the co-occurrence
+  geom_edges(data = edges_0_adj, mapping = aes(x, y, xend = xend, yend = yend, color = Freq),
+             size = 0.2) +
+  scale_color_gradient(low = "navy", high = "navy") +
+  labs(size = "Population (10,000)",
+       color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio and Less Splits than SQ",
+       caption = "Lines represent co-occurrence between adjacent municipalities.") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+redist::redist.plot.map(nagasaki_42_2, plan = status_quo$ku)
