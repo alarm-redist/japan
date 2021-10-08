@@ -113,536 +113,757 @@ urban <- pref %>%
                      "13360", "13380", "13400", "13420")) #Islands are considered connected to Minato-ku
 #save(list=ls(all=TRUE), file="13_smc_tokyo_basic_data_by_region.Rdata")
 
-#############Urban: choose municipalities to set aside#################
-urban_block <- urban %>%
+#############Urban Create 3 Blocks Through Enumeration#################
+#group by municipality
+urban_by_mun <- urban %>%
   dplyr::group_by(code) %>%
-  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry)) #27 administrative units
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
-#adjacency list
-urban_block_adj <- redist::redist.adjacency(urban_block)
-#ferries
-ferries_urban_block <- add_ferries(urban_block)
-#edit adjacency list
-urban_block_adj <- geomander::add_edge(urban_block_adj, ferries_urban_block$V1, ferries_urban_block$V2)
+#group islands together with Minatoku to make results of enumeration reasonable
+minato_islands <- urban_by_mun %>%
+  dplyr::filter(code %in% c(13103, 13360, 13380, 13400, 13420)) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+minato_islands$code <- 13103
 
-#create tibble that shows combination of municipalities
-poptotal <- expand.grid(urban_block$code, urban_block$code)
-poptotal <- as_tibble(as.data.frame(poptotal))
-poptotal$total <- c(1:length(poptotal$Var1))
+#bind back together
+urban_by_mun <-
+  dplyr::bind_rows(urban_by_mun %>%
+          dplyr::filter(code %in% c(13103, 13360, 13380, 13400, 13420) == FALSE),
+          minato_islands)
 
-#calculate total of pop. between two municipalities
-for(i in 1:length(poptotal$Var1)){
-  poptotal$total[i] <- urban_block$pop[which(urban_block$code == poptotal$Var1[i])] +
-                       urban_block$pop[which(urban_block$code == poptotal$Var2[i])]
+#prepare for enumeration: adjacency list
+urban_by_mun_edge_adj <- redist::redist.adjacency(urban_by_mun)
+
+#prepare for enumeartion: define map
+urban_group_map <- redist::redist_map(urban_by_mun,
+                                      ndists = 3,
+                                      pop_tol= 0.08,
+                                      total_pop = pop,
+                                      adj = urban_by_mun_edge_adj)
+
+#enumeration set up
+makecontent <- readLines(system.file('enumpart/Makefile', package = 'redist'))
+makecontent[7] <- "\tg++ enumpart.cpp SAPPOROBDD/bddc.o SAPPOROBDD/BDD.o SAPPOROBDD/ZBDD.o -o enumpart -I$(TDZDD_DIR) -std=c++11 -O3 -DB_64 -DNDEBUG"
+writeLines(text = makecontent, con = system.file('enumpart/Makefile', package = 'redist'))
+if(TRUE){ # change to TRUE if you need to init
+  redist::redist.init.enumpart()
 }
 
-#Creat 0 x 3 tibble
-poptotal_adj <- poptotal
-poptotal_adj <- poptotal_adj[ !(poptotal_adj$Var1 %in% poptotal$Var1), ]
+#enumeration
+urban_enum_plans <- redist::redist.enumpart(adj = urban_by_mun_edge_adj,
+                                            unordered_path = here::here('simulation/unord_tokyo_urban'),
+                                            ordered_path = here::here('simulation/ord_tokyo_urban'),
+                                            out_path = here::here('simulation/enum_tokyo_urban'),
+                                            ndists = 3,
+                                            all = TRUE,
+                                            total_pop = urban_group_map[[attr(urban_group_map, 'pop_col')]])
+save(urban_enum_plans, file = "simulation/13_enum_tokyo_urban_muns.Rdata")
 
-#filter out adjacent municipalities
-for(i in 1:length(urban_block$code)){
-  p <- poptotal %>%
-    filter(Var1 == urban_block$code[i]) %>%
-    filter(Var2 %in% c(as.character(urban_block$code[urban_block_adj[[i]]+1])))
-  poptotal_adj <- dplyr::bind_rows(p, poptotal_adj)
+#check result of enumeration
+urban_enum_plans_result <- redist::redist.read.enumpart(out_path = 'simulation/enum_tokyo_urban')
+urban_enum_plans_result_matrix <- redist::redist_plans(urban_enum_plans_result,
+                                                       urban_group_map,
+                                                       algorithm = 'enumpart')
+
+urban_enum_plans_result_matrix <- dplyr::as_tibble(urban_enum_plans_result_matrix)
+
+save(urban_enum_plans_result_matrix, file = "urban_enum_plans_result_matrix.Rdata")
+
+#cauculate target pop.
+target <- round(sum(urban_by_mun$pop)/21)
+
+
+#Calculate Score: 1.*target   2.round(*target) - *target   3. take absolute value
+urban_enum_plans_result_matrix$score <- abs(urban_enum_plans_result_matrix$total_pop/target -
+                                              round(urban_enum_plans_result_matrix$total_pop/target))
+
+#filter out plans with low deviation from multiple of target pop.
+good_split <-
+  redist::redist_plans(urban_enum_plans_result,
+                       urban_group_map,
+                       algorithm = 'enumpart') %>%
+  filter(draw %in%
+           as.numeric(urban_enum_plans_result_matrix$draw[which(urban_enum_plans_result_matrix$score ==
+                                                                  min(urban_enum_plans_result_matrix$score))]))
+
+#choose best split
+best_split <- as_tibble(good_split)
+best_split$score <- abs(best_split$total_pop/target - round(best_split$total_pop/target))
+#obtain dataframe that has one line per draw
+best_split_plan <- as_tibble(best_split %>% dplyr::filter(district == 1))
+best_split_plan$aggregate <- 0
+#choose the plan whose total score is minimum
+for(i in 1:as.numeric(length(unique(best_split$draw)))){
+  best_split_plan$aggregate[i] <-
+    best_split$score[(3*i-2)] + best_split$score[(3*i-1)]+  + best_split$score[(3*i)]
 }
 
-#choose pairs whose population is close to *2 of target pop.
-target_urban <- sum(urban_block$pop)/21
-poptotal_adj_multiple <- poptotal_adj %>%
-  filter(total > target_urban*2*0.975 & total < target_urban*2*1.025)
-#13119 13117 板橋区 北区
-#13115 13114 中野区 杉並区
-#13108 13109 江東区 品川区
+#get data on optimal plan
+optimal_split <- good_split %>%
+  dplyr::filter(draw == best_split_plan$draw[which(best_split_plan$aggregate ==
+                                                    min(best_split_plan$aggregate))])
+matrix_best_split <- redist::get_plans_matrix(optimal_split)
+colnames(matrix_best_split) <- "block"
 
-########Setagaya 13112 #############
-setagaya <- pref %>%
-  dplyr::filter(code == 13112)
+#bind together data on block with map
+urban_by_mun_block <- as_tibble(cbind(urban_by_mun, as_tibble(matrix_best_split)))
 
-#adjacency list
-setagaya_adj <- redist::redist.adjacency(setagaya)
+save(urban_by_mun_block, file = "urban_by_mun_block.Rdata")
 
-#set up map
-setagaya_map <- redist::redist_map(setagaya,
-                                   ndists = 2,
-                                   pop_tol= 0.03,
-                                   total_pop = pop,
-                                   adj = setagaya_adj)
+#allocate number of seats to each block
+optimal_split$multiple <- round(optimal_split$total_pop/target)
+optimal_split$target <- optimal_split$total_pop/optimal_split$multiple
 
-#smc simulation
-setagaya_smc <- redist::redist_smc(setagaya_map,
-                                   nsims = nsims,
-                                   pop_temper = 0.05)
+save(optimal_split, file = "optimal_split.Rdata")
 
-setagaya <- pref %>%
-  dplyr::filter(code == 13112)
+##########Visualize Best Block####################
+urban_excluding_islands <- urban %>%
+  filter(code %in% c(13360, 13380, 13400, 13420) == FALSE) %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
-#adjacency list
-setagaya_adj <- redist::redist.adjacency(setagaya)
+#match with dataframe that shows the optimal way to break up Tokyo 23-ku into 3 blocks
+urban_excluding_islands$block <- (urban_by_mun_block %>% arrange(code))$block
 
-#set up map
-setagaya_map <- redist::redist_map(setagaya,
-                                   ndists = 2,
-                                   pop_tol= 0.03,
-                                   total_pop = pop,
-                                   adj = setagaya_adj)
+#map
+ggplot() +
+  geom_sf(data = urban_excluding_islands, aes(fill = factor(block))) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(),
+        panel.background = element_blank())
 
-#smc simulation
-setagaya_smc <- redist::redist_smc(setagaya_map,
-                                   nsims = nsims,
-                                   pop_temper = 0.05)
-
-#save
-saveRDS(setagaya_smc, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            "setagaya",
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
-
-setagaya_smc <- readRDS("~/Desktop/ALARM Project/jcdf/simulation/13_setagaya_smc_25000.Rds")
-
-wgt_smc_setagaya <- simulation_weight_disparity_table(setagaya_smc)
-m <- c(1:25000)
-wgt_smc_setagaya <- cbind(m, wgt_smc_setagaya)
-minimum_maxmin_setagaya <-
-  wgt_smc_setagaya$m[which(wgt_smc_setagaya$max_to_min == min(wgt_smc_setagaya$max_to_min))][1]
-
-redist::redist.plot.plans(setagaya_smc, draws = minimum_maxmin_setagaya, geom = setagaya_map)
-
-setagaya_smc %>% filter(draw == minimum_maxmin_setagaya) # 462290  V.S. 462298
-
-########Itabashi_Kita 13119 13117#########
-itabashi_kita <- pref %>%
-  dplyr::filter(code %in% c(13119, 13117))
+#########Urban Block 1################
+urban_block_1 <- urban %>%
+  filter(code %in% c(urban_by_mun_block$code[which(urban_by_mun_block$block == 1)],
+                     13360, 13380, 13400, 13420)) #add islands (connected to Minato-ku)
 
 #adjacency list
-itabashi_kita_adj <- redist::redist.adjacency(itabashi_kita)
-
-#set up map
-itabashi_kita_map <- redist::redist_map(itabashi_kita,
-                                        ndists = 2,
-                                        pop_tol= 0.03,
-                                        total_pop = pop,
-                                        adj = itabashi_kita_adj)
-
-#smc simulation
-itabashi_kita_smc <- redist::redist_smc(itabashi_kita_map,
-                                       nsims = nsims,
-                                        pop_temper = 0.05)
-
-
-#save
-saveRDS(itabashi_kita_smc, paste("simulation/",
-                            as.character(pref_code),
-                            "_",
-                            "itabashi_kita",
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
-
-wgt_smc_itabashi_kita <- simulation_weight_disparity_table(itabashi_kita_smc)
-m <- c(1:25000)
-wgt_smc_itabashi_kita <- cbind(m, wgt_smc_itabashi_kita)
-minimum_maxmin_itabashi_kita <-
-  wgt_smc_itabashi_kita$m[which(wgt_smc_itabashi_kita$max_to_min == min(wgt_smc_itabashi_kita$max_to_min))][1]
-
-redist::redist.plot.plans(itabashi_kita_smc,
-                          draws = minimum_maxmin_itabashi_kita,
-                          geom = itabashi_kita_map)
-
-itabashi_kita_smc %>% filter(draw == minimum_maxmin_itabashi_kita)
-#445576 vs. 445577
-
-########Nakano_Suginami 13115 13114##############
-nakano_suginami <- pref %>%
-  dplyr::filter(code %in% c(13115, 13114))
-
-#adjacency list
-nakano_suginami_adj <- redist::redist.adjacency(nakano_suginami)
-
-#set up map
-nakano_suginami_map <- redist::redist_map(nakano_suginami,
-                                          ndists = 2,
-                                          pop_tol= 0.03,
-                                          total_pop = pop,
-                                          adj = nakano_suginami_adj)
-
-#smc simulation
-nakano_suginami_smc <- redist::redist_smc(nakano_suginami_map,
-                                          nsims = nsims,
-                                          pop_temper = 0.05)
-
-#save
-saveRDS(nakano_suginami_smc, paste("simulation/",
-                                 as.character(pref_code),
-                                 "_",
-                                 "nakano_suginami",
-                                 "_",
-                                 as.character(sim_type),
-                                 "_",
-                                 as.character(nsims),
-                                 ".Rds",
-                                 sep = ""))
-
-wgt_smc_nakano_suginami <- simulation_weight_disparity_table(nakano_suginami_smc)
-m <- c(1:25000)
-wgt_smc_nakano_suginami <- cbind(m, wgt_smc_nakano_suginami)
-minimum_maxmin_nakano_suginami <-
-  wgt_smc_nakano_suginami$m[which(wgt_smc_nakano_suginami$max_to_min == min(wgt_smc_nakano_suginami$max_to_min))][1]
-
-redist::redist.plot.plans(nakano_suginami_smc,
-                          draws = minimum_maxmin_nakano_suginami,
-                          geom = nakano_suginami_map)
-
-nakano_suginami_smc %>% filter(draw == minimum_maxmin_nakano_suginami)
-#451109, 451103
-
-########Shinagawa_Koto 13108, 13109##############
-shinagawa_koto <- pref %>%
-  dplyr::filter(code %in% c(13108, 13109))
-
-#adjacency list
-shinagawa_koto_adj <- redist::redist.adjacency(shinagawa_koto)
-
-#[70]13109 0250 品川区八潮
-shinagawa_koto_adj <- geomander::add_edge(shinagawa_koto_adj, 70, 63) #[63]品川区東品川180
-shinagawa_koto_adj <- geomander::add_edge(shinagawa_koto_adj, 70, 61) #[61]品川区東大井160
-shinagawa_koto_adj <- geomander::add_edge(shinagawa_koto_adj, 70, 49) #[49]品川区勝島40
-
-#[72]13109 0270 品川区東八潮
-shinagawa_koto_adj <- geomander::add_edge(shinagawa_koto_adj, 72, 70) #[70]13109 0250 品川区八潮
-
-#set up map
-shinagawa_koto_map <- redist::redist_map(shinagawa_koto,
-                                         ndists = 2,
-                                         pop_tol= 0.03,
-                                         total_pop = pop,
-                                         adj = shinagawa_koto_adj)
-
-#smc simulation
-shinagawa_koto_smc <- redist::redist_smc(shinagawa_koto_map,
-                                          nsims = nsims,
-                                          pop_temper = 0.05)
-
-#save
-saveRDS(shinagawa_koto_smc, paste("simulation/",
-                                   as.character(pref_code),
-                                   "_",
-                                   "shinagawa_koto",
-                                   "_",
-                                   as.character(sim_type),
-                                   "_",
-                                   as.character(nsims),
-                                   ".Rds",
-                                   sep = ""))
-
-wgt_smc_shinagawa_koto <- simulation_weight_disparity_table(shinagawa_koto_smc)
-m <- c(1:25000)
-wgt_smc_shinagawa_koto <- cbind(m, wgt_smc_shinagawa_koto)
-minimum_maxmin_shinagawa_koto <-
-  wgt_smc_shinagawa_koto$m[which(wgt_smc_shinagawa_koto$max_to_min == min(wgt_smc_shinagawa_koto$max_to_min))][1]
-
-redist::redist.plot.plans(shinagawa_koto_smc,
-                          draws = minimum_maxmin_shinagawa_koto,
-                          geom = shinagawa_koto_map)
-
-shinagawa_koto_smc %>% filter(draw == minimum_maxmin_shinagawa_koto)
-
-########Urban Remainder Set up###################
-urban_rem <- pref %>%
-  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
-                     "13106", "13107", 　　　　　　　　　"13110",
-                     "13111",          "13113",
-                     "13116",          "13118",          "13120",
-                     "13121", "13122", "13123",
-                     "13360", "13380", "13400", "13420")) #Islands are considered part of Minato-ku
-
-#adjacency list
-urban_rem_adj <- redist::redist.adjacency(urban_rem)
+urban_block_1_adj <- redist::redist.adjacency(urban_block_1)
 
 #ferries
-ferries_urban_rem <- add_ferries(urban_rem)
-
+ferries_urban_block_1 <- add_ferries(urban_block_1)
 #edit adjacency list
-urban_rem_adj <- geomander::add_edge(urban_rem_adj,
-                                     ferries_urban_rem$V1, ferries_urban_rem$V2)
-#manually edit adjacency list
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj,
+                                         ferries_urban_block_1$V1, ferries_urban_block_1$V2)
+
 #[92] 13102 0340 中央区佃
 #[93] 13102 0350 中央区月島
 #[94] 13102 0360 中央区勝どき
 #[95] 13102 0370 中央区豊海町
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 92, 70) #[70] 13102 110 中央区新川
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 92, 66) #[66] 13102 0070 中央区明石町
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 92, 93)
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 93, 94)
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 94, 67)  #[67] 13102 0080 中央区築地
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 94, 95)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 92, 70) #[70] 13102 110 中央区新川
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 92, 66) #[66] 13102 0070 中央区明石町
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 92, 93)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 93, 94)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 94, 67)  #[67] 13102 0080 中央区築地
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 94, 95)
 
 #[96] 13102 0380 中央区晴海
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 96, 93)
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 96, 94)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 96, 93)
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 96, 94)
 
 #[126]13103 0300 港区台場
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 126, 98) #[98]13103 0020港区海岸
+urban_block_1_adj <- geomander::add_edge(urban_block_1_adj, 126, 98) #[98]13103 0020港区海岸
 
-#[384]13111 0580 大田区東海
-#[385]13111 0590 大田区城南島
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 384, 385)
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 384, 335) #[335] 13111 0090大田区平和島
+#save(urban_block_1, file = "urban_block_1.Rdata")
+#save(urban_block_1_adj, file = "urban_block_1_adj.Rdata")
 
-#[489]13120 0420 練馬区西大泉町
-urban_rem_adj <- geomander::add_edge(urban_rem_adj, 489, 490) #connect to [490]練馬区西大泉(６丁目) 0430
 
-urban_rem_map <- redist::redist_map(urban_rem,
-                                    ndists = 13,
-                                    pop_tol= 0.08,
-                                    total_pop = pop,
-                                    adj = urban_rem_adj)
+#define map
+urban_block_1_map <- redist::redist_map(urban_block_1,
+                                        ndists = 8,
+                                        pop_tol = 0.08,
+                                        total_pop = pop,
+                                        adj = urban_block_1_adj)
 
-#save(list=ls(all=TRUE), file="13_smc_tokyo_set_aside_urban_2.Rdata")
+# --------- MS simulation ----------------#
+#run simulation
+urban_block_1_ms <- redist::redist_mergesplit(urban_block_1_map,
+                                              nsims = 25000,
+                                              counties = urban_block_1_map$code,
+                                              constraints = list(multisplits = list(strength = 500),
+                                                                 splits = list(strength = 300))
+)
 
-##########Urban Remainder Diagnostics#############
-urban_rem_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/Set_aside/Urban/[0.08-1000]13_urbansetaside2.Rds")
+##########Diagnostics: Urban Block 1#############
+wgt_urban_block_1 <- simulation_weight_disparity_table(urban_block_1_rs)
+m <- c(1:12501)
+wgt_urban_block_1 <- cbind(m, wgt_urban_block_1)
+min(wgt_urban_block_1$max_to_min)
 
-wgt_smc_urban_rem <- simulation_weight_disparity_table(urban_rem_smc)
-m <- c(1:1000)
-wgt_smc_urban_rem <- cbind(m, wgt_smc_urban_rem)
-min(wgt_smc_urban_rem$max_to_min)
+minimum_maxmin_urban_1 <-
+  wgt_urban_block_1$m[which(wgt_urban_block_1$max_to_min == min(wgt_urban_block_1$max_to_min))][1]
 
-minimum_maxmin_urban <-
-  wgt_smc_urban_rem$m[which(wgt_smc_urban_rem$max_to_min == min(wgt_smc_urban_rem$max_to_min))][1]
-
-plans_pref_urban_rem <- redist::get_plans_matrix(urban_rem_smc)
+plans_pref_urban_block_1 <- redist::get_plans_matrix(urban_block_1_rs)
 
 #count the number of splits
-splits_urban_rem <- count_splits(plans_pref_urban_rem, urban_rem_map$code)
-splits_urban_rem[minimum_maxmin_urban]
+splits_urban_block_1 <- count_splits(plans_pref_urban_block_1, urban_block_1_map$code)
+splits_urban_block_1[minimum_maxmin_urban_1]
 
 #count the number of municipalities that are split
-csplits_urban_rem <- redist::redist.splits(plans_pref_urban_rem, urban_rem_map$code)
-csplits_urban_rem[minimum_maxmin_urban]
+csplits_urban_block_1 <- redist::redist.splits(plans_pref_urban_block_1, urban_block_1_map$code)
+csplits_urban_block_1[minimum_maxmin_urban_1]
 
-results_urban <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_urban_rem)))
-results_urban$max_to_min <- wgt_smc_urban_rem$max_to_min
-results_urban$splits <- splits_urban_rem
-results_urban$counties_split <- csplits_urban_rem
-results_urban$index <- 1:nrow(wgt_smc_urban_rem)
-results_urban$dif <-  results_urban$splits - results_urban$counties_split
-min(results_urban$dif)
-View(results_urban)
+results_urban_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_urban_block_1)))
+results_urban_1$max_to_min <- wgt_urban_block_1$max_to_min
+results_urban_1$splits <- splits_urban_block_1
+results_urban_1$counties_split <- csplits_urban_block_1
+results_urban_1$index <- 1:nrow(wgt_urban_block_1)
+results_urban_1$dif <-  results_urban_1$splits - results_urban_1$counties_split
+min(results_urban_1$dif)
+View(results_urban_1)
 
-#optimal plan: draw 1; maxmin 1.122205; splits 10 (0 multi-splits)
+block1_optimal <- which(results_urban_1$max_to_min ==
+                          min((results_urban_1 %>% filter(dif == 0))$max_to_min))[1]
 
-#############Urban Remainder Plot Plan################
+#############Urban Block 1 Plot Plan################
 #get data on optimal plan
-matrix_plan_urban_rem <- redist::get_plans_matrix(urban_rem_smc %>% filter(draw == 1))
-colnames(matrix_plan_urban_rem) <- "district"
-matrix_plan_urban_rem <- head(matrix_plan_urban_rem, 731)
-optimal_boundary <- cbind(head(urban_rem, 731), as_tibble(matrix_plan_urban_rem))
+matrix_plan_urban_block_1 <- redist::get_plans_matrix(urban_block_1_rs %>% filter(draw == block1_optimal))
+colnames(matrix_plan_urban_block_1) <- "district"
+matrix_plan_urban_block_1 <- head(matrix_plan_urban_block_1, 424) #filter out islands
+optimal_boundary_1 <- cbind(head(urban_block_1, 424), as_tibble(matrix_plan_urban_block_1))
 
 #get data on municipality boundary
-urban_rem_boundaries <- urban_rem %>%
+urban_block_boundaries_1 <- urban_block_1 %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-urban_rem_boundaries <- head(urban_rem_boundaries, 18)
+urban_block_boundaries_1 <- head(urban_block_boundaries_1, 10) #filter out islands
 
 #get data on district boundary
-urban_rem_district_boundaries <- optimal_boundary %>%
+urban_district_boundaries_1 <- optimal_boundary_1 %>%
   group_by(district) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #map with district data + municipality boundary
 ggplot() +
-  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
   viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
-  geom_sf(data = urban_rem_boundaries, fill = NA, color = "black", lwd = 1.5) +
-  geom_sf(data = urban_rem_district_boundaries, fill = NA, color = "yellow", lwd = 0.15) +
+  geom_sf(data = urban_block_boundaries_1, fill = NA, color = "black", lwd = 1.5) +
+  geom_sf(data = urban_district_boundaries_1, fill = NA, color = "yellow", lwd = 0.15) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
 
-#############Rural: Choose municipalities to set aside#################
-rural_block <- rural %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry)) #27 administrative units
+
+#########Urban Block 2################
+urban_block_2 <- urban %>%
+  filter(code %in% urban_by_mun_block$code[which(urban_by_mun_block$block == 2)])
 
 #adjacency list
-rural_block_adj <- redist::redist.adjacency(rural_block)
+urban_block_2_adj <- redist::redist.adjacency(urban_block_2)
 
-#create tibble that shows combination of municipalities
-poptotal <- expand.grid(rural_block$code, rural_block$code)
-poptotal <- as_tibble(as.data.frame(poptotal))
-poptotal$total <- c(1:length(poptotal$Var1))
+#[235]13120 0420 練馬区西大泉町
+urban_block_2_adj <- geomander::add_edge(urban_block_2_adj, 235, 236) #connect to [236]練馬区西大泉(６丁目)
 
-#calculate total of pop. between two municipalities
-for(i in 1:length(poptotal$Var1)){
-  poptotal$total[i] <- rural_block$pop[which(rural_block$code == poptotal$Var1[i])] +
-    rural_block$pop[which(rural_block$code == poptotal$Var2[i])]
-}
+#save(urban_block_2, file = "urban_block_2.Rdata")
+#save(urban_block_2_adj, file = "urban_block_2_adj.Rdata")
 
-#Creat 0 x 3 tibble
-poptotal_adj <- poptotal
-poptotal_adj <- poptotal_adj[ !(poptotal_adj$Var1 %in% poptotal$Var1), ]
+#define map
+urban_block_2_map <- redist::redist_map(urban_block_2,
+                                        ndists = 5,
+                                        pop_tol = 0.07,
+                                        total_pop = pop,
+                                        adj = urban_block_2_adj)
+# --------- MS simulation ----------------#
+#run simulation
+urban_block_2_ms <- redist::redist_mergesplit(urban_block_2_map,
+                                              nsims = 25000,
+                                              counties = urban_block_2_map$code,
+                                              constraints = list(multisplits = list(strength = 500),
+                                                                 splits = list(strength = 300))
+)
 
-#filter out adjacent municipalities
-for(i in 1:length(rural_block$code)){
-  p <- poptotal %>%
-    filter(Var1 == rural_block$code[i]) %>%
-    filter(Var2 %in% c(as.character(rural_block$code[rural_block_adj[[i]]+1])))
-  poptotal_adj <- dplyr::bind_rows(p, poptotal_adj)
-}
+##########Diagnostics: Urban Block 2#############
+wgt_urban_block_2 <- simulation_weight_disparity_table(urban_block_2_rs)
+m <- c(1:12501)
+wgt_urban_block_2 <- cbind(m, wgt_urban_block_2)
+min(wgt_urban_block_2$max_to_min)
 
-#filter out pairs of municipalities whose population is close to *2 of target pop.
-target_rural <- sum(rural_block$pop)/9
-poptotal_adj_multiple <- poptotal_adj %>%
-  filter(total > target_rural*2*0.90 & total < target_rural*2*1.10)
-#13209町田市 13201八王子市　= total 992341 -> 496170.5 per district
+minimum_maxmin_urban_2 <-
+  wgt_urban_block_2$m[which(wgt_urban_block_2$max_to_min == min(wgt_urban_block_2$max_to_min))][1]
 
-########Machida_Hachioji 13209 13201#############
-machida_hachioji <- pref %>%
-  dplyr::filter(code %in% c(13209, 13201))
+plans_pref_urban_block_2 <- redist::get_plans_matrix(urban_block_2_rs)
+
+#count the number of splits
+splits_urban_block_2 <- count_splits(plans_pref_urban_block_2, urban_block_2_map$code)
+splits_urban_block_2[minimum_maxmin_urban_2]
+
+#count the number of municipalities that are split
+csplits_urban_block_2 <- redist::redist.splits(plans_pref_urban_block_2, urban_block_2_map$code)
+csplits_urban_block_2[minimum_maxmin_urban_2]
+
+results_urban_2 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_urban_block_2)))
+results_urban_2$max_to_min <- wgt_urban_block_2$max_to_min
+results_urban_2$splits <- splits_urban_block_2
+results_urban_2$counties_split <- csplits_urban_block_2
+results_urban_2$index <- 1:nrow(wgt_urban_block_2)
+results_urban_2$dif <-  results_urban_2$splits - results_urban_2$counties_split
+min(results_urban_2$dif)
+View(results_urban_2)
+
+block2_optimal <- which(results_urban_2$max_to_min ==
+                          min((results_urban_2 %>% filter(dif == 0))$max_to_min))[1]
+
+#############Urban Block 2 Plot Plan################
+#get data on optimal plan
+matrix_plan_urban_block_2 <- redist::get_plans_matrix(urban_block_2_rs %>% filter(draw == block2_optimal))
+colnames(matrix_plan_urban_block_2) <- "district"
+optimal_boundary_2 <- cbind(urban_block_2, as_tibble(matrix_plan_urban_block_2))
+
+#get data on municipality boundary
+urban_block_boundaries_2 <- urban_block_2 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on district boundary
+urban_district_boundaries_2 <- optimal_boundary_2 %>%
+  group_by(district) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_2, aes(fill = factor(district))) +
+  scale_fill_manual(values = c("green", "purple", "blue", "yellow", "brown")) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_2, fill = NA, color = "black", lwd = 2.5) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+#################Urban Block 3#################
+urban_block_3 <- urban %>%
+  filter(code %in% c(urban_by_mun_block$code[which(urban_by_mun_block$block == 3)]))
 
 #adjacency list
-machida_hachioji_adj <- redist::redist.adjacency(machida_hachioji)
+urban_block_3_adj <- redist::redist.adjacency(urban_block_3)
 
-#set up map
-machida_hachioji_map <- redist::redist_map(machida_hachioji,
-                                          ndists = 2,
-                                          pop_tol= 0.03,
-                                          total_pop = pop,
-                                          adj = machida_hachioji_adj)
 
-#smc simulation
-machida_hachioji_smc <- redist::redist_smc(machida_hachioji_map,
-                                          nsims = nsims,
-                                          pop_temper = 0.05)
+#manually edit adjacency list
+#edit adjacency list
+#[70]13109 0250 品川区八潮
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 70, 63) #[63]品川区東品川180
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 70, 61) #[61]品川区東大井160
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 70, 49) #[49]品川区勝島40
 
-#save
-saveRDS(machida_hachioji_smc, paste("simulation/",
-                                   as.character(pref_code),
-                                   "_",
-                                   "machida_hachioji",
-                                   "_",
-                                   as.character(sim_type),
-                                   "_",
-                                   as.character(nsims),
-                                   ".Rds",
-                                   sep = ""))
+#[72]13109 0270 品川区東八潮
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 72, 70) #[70]13109 0250 品川区八潮
 
-wgt_smc_machida_hachioji <- simulation_weight_disparity_table(machida_hachioji_smc)
-m <- c(1:25000)
-wgt_smc_machida_hachioji <- cbind(m, wgt_smc_machida_hachioji)
-minimum_maxmin_machida_hachioji <-
-  wgt_smc_machida_hachioji$m[which(wgt_smc_machida_hachioji$max_to_min == min(wgt_smc_machida_hachioji$max_to_min))][1]
+#[157]13111 0580 大田区東海 -- currently connected to only [70]13109 0250 品川区八潮 and [158]13111 0590大田区城南島
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 157, 108)　#[108]13111 0090 大田区平和島 107 109
+urban_block_3_adj <- geomander::add_edge(urban_block_3_adj, 157, 159)   #[159]13111 0600大田区京浜島
 
-redist::redist.plot.plans(machida_hachioji_smc,
-                          draws = minimum_maxmin_machida_hachioji,
-                          geom = machida_hachioji_map)
 
-machida_hachioji_smc %>% filter(draw == minimum_maxmin_machida_hachioji)
-#496171, 496170
+#save(urban_block_3, file = "urban_block_3.Rdata")
+#save(urban_block_3_adj, file = "urban_block_3_adj.Rdata")
 
-########Rural Remainder Set up###################
-rural_rem <-  pref %>%
-  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
-                     "13106", "13107", "13108", "13109", "13110",
-                     "13111", "13112", "13113", "13114", "13115",
-                     "13116", "13117", "13118", "13119", "13120",
-                     "13121", "13122", "13123",
-                     "13360", "13380", "13400", "13420",
-                     "13209", "13201") == FALSE) #set aside 八王子、町田
-
-#adjacency list
-rural_rem_adj <- redist::redist.adjacency(rural_rem)
-
-#save(list=ls(all=TRUE), file="13_smc_tokyo_set_aside_rural.Rdata")
-
-########Rural Remainder Simulation##########
-#maps
-rural_rem_map <- redist::redist_map(rural_rem,
-                                    ndists = 7, #9-2(Hachioji;Machida)
-                                    pop_tol= 0.08,
-                                    total_pop = pop,
-                                    adj = rural_rem_adj)
+urban_block_3_map <- redist::redist_map(urban_block_3,
+                                        ndists = 8,
+                                        pop_tol = 0.075,
+                                        total_pop = pop,
+                                        adj = urban_block_3_adj)
 
 # --------- SMC simulation ----------------#
 #run simulation
-rural_rem_smc <- redist::redist_smc(rural_rem_map,
-                                    nsims = 25000,
-                                    counties = rural_rem_map$code,
-                                    constraints = list(multisplits = list(strength = 100000000)),
-                                    pop_temper = 0.05
+urban_block_3_ms <- redist::redist_mergesplit(urban_block_3_map,
+                                              nsims = 25000,
+                                              counties = urban_block_3_map$code,
+                                              constraints = list(multisplits = list(strength = 500),
+                                                                 splits = list(strength = 300))
+)
+
+##########Diagnostics: Urban Block 3#############
+wgt_urban_block_3 <- simulation_weight_disparity_table(urban_block_3_rs)
+m <- c(1:12501)
+wgt_urban_block_3 <- cbind(m, wgt_urban_block_3)
+min(wgt_urban_block_3$max_to_min)
+
+minimum_maxmin_urban_3 <-
+  wgt_urban_block_3$m[which(wgt_urban_block_3$max_to_min == min(wgt_urban_block_3$max_to_min))][1]
+
+plans_pref_urban_block_3 <- redist::get_plans_matrix(urban_block_3_rs)
+
+#count the number of splits
+splits_urban_block_3 <- count_splits(plans_pref_urban_block_3, urban_block_3_map$code)
+splits_urban_block_3[minimum_maxmin_urban_3]
+
+#count the number of municipalities that are split
+csplits_urban_block_3 <- redist::redist.splits(plans_pref_urban_block_3, urban_block_3_map$code)
+csplits_urban_block_3[minimum_maxmin_urban_3]
+
+results_urban_3 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_urban_block_3)))
+results_urban_3$max_to_min <- wgt_urban_block_3$max_to_min
+results_urban_3$splits <- splits_urban_block_3
+results_urban_3$counties_split <- csplits_urban_block_3
+results_urban_3$index <- 1:nrow(wgt_urban_block_3)
+results_urban_3$dif <-  results_urban_3$splits - results_urban_3$counties_split
+min(results_urban_3$dif)
+View(results_urban_3)
+
+block3_optimal <- which(results_urban_3$max_to_min ==
+                          min((results_urban_3 %>% filter(dif == 0))$max_to_min))[1]
+
+
+#############Urban Block 3 Plot Plan################
+#get data on optimal plan
+matrix_plan_urban_block_3 <- redist::get_plans_matrix(urban_block_3_rs %>% filter(draw == block3_optimal))
+colnames(matrix_plan_urban_block_3) <- "district"
+optimal_boundary_3 <- cbind(urban_block_3, as_tibble(matrix_plan_urban_block_3))
+
+#get data on municipality boundary
+urban_block_boundaries_3 <- urban_block_3 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on district boundary
+urban_district_boundaries_3 <- optimal_boundary_3 %>%
+  group_by(district) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_3, aes(fill = factor(district))) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_3, fill = NA, color = "black", lwd = 1.5) +
+  geom_sf(data = urban_district_boundaries_3, fill = NA, color = "yellow", lwd = 0.15) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+##########Rural MS###################
+#adjacency list
+rural_adj <- redist::redist.adjacency(rural)
+
+#save(rural, file = "rural.Rdata")
+#save(rural_adj, file = "rural_adj.Rdata")
+
+#define map
+rural_map <- redist::redist_map(rural,
+                                ndists = 9,
+                                pop_tol= 0.04,
+                                total_pop = pop,
+                                adj = rural_adj)
+
+# --------- MS simulation ----------------#
+#run simulation
+rural_ms <- redist::redist_mergesplit(rural_map,
+                                      nsims = 25000,
+                                      counties = rural_map$code,
+                                      constraints = list(multisplits = list(strength = 500),
+                                                         splits = list(strength = 300))
 )
 
 #########diagnostics:rural#########
-rural_smc <- readRDS("~/Desktop/ALARM Project/Tokyo Results/Set_aside/Rural/[0.08-1000]13_rural_smc_1000.Rds")
-
-wgt_smc_rural <- simulation_weight_disparity_table(rural_smc)
-m <- c(1:25000)
-wgt_smc_rural <- cbind(m, wgt_smc_rural)
-min(wgt_smc_rural$max_to_min)
+wgt_rural <- simulation_weight_disparity_table(rural_ms_res)
+m <- c(1:12501)
+wgt_rural <- cbind(m, wgt_rural)
+min(wgt_rural$max_to_min)
 
 minimum_maxmin_rural <-
-  wgt_smc_rural$m[which(wgt_smc_rural$max_to_min == min(wgt_smc_rural$max_to_min))][1]
+  wgt_rural$m[which(wgt_rural$max_to_min == min(wgt_rural$max_to_min))][1]
 
-plans_pref_rural <- redist::get_plans_matrix(rural_smc)
+plans_pref_rural <- redist::get_plans_matrix(rural_ms_res)
 
 #count the number of splits
-splits_rural <- count_splits(plans_pref_rural, rural_rem_map$code)
+splits_rural <- count_splits(plans_pref_rural, rural_map$code)
 splits_rural[minimum_maxmin_rural]
 
 #count the number of municipalities that are split
-csplits_rural<- redist::redist.splits(plans_pref_rural, rural_rem_map$code)
+csplits_rural<- redist::redist.splits(plans_pref_rural, rural_map$code)
 csplits_rural[minimum_maxmin_rural]
 
-results_rural <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_rural)))
-results_rural$max_to_min <- wgt_smc_rural$max_to_min
+results_rural <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_rural)))
+results_rural$max_to_min <- wgt_rural$max_to_min
 results_rural$splits <- splits_rural
 results_rural$counties_split <- csplits_rural
-results_rural$index <- 1:nrow(wgt_smc_rural)
+results_rural$index <- 1:nrow(wgt_rural)
 results_rural$dif <-  results_rural$splits - results_rural$counties_split
 min(results_rural$dif)
 View(results_rural)
 
-#New: optimal plan: draw 1; maxmin 1.141586; splits 6 (0 multi-splits)
-optimal_rural <- minimum_maxmin_rural #1
+optimal_rural <- which(results_rural$max_to_min ==
+                         min((results_rural %>% filter(dif == 0))$max_to_min))[1]
 
-#############Rural Remainder Plot Plan################
+#############Rural  Plot Plan################
 #get data on optimal plan
-matrix_plan_rural_rem <- redist::get_plans_matrix(rural_smc %>% filter(draw == 1))
-colnames(matrix_plan_rural_rem) <- "district"
-optimal_boundary <- cbind(rural_rem, as_tibble(matrix_plan_rural_rem))
-
-#get data on municipality boundary
-rural_rem_boundaries <- rural_rem %>%
-  group_by(code) %>%
-  summarise(geometry = sf::st_union(geometry))
+matrix_plan_rural <- redist::get_plans_matrix(rural_ms_res %>% filter(draw == optimal_rural))
+colnames(matrix_plan_rural) <- "district"
+optimal_boundary_rural <- cbind(rural, as_tibble(matrix_plan_rural))
 
 #get data on district boundary
-rural_rem_district_boundaries <- optimal_boundary %>%
+rural_district_boundaries <- optimal_boundary_rural %>%
   group_by(district) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on municipality boundary
+rural_boundaries <- rural %>%
+  group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #map with district data + municipality boundary
 ggplot() +
-  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  geom_sf(data = optimal_boundary_rural, aes(fill = factor(district))) +
   viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
-  geom_sf(data = rural_rem_boundaries, fill = NA, color = "black", lwd = 1) +
-  geom_sf(data = rural_rem_district_boundaries, fill = NA, color = "yellow", lwd = 0.15) +
+  geom_sf(data = rural_boundaries, fill = NA, color = "black", lwd = 1) +
+  geom_sf(data = rural_district_boundaries, fill = NA, color = "yellow", lwd = 0.15) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
+
+##############Merge Together 4 Blocks###############
+#--------merge together---------#
+#change color of Suginami-ku to make it more visible
+optimal_boundary_1_edited$district[optimal_boundary_1$district==1] <- 9
+
+
+ggplot() +
+  #urban block 1
+  geom_sf(data = optimal_boundary_1_edited, aes(fill = factor(district))) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_1, fill = NA, color = "black", lwd = 2.5) +
+  geom_sf(data = urban_district_boundaries_1, fill = NA, color = "red", lwd = 1.5) +
+  #urban block 2
+  geom_sf(data = optimal_boundary_2, aes(fill = factor(district))) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_2, fill = NA, color = "black", lwd = 2.5) +
+  geom_sf(data = urban_district_boundaries_2, fill = NA, color = "red", lwd = 1.5) +
+  #urban block 3
+  geom_sf(data = optimal_boundary_3, aes(fill = factor(district))) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_3, fill = NA, color = "black", lwd = 2.5) +
+  geom_sf(data = urban_district_boundaries_3, fill = NA, color = "red", lwd = 1.5) +
+  #rural
+  geom_sf(data = optimal_boundary_rural, aes(fill = factor(district))) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = rural_boundaries, fill = NA, color = "black", lwd = 2.5) +
+  geom_sf(data = rural_district_boundaries, fill = NA, color = "red", lwd = 1.5) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+#------------status quo-----------------#
+pref_sq <- status_quo_match(pref)
+
+save(pref_sq, file = "pref_sq.Rdata")
+
+pref_sq_without_islands <- head(pref_sq, 1603) #filter out islands
+
+pref_sq_boundaries <- pref_sq_without_islands %>%
+  group_by(ku) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#change the number of ku to make plot more visible
+"pref_sq_without_islands$ku[pref_sq_without_islands$ku==10] <- 3
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==11] <- 1
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==12] <- 2
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==13] <- 3
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==14] <- 4
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==15] <- 5
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==16] <- 6
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==17] <- 7
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==18] <- 9
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==19] <- 8
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==20] <- 10
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==21] <- 1
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==22] <- 2
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==23] <- 3
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==24] <- 4
+pref_sq_without_islands$ku[pref_sq_without_islands$ku==25] <- 5"
+
+ggplot() +
+  geom_sf(data = pref_sq_without_islands, aes(fill = factor(ku))) +  #color in 25  districts
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_excluding_islands, fill = NA, color = "black", lwd = 2.5) + #municipality boundary
+  geom_sf(data = rural_boundaries, fill = NA, color = "black", lwd = 2.5) +
+  geom_sf(data = pref_sq_boundaries, fill = NA, color = "red", lwd = 1.5)+ #district boundary
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+#---------status quo: urban block 1-----------#
+urban_block_1_sq <- pref_sq %>%
+  filter(code %in% urban_by_mun_block$code[which(urban_by_mun_block$block == 1)])
+urban_block_1_sq_boundaries <- urban_block_1_sq %>%
+  group_by(ku) %>%
+  summarise(geometry = sf::st_union(geometry))
+ggplot() +
+  geom_sf(data = urban_block_1_sq, aes(fill = factor(ku))) +  #color in 25  districts
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_1, fill = NA, color = "black", lwd = 2.5) + #municipality boundary
+  geom_sf(data = urban_block_1_sq_boundaries, fill = NA, color = "red", lwd = 1.5) + #district boundary
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+#---------status quo: urban block 2-----------#
+urban_block_2_sq <- pref_sq %>%
+  filter(code %in% urban_by_mun_block$code[which(urban_by_mun_block$block == 2)])
+urban_block_2_sq_boundaries <- urban_block_2_sq %>%
+  group_by(ku) %>%
+  summarise(geometry = sf::st_union(geometry))
+ggplot() +
+  geom_sf(data = urban_block_2_sq, aes(fill = factor(ku))) +  #color in 25  districts
+  scale_fill_manual(values = c("grey64", "lightsalmon", "deeppink", "orange4",
+                               "paleturquoise", "red4", "olivedrab1"
+                               )) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_2, fill = NA, color = "black", lwd = 2.5) + #municipality boundary
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+
+#---------status quo: urban block 3-----------#
+urban_block_3_sq <- pref_sq %>%
+  filter(code %in% urban_by_mun_block$code[which(urban_by_mun_block$block == 3)])
+urban_block_3_sq_boundaries <- urban_block_3_sq %>%
+  group_by(ku) %>%
+  summarise(geometry = sf::st_union(geometry))
+ggplot() +
+  geom_sf(data = urban_block_3_sq, aes(fill = factor(ku))) +  #color in 25  districts
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = urban_block_boundaries_3, fill = NA, color = "black", lwd = 2.5) + #municipality boundary
+  geom_sf(data = urban_block_3_sq_boundaries, fill = NA, color = "red", lwd = 1.5) + #district boundary
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+#---------status quo: rural-----------#
+rural_sq <- pref_sq %>%
+  filter(code %in% c("13101", "13102", "13103", "13104", "13105",
+                "13106", "13107", "13108", "13109", "13110",
+                "13111", "13112", "13113", "13114", "13115",
+                "13116", "13117", "13118", "13119", "13120",
+                "13121", "13122", "13123",
+                "13360", "13380", "13400", "13420") == FALSE)
+ggplot() +
+  geom_sf(data = rural_sq, aes(fill = factor(ku))) +  #color in 25  districts
+  scale_fill_manual(values = c("plum4", "darkseagreen4", "darkorange3", "yellow",
+                               "burlywood4", "forestgreen", "red", "royalblue4")) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = rural_boundaries, fill = NA, color = "black", lwd = 1.5) + #municipality boundary
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+##########Co-occurrence: Rural##############
+#filter out the plans with 0 multi-splits
+zero_multisplit_rural <- results_rural %>%
+  filter(dif == 0)
+
+#filter out the plans that have a low max:min ratio (Top 10%)
+good_num_0 <-  zero_multisplit_rural %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(nsims*0.1)) %>%
+  select(index)
+good_num_0 <- as.vector(t(good_num_0))
+sim_smc_pref_0_good <- rural_ms_res %>%
+  filter(draw %in% good_num_0)
+#obtain co-occurrence matrix
+m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+
+#use cluster package to create clusters
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, 9) #9: number of clusters
+
+#convert data on membership to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+names(pref_membership_0) <- "membership"
+
+#co-occurrence: ratio
+cooc_ratio <- vector(length = length(rural$code))
+#----define relcomp function--------
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+for (i in 1:length(rural$code))
+{
+  cooc_ratio[i] <- 1 -
+    sum(rural$pop[relcomp(rural_adj[[i]]+1,
+                              which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(rural_adj[[i]]+1,
+                                                                                                 which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(rural$pop[rural_adj[[i]]+1] * m_co_0[i, rural_adj[[i]]+1])
+}
+
+#match membership data with map object
+rural_membership <- cbind(rural, cooc_ratio, pref_membership_0)
+
+#sort membership data by group
+rural_membership_1 <- rural_membership %>% dplyr::filter(membership == 1)
+rural_membership_2 <- rural_membership %>% dplyr::filter(membership == 2)
+rural_membership_3 <- rural_membership %>% dplyr::filter(membership == 3)
+rural_membership_4 <- rural_membership %>% dplyr::filter(membership == 4)
+rural_membership_5 <- rural_membership %>% dplyr::filter(membership == 5)
+rural_membership_6 <- rural_membership %>% dplyr::filter(membership == 6)
+rural_membership_7 <- rural_membership %>% dplyr::filter(membership == 7)
+rural_membership_8 <- rural_membership %>% dplyr::filter(membership == 8)
+rural_membership_9 <- rural_membership %>% dplyr::filter(membership == 9)
+
+###plot
+ggplot() +
+  geom_sf(data = rural_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="lightpink", high="red") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "lightgoldenrodyellow", high = "yellow") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "grey71", high = "grey22") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="darkseagreen1", high="darkseagreen4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="burlywood1", high="burlywood4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "royalblue1", high = "royalblue4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_7, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="plum1", high="plum4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_8, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="palegreen", high="forestgreen") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = rural_membership_9, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="orange", high="darkorange3") +
+
+  labs(color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
+  geom_sf(data = rural_boundaries, fill = NA, color = "black", lwd = 1.5) +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
 
 
 #######Visualization of Blocks###############
@@ -651,9 +872,9 @@ tokyo_exclude_islands <- pref %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
-tokyo_exclude_islands$block <- c(1,1,1,1,1,1,1,2,2,1,1,3,1,4,4,1,5,1,5,1,1,1,1,
-                                 7,6,6,6,6,6,6,6,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-                                 6,6,6,6)
+tokyo_exclude_islands$block <- c(urban_excluding_islands$block,
+                                 rep(4, length(unique(rural$code))))
+
 #get data on district boundary
 block_boundary <- tokyo_exclude_islands %>%
   group_by(block) %>%
@@ -661,31 +882,28 @@ block_boundary <- tokyo_exclude_islands %>%
 
 ggplot() +
   geom_sf(data = tokyo_exclude_islands, aes(fill = factor(block))) +
+  scale_fill_manual(values = c("red", "yellow", "orange", "green")) +
   geom_sf(data = block_boundary, fill = NA, color = "black", lwd = 1) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
 
-########Results########
-total <- dplyr::bind_rows(setagaya_smc %>% filter(draw == minimum_maxmin_setagaya),
-                          itabashi_kita_smc %>% filter(draw == minimum_maxmin_itabashi_kita),
-                          nakano_suginami_smc %>% filter(draw == minimum_maxmin_nakano_suginami),
-                          shinagawa_koto_smc %>% filter(draw == minimum_maxmin_shinagawa_koto),
-                          machida_hachioji_smc %>% filter(draw == minimum_maxmin_machida_hachioji),
-                          urban_rem_smc %>% filter(draw == minimum_maxmin_urban),
-                          rural_smc %>%  filter(draw == optimal_rural))
-total$region <- rep(c("Setagaya",
-                      "Itabashi-Kita",
-                      "Nakano-Suginami",
-                      "Shinagawa-Koto",
-                      "Machida-Hachioji",
-                      "Urban(Remainder)",
-                      "Rural(Remainder)"),
-                    times = c(2, 2, 2, 2, 2, 13, 7))
-max(total$total_pop)/min(total$total_pop)
+tokyo_exclude_islands$block <- c(rep(1, 23),
+                                 rep(2, length(unique(rural$code))))
 
-#Number of splits
-nsplits <- 1+2+2+2+2+10+6
+#get data on district boundary
+block_boundary <- tokyo_exclude_islands %>%
+  group_by(block) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+ggplot() +
+  geom_sf(data = tokyo_exclude_islands, aes(fill = factor(block))) +
+  scale_fill_manual(values = c("yellow", "green")) +
+  geom_sf(data = block_boundary, fill = NA, color = "black", lwd = 1) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
 
 
