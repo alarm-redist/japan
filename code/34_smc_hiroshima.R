@@ -504,6 +504,58 @@ hiroshima_34_optimalmap_1 <- redist::redist.plot.map(shp = pref_1,
   scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
   labs(caption = paste("Max-min Ratio: ", round(min(wgt_smc_1$max_to_min), 3), sep = ""), hjust = 0.5)
 
+#--------New Way of Visualization that Takes into Account 郡 & 広域連携 boundaries ----------
+#optimal district boundaries
+pref_map_1$district <- pref_smc_plans_1[, which(wgt_smc_1$max_to_min == min(wgt_smc_1$max_to_min))[1]]
+
+#municipality boundary
+mun_boundary <-  pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, geometry, pop)
+
+#gun boundary
+gun_boundary <- merge_gun(mun_boundary) %>%
+  dplyr::filter(code >= (merge_gun(mun_boundary)$code[1] %/% 1000)*1000 + 300) #filter out 郡
+
+#広域連携 boundary (those that are respected under the enacted plan)
+#広域連携 boundary (those that are not respected under the enacted plan)
+koiki_violated_1 <- mun_boundary %>%
+  dplyr::filter(code %in% c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
+                            34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
+                            34302, 34304, 34307, 34309,
+                            34368, 34369,
+                            34431, 34462)) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
+
+#備後圏域連携中枢都市圏
+koiki_violated_2 <- mun_boundary %>%
+  dplyr::filter(code %in% c(34207, 34204, 34205, 34208, 34462, 34545)) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
+
+#広島中央地域連携中枢都市圏
+koiki_violated_3 <- mun_boundary %>%
+  dplyr::filter(code %in% c(34202, 34203, 34212, 34215, 34304, 34307, 34309, 34431)) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
+
+
+ggplot() +
+  geom_sf(data = pref_map_1, aes(fill = factor(district))) + #color in the districts
+  scale_fill_manual(values= c("1" = "blue", "2" = "red", "3" = "yellow", "4" = "green", "5" = "orange", "6" = "brown")) +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.5) + #municipality boundary
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.5) + #gun boundary
+  #geom_sf(data = koiki_violated_1, fill = "plum1", alpha = 0.7, color = "plum1", lwd = 0.5) + #広島広域都市圏
+  #geom_sf(data = koiki_violated_2, fill = "plum1", alpha = 0.7, color = "plum1", lwd = 0.5) + #備後圏域連携中枢都市圏
+  geom_sf(data = koiki_violated_3, fill = "plum1", alpha = 0.7, color = "plum1", lwd = 0.5) + #広島中央地域連携中枢都市圏
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+
+
 wgt_smc_2 <- simulation_weight_disparity_table(sim_smc_pref_2)
 #wgt_smc_2 <- cbind(n, wgt_smc_2)
 #wgt_smc_2$n[which(wgt_smc_2$max_to_min == min(wgt_smc_2$max_to_min))]
