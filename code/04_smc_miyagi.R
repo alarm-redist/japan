@@ -224,6 +224,7 @@ saveRDS(sim_smc_pref_1, paste("simulation/",
                               ".Rds",
                               sep = ""))
 
+
 ##########Two split###################
 pref_2 <- pref_1
 
