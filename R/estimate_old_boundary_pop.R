@@ -29,6 +29,8 @@ estimate_old_boundary_pop <- function(old_code, new_code, pref, census2020) {
 
   row.names(pref_new) <- NULL
 
+  pref_new <- sf::st_as_sf(pref_new)
+
   # return result
   return(pref_new)
 
