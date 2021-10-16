@@ -12,23 +12,22 @@
 #' @export
 #'
 
-estimate_old_boundary_pop <- function(old_codes, new_code, pref, census2020) {
+estimate_old_boundary_pop <- function(old_code, new_code, pref, census2020) {
 
   # initialize pref_new object
   pref_new <- pref
 
   # population of Japanese nationals in municipality new_code for 2020
-  nat_2020 <- (census2020 %>% dplyr::filter(code == new_code, ))$pop_national
-  pop_2015 <- sum(pref[which(pref$code %in% old_codes), ]$pop)
+  nat_2020 <- (census2020 %>% dplyr::filter(code == as.numeric(new_code), ))$pop_national
+  pop_2015 <- sum(pref[which(pref$code %in% old_code), ]$pop)
 
   # conduct estimates using simple rounding proportional method
-  for (i in 1:length(old_codes)) {
-    pref_new[which(pref_new$code == old_codes[i]), ]$pop <-
-      round(pref_new[which(pref_new$code == old_codes[i]), ]$pop / pop_2015 * nat_2020)
+  for (i in 1:length(old_code)) {
+    pref_new[which(pref_new$code == old_code[i]), ]$pop <-
+      round(pref_new[which(pref_new$code == old_code[i]), ]$pop / pop_2015 * nat_2020)
   }
 
   row.names(pref_new) <- NULL
-  pref_new <- sf::st_make_valid(pref_new)
 
   # return result
   return(pref_new)
