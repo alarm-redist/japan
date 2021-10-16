@@ -30,25 +30,38 @@
 
 
 reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_code, new_code){
+
+  #code of old municipalities: convert input into character; make sure that code is 5 digits
+  if(nchar(old_code[1]) == 4){
+    old_code_char <- paste0(0, as.character(old_code))
+  }else{
+    old_code_char <- as.character(old_code)
+  }
+
+  #code of new municipalities: convert input into character; make sure that code is 5 digits
+  if(nchar(new_code) == 4){
+    new_code_char <- paste0(0, as.character(new_code))
+  }else{
+    new_code_char <- as.character(new_code)
+  }
+
   #Match CRS
   sf::st_crs(old_boundary) <- sf::st_crs(pref)
 
   #filter out the municipalities that will not be split
   #(i.e. no need to take into account old boundaries)
   post_gappei_except_for_designated_city <- pref %>%
-    dplyr::filter(code != new_code) %>%
-    dplyr::select(code, pop, geometry)
-
-
+      dplyr::filter(code != as.numeric(new_code)) %>%
+      dplyr::select(code, pop, geometry)
 
   #Clean the data on old boundaries
   pre_gappei_geom <- old_boundary %>%
-    dplyr::filter(N03_007 %in% old_code) %>%
+    dplyr::filter(N03_007 %in% old_code_char) %>%
     dplyr::select(N03_004, N03_007, geometry)
-  names(pre_gappei_geom) <- c("municipality", "code", "geometry")
+  names(pre_gappei_geom) <- c("municipality", "pre_gappei_code", "geometry")
   pre_gappei_geom <- sf::st_make_valid(pre_gappei_geom)
   pre_gappei_geom <- pre_gappei_geom %>%
-    dplyr::group_by(code) %>%
+    dplyr::group_by(pre_gappei_code) %>%
     dplyr::summarise(geometry =  sf::st_union(geometry))
 
   #get rid of unnecessary rows and columns
@@ -60,38 +73,48 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
 
   #select the data we are interested in
   pop_data <- cleaned_pop_by_old_boundary %>%
-    filter(X %in% new_code) %>%
+    filter(X %in% new_code_char) %>%
     filter(X.1 %in% 9) %>%
     #"9" corresponds to the old municipalities (cf.shikibetsu code)
     select(X, X.4, X.5)
-  names(pop_data) <- c("null_code", "municipality", "pop")
+  names(pop_data) <- c("code", "municipality", "pop")
   #obtain the last three digits of the old municipality codes
   pop_data <- pop_data %>%
-    separate(municipality, into = c("a", "old_code", "b"), sep = " ") %>%
-    select(old_code, pop)
+    separate(municipality, into = c("a", "pre_code", "b"), sep = " ") %>%
+    select(code, pre_code, pop)
+  pop_data$code <- as.numeric(pop_data$code)
 
 
   #generate functioning municipality codes
   #(i.e. add the first two digits)
   pref_10<- pref$code[1] %/% 1000 #prefecture_code
-  a <- lapply(pref_10,  paste0, pop_data$old_code)
-  b <- as.data.frame(a, col.names = "code")
+  a <- lapply(pref_10,  paste0, pop_data$pre_code)
+  b <- as.data.frame(a, col.names = "pre_gappei_code")
 
   #final version of 2015(2020) population based on old boundaries
   pop_data <- bind_cols(b, pop_data)
-
+  pop_data = subset(pop_data, select = -c(pre_code))
+  #make old code into character vector
+  if(nchar(pop_data$pre_gappei_code[1]) == 4){
+    pop_data$pre_gappei_code <- as.character(paste0(0, as.character(pop_data$pre_gappei_code)))
+  }else{
+    pop_data$pre_gappei_code  <- as.character(pop_data$pre_gappei_code )
+  }
 
   #match with dataframes based on municipality code
-  old_joined <- merge(pre_gappei_geom, pop_data, by = "code")
-  old_joined_simp <- old_joined %>%
-    select(code, pop, geometry)
-  old_joined_simp$code <- as.numeric(old_joined_simp$code)
-  old_joined_simp$pop <- as.numeric(old_joined_simp$pop)
+  old_joined <- merge(pre_gappei_geom, pop_data, by = "pre_gappei_code")
+
+  #prepare to merge together with original dataframe
+  old_joined$pre_gappei_code <- as.numeric(old_joined$pre_gappei_code)
+  old_joined$pop <- as.numeric(old_joined$pop)
+  if("gun_code" %in% colnames(post_gappei_except_for_designated_city)){
+    old_joined$gun_code <- old_joined$code
+  }
+  old_joined <- as_tibble(old_joined)
+  post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
 
   #merge with the data that excludes the designated city
-  merged <- dplyr::bind_rows(old_joined_simp, post_gappei_except_for_designated_city)
-
-
+  merged <- dplyr::bind_rows(old_joined, post_gappei_except_for_designated_city)
 
   return(merged)
 }
