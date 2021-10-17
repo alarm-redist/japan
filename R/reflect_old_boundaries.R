@@ -51,8 +51,7 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   #filter out the municipalities that will not be split
   #(i.e. no need to take into account old boundaries)
   post_gappei_except_for_designated_city <- pref %>%
-      dplyr::filter(code != as.numeric(new_code)) %>%
-      dplyr::select(code, pop, geometry)
+      dplyr::filter(code != as.numeric(new_code))
 
   #Clean the data on old boundaries
   pre_gappei_geom <- old_boundary %>%
@@ -108,13 +107,15 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   old_joined$pre_gappei_code <- as.numeric(old_joined$pre_gappei_code)
   old_joined$pop <- as.numeric(old_joined$pop)
   if("gun_code" %in% colnames(post_gappei_except_for_designated_city)){
-    old_joined$gun_code <- old_joined$code
+    old_joined$gun_code <- pref$gun_code[which(pref$code == as.numeric(new_code))]
   }
   old_joined <- as_tibble(old_joined)
   post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
 
   #merge with the data that excludes the designated city
   merged <- dplyr::bind_rows(old_joined, post_gappei_except_for_designated_city)
+
+  merged <- sf::st_as_sf(merged)
 
   return(merged)
 }
