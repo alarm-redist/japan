@@ -119,22 +119,29 @@ rural_by_mun <- rural %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
+#group by municipality
 urban_by_mun <- urban %>%
   dplyr::group_by(code) %>%
   dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
-#######maps set-up##########
-urban_by_mun_edge <- add_ferries(urban_by_mun)
+#group islands together with Minatoku to make results of enumeration reasonable
+minato_islands <- urban_by_mun %>%
+  dplyr::filter(code %in% c(13103, 13360, 13380, 13400, 13420)) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+minato_islands$code <- 13103
 
-# simulation parameters
-urban_by_mun_edge_adj <- redist::redist.adjacency(urban_by_mun) # Adjacency list
-#add ferries
-urban_by_mun_edge_adj <- geomander::add_edge(urban_by_mun_edge_adj,
-                                             urban_by_mun_edge$V1,
-                                             urban_by_mun_edge$V2)
+#bind back together
+urban_by_mun <-
+  dplyr::bind_rows(urban_by_mun %>%
+                     dplyr::filter(code %in% c(13103, 13360, 13380, 13400, 13420) == FALSE),
+                   minato_islands)
 
+#prepare for enumeration: adjacency list
+urban_by_mun_edge_adj <- redist::redist.adjacency(urban_by_mun)
+
+#prepare for enumeartion: define map
 urban_group_map <- redist::redist_map(urban_by_mun,
-                                      ndists = 2,
+                                      ndists = 3,
                                       pop_tol= 0.08,
                                       total_pop = pop,
                                       adj = urban_by_mun_edge_adj)
@@ -154,7 +161,7 @@ urban_enum_plans <- redist::redist.enumpart(adj = urban_by_mun_edge_adj,
                                        unordered_path = here::here('simulation/unord_tokyo_urban'),
                                        ordered_path = here::here('simulation/ord_tokyo_urban'),
                                        out_path = here::here('simulation/enum_tokyo_urban'),
-                                       ndists = 2,
+                                       ndists = 3,
                                        all = TRUE,
                                        total_pop = urban_group_map[[attr(urban_group_map, 'pop_col')]])
 
@@ -166,31 +173,51 @@ urban_enum_plans_result_matrix <- redist::redist_plans(urban_enum_plans_result,
                                                        urban_group_map,
                                                        algorithm = 'enumpart')
 
-#multiple of target pop.
+#cauculate target pop.
 target <- round(sum(urban_by_mun$pop)/21)
-#Score: 1.*target   2.round(*target) - *target   3. take absolute value
+
+#calculate deviation from multiple of target pop.
 urban_enum_plans_result_matrix$score <- abs(urban_enum_plans_result_matrix$total_pop/target -
-  round(urban_enum_plans_result_matrix$total_pop/target))
+                                              round(urban_enum_plans_result_matrix$total_pop/target))
+
+
+best_split <-
+  urban_enum_plans_result_matrix %>%
+  filter(draw %in% urban_enum_plans_result_matrix$draw[which(urban_enum_plans_result_matrix$score ==
+                                                             min(urban_enum_plans_result_matrix$score))])
+
+#obtain dataframe that has one line per draw
+total_deviation <- as_tibble(urban_enum_plans_result_matrix %>%
+  dplyr::filter(district == 1))
+
+#calculate the total of deviation score
+for(i in 1:length((as_tibble(urban_enum_plans_result_matrix)$draw))/3){
+  total_deviation$score_total[3*i-2] <-
+    as_tibble(urban_enum_plans_result_matrix)$score[3*i-2] +
+    as_tibble(urban_enum_plans_result_matrix)$score[3*i-1] +
+    as_tibble(urban_enum_plans_result_matrix)$score[3*i]
+}
+
+####save(total_deviation, file = "simulation/13_enum_tokyo_urban_muns_deviation.Rdata")
 
 #filter out best plan
 best_split <-
-urban_enum_plans_result_matrix %>%
-  filter(draw == urban_enum_plans_result_matrix$draw[which(urban_enum_plans_result_matrix$score ==
-                                                             min(urban_enum_plans_result_matrix$score))])
-#visualization
-urban_by_mun$block <- best_split
+  total_deviation$draw[which(total_deviation$deviation_total ==
+                               min(total_deviation$deviation_total))]
 
 #get data on optimal plan
 matrix_best_split <- redist::get_plans_matrix(best_split)
 colnames(matrix_best_split) <- "block"
-optimal_boundary <- cbind(head(urban_by_mun, 23), head(as_tibble(matrix_best_split), 23))
+optimal_boundary <- cbind(head(urban_by_mun, 22), head(as_tibble(matrix_best_split), 22))
 
+#visualization
+urban_by_mun$block <- matrix_best_split
 
 #map with block data + municipality boundary
 ggplot() +
   geom_sf(data = optimal_boundary, aes(fill = factor(block))) +
   scale_fill_manual(values = c("red", "yellow")) +
-  geom_sf(data = head(urban_by_mun, 23), fill = NA, color = "black", lwd = 1.5) +
+  geom_sf(data = head(urban_by_mun, 22), fill = NA, color = "black", lwd = 1.5) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
