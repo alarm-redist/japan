@@ -113,6 +113,7 @@ pref_map <- redist::redist_map(pref,
 save.image("clean_saitama.Rdata")
 
 load("clean_saitama.Rdata")
+
 ####### Mergesplit Simulation ######
 sim_type <- "ms"
 
@@ -229,14 +230,16 @@ sim_smc_pref_0_good <- pref_ms %>%
 m_co_0 <- redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 ###calculate the centroids of each municipality/gun to plot population size
-pref_map_0 <- pref
-pref_map_0$CENTROID <- sf::st_centroid(pref$geometry)
+pref_map_0 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), county = first(county))
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
 
 ###Draw lines between municipalities that tend to be in the same district
 m_co_sig_0 <- m_co_0
 #extract co-occurrence > 90%
-rownames(m_co_sig_0) <- pref_map_0$code
-colnames(m_co_sig_0) <- pref_map_0$code
+rownames(m_co_sig_0) <- pref$code
+colnames(m_co_sig_0) <- pref$code
 m_co_sig_0 <- as_tibble(as.data.frame(as.table(m_co_sig_0)))
 m_co_sig_0$Freq <- as.numeric(m_co_sig_0$Freq)
 
@@ -251,10 +254,10 @@ m_co_sig_0_adj <- m_co_sig_0
 m_co_sig_0_adj <- m_co_sig_0_adj[ !(m_co_sig_0_adj$Var1 %in% m_co_sig_0$Var1), ]
 
 #filter out the co-occurrence between adjacent municipalities
-for(i in 1:length(pref$code)){
+for(i in 1:length(pref_map_0$code)){
   p <- m_co_sig_0 %>%
-    filter(Var1 == pref$code[i]) %>%
-    filter(Var2 %in% c(as.character(pref$code[prefadj[[i]]+1])))
+    filter(Var1 == pref_map_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj[[i]]+1])))
   m_co_sig_0_adj <- dplyr::bind_rows(p, m_co_sig_0_adj)
 }
 
@@ -269,25 +272,16 @@ prec_clusters_0 = cutree(cl_co_0, ndists_new) # change 6 to the number of cluste
 
 #convert to tibble
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
-pref_membership_0 <- bind_cols(pref_map_0$code, pref_membership_0)
+pref_membership_0 <- bind_cols(pref$code, pref_membership_0)
 names(pref_membership_0) <- c("code", "membership")
 pref_membership_0$membership <- as.factor(pref_membership_0$membership)
 
 #match membership data with pref_map_0
 pref_map_0 <- cbind(pref_map, pref_membership_0$membership) %>%
-  dplyr::rename(membership = pref_membership_0.membership)
-
-#counts <- as.data.frame(unique(cbind(pref_map_0$code, pref_map_0$membership)))
-
-#split <- pref_map_0 %>% dplyr::filter(code == 14113)
-#together <- pref_map_0 %>% dplyr::filter(code != 14113) %>%
-#  dplyr::group_by(code, membership) %>%
-#  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), subcode = "0000")
-#together$CENTROID <- sf::st_centroid(together$geometry)
-
-#pref_map_0$CENTROID <- dplyr::group_by(code, membership) %>%
-#  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), subcode = "0000") %>%
-#  sf::st_centroid(pref_map_0$geometry)
+  dplyr::rename(membership = pref_membership_0.membership) %>%
+  dplyr::group_by(code, membership) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
 
 pref_map_pop_centroid_0 <- pref_map_0 %>%
   as_tibble() %>%
@@ -332,3 +326,56 @@ pref_map_0 %>%
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         panel.background = element_blank())
+
+
+#### Cooccurence Visualisation#####
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, ndists_new) # change 6 to the number of clusters you want
+
+relcomp <- function(a, b) {
+
+  comp <- vector()
+
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+
+  return(comp)
+}
+
+cooc_ratio <- vector(length = length(pref$code))
+
+for (i in 1:length(pref$code))
+{
+  cooc_ratio[i] <- 1 - sum(pref$pop[relcomp(prefadj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref$pop[prefadj[[i]]+1] * m_co_0[i, prefadj[[i]]+1])
+}
+
+pref_block <- merge_gun(pref)
+
+pref$cluster = prec_clusters_0
+pref$strength = cooc_ratio
+
+redist::redist.plot.map(pref, plan = pref$cluster, fill = pref$strength) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)
+
+pref %>%
+  ggplot() +
+  geom_sf(aes(color = cluster, alpha = strength), show.legend = FALSE) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5) +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+redist::redist.plot.map(pref, plan = prec_clusters_0, fill = cooc_ratio) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)+
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))
