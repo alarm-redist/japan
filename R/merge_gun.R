@@ -31,19 +31,18 @@ merge_gun <- function(pref, exception = NULL){
 
         #obtain the last 3 digits of the municipality codes
         pref_gun <- pref %>%
-          mutate(municipality_code = code) %>%
-          mutate(gun_code = code)
+          mutate(gun_code = code %% pref_code)
 
 
-        for(i in 1:length(pref_gun$municipality_code)){
-          if(pref_gun$municipality_code[i] < 300){
+        for(i in 1:length(pref_gun$gun_code)){
+          if(pref_gun$gun_code[i] < 300){
             #the municipality codes of all the municipalities that do not belong to "gun" are kept the same
-            pref_gun$gun_code[i] <-  pref_gun$municipality_code[i]
+            pref_gun$gun_code[i] <-  pref_gun$code[i]
           }
 
           else{
             #group together the municipalities that belong to a "gun"
-            pref_gun$gun_code[i] <-  cut(pref_gun$municipality_code[i],
+            pref_gun$gun_code[i] <-  cut(pref_gun$gun_code[i],
                                  breaks = c(300, 320, 340, 360, 380,
                                             400, 420, 440, 460, 480,
                                             500, 520, 540, 560, 580,
@@ -55,12 +54,9 @@ merge_gun <- function(pref, exception = NULL){
 
         #relabel the municipality codes of the municipalities that belong to "gun"
         for(i in 1:20){
-          pref_gun$gun_code[pref_gun$gun_code == i] <- gun_code + 300 + 20*(i-1)
+          pref_gun$gun_code[pref_gun$gun_code == i] <- pref_code + 300 + 20*(i-1)
         }
 
-
-        #delete the unncessary column
-        pref_gun <- subset(pref_gun, select = - municipality_code)
         # return the results
         return(pref_gun)
       }
@@ -68,36 +64,37 @@ merge_gun <- function(pref, exception = NULL){
 
       else{
         #Create a dataframe without any data
-        pref_interm <- pref %>%
-          mutate(gun_code = code)
-        pref_separate <- pref_interm[ !(pref_interm$code %in% pref_interm$code), ]
+        pref_interm <- pref
+        pref_separate <- pref_interm[ !(pref_interm$code %in% pref$code), ]
+
+        #validate exception
+        exception = as.numeric(exception)
 
         #Create a data frame that contains all the municipalities that belong to a "gun" that the user does not wish to group together
         for(i in 1:length(exception)){
           mod <- exception %% pref_code
           div_twenty <- mod %/% 20
           separate_gun_code <- pref_code + div_twenty * 20
-          pref_to_separate <- pref_interm %>%
+          pref_to_separate <- pref %>%
             filter(between(code, separate_gun_code[i], separate_gun_code[i] + 19))
           pref_separate <- dplyr::bind_rows(pref_to_separate, pref_separate)
-
         }
 
         #Create a data frame that includes the municipalities that need to be grouped together
-        pref_to_group <- setdiff(pref_interm, pref_separate)
+        pref_to_group <- setdiff(pref, pref_separate)
         pref_to_group <- pref_to_group %>%
-          mutate(municipality_code = code %% pref_code)
+          mutate(gun_code = code %% pref_code)
 
         #the municipality codes of all the municipalities that do not belong to "gun" are kept the same
-        for(i in 1:length(pref_to_group$municipality_code)){
-          if(pref_to_group$municipality_code[i] < 300){
-            pref_to_group$gun_code[i] <-  pref_to_group$gun_code[i]
+        for(i in 1:length(pref_to_group$gun_code)){
+          if(pref_to_group$gun_code[i] < 300){
+            pref_to_group$gun_code[i] <-  pref_to_group$code[i]
 
           }
 
           #group together the municipalities that belong to a "gun"
           else{
-            pref_to_group$gun_code[i] <-  cut(pref_to_group$municipality_code[i],
+            pref_to_group$gun_code[i] <-  cut(pref_to_group$gun_code[i],
                                           breaks = c(300, 320, 340, 360, 380,
                                                      400, 420, 440, 460, 480,
                                                      500, 520, 540, 560, 580,
@@ -112,11 +109,8 @@ merge_gun <- function(pref, exception = NULL){
           pref_to_group$gun_code[pref_to_group$gun_code == i] <- pref_code + 300 + 20*(i-1)
         }
 
-
-        #delete the unnecessary column
-        pref_to_group = subset(pref_to_group, select = - municipality_code)
-
         #return results
+        pref_separate$gun_code <- pref_separate$code
         pref_gun <- dplyr::bind_rows(pref_to_group, pref_separate)
         return(pref_gun)
       }
