@@ -68,6 +68,15 @@ rest_of_pref <- pref %>%
   dplyr::filter(gun_code <13300)
 pref <- dplyr::bind_rows(merge_gun_pref, rest_of_pref)
 
+
+
+
+
+
+
+
+
+
 #Rural Prefectures (Miyagi as an example)
 ############# set up ###############
 #-------------- functions set up ---------------
