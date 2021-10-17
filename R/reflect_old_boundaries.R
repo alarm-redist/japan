@@ -107,7 +107,7 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   old_joined$pre_gappei_code <- as.numeric(old_joined$pre_gappei_code)
   old_joined$pop <- as.numeric(old_joined$pop)
   if("gun_code" %in% colnames(post_gappei_except_for_designated_city)){
-    old_joined$gun_code <- pref$gun_code[which(pref$code == as.numeric(new_code))]
+    old_joined$gun_code <- old_joined$code
   }
   old_joined <- as_tibble(old_joined)
   post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
