@@ -157,3 +157,19 @@ pref <- pref %>%
                    pre_gappei_code = gun_code[1],
                    code = gun_code[1])
 
+########広域連携####################
+#define 広域連携 area
+ishinomaki_koiki <- c(4202, 4214, 4581)
+
+#make column for 広域連携
+pref$koiki_code <- pref$code
+
+#assign 広域連携 codes
+koiki_1 <- pref %>% filter(code %in% ishinomaki_koiki)
+koiki_1$koiki_code <- rep(1, times = length((pref %>% filter(code %in% ishinomaki_koiki))$koiki_code))
+remainder <- pref %>% filter(code %in% ishinomaki_koiki == FALSE)
+
+#bind together
+pref <- dplyr::bind_rows(koiki_1, remainder)
+
+
