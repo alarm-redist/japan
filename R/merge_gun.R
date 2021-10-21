@@ -112,6 +112,10 @@ merge_gun <- function(pref, exception = NULL){
         #return results
         pref_separate$gun_code <- pref_separate$code
         pref_gun <- dplyr::bind_rows(pref_to_group, pref_separate)
+
+        #return sf object
+        pref_gun <- sf::st_as_sf(pref_gun)
+
         return(pref_gun)
       }
     }
