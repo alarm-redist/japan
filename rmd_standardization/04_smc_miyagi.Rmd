@@ -80,6 +80,26 @@ Miyagi-gun and Kurokawa-gun are split under the enacted plan. Thus, we allow tho
 pref <- merge_gun(pref, c(4401, 4421))
 ```
 
+### 1.5 Define "Koiki-renkei" Areas
+```{r}
+ishinomaki_koiki <- c(4202, 4214, 4581)
+osaki_koiki <- c(4215, 4444, 4445, 4501, 4505)
+
+
+pref$koiki_code <- pref$code
+
+#filter out the municipalities that belong to this koiki_renkei area and assign new codes
+koiki_1 <- pref %>% filter(code %in% ishinomaki_koiki)
+koiki_1$koiki_code <- rep(1, times = length((pref %>% filter(code %in% ishinomaki_koiki))$koiki_code))
+koiki_2 <- pref %>% filter(code %in% osaki_koiki)
+koiki_2$koiki_code <- rep(2, times = length((pref %>% filter(code %in% osaki_koiki))$koiki_code))
+
+#bind together with the remainder
+remainder <- pref %>% filter(code %in% c(ishinomaki_koiki, osaki_koiki) == FALSE)
+pref <- dplyr::bind_rows(koiki_1, koiki_2, remainder)
+```
+
+
 ## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
 ### 2.1 Finalize pref object
 In this case, we merge together the gun and treat them as one geographical unit, except for the guns that are split under the status quo.
@@ -135,7 +155,16 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 ```
 
 
-## 3. Run Simulations with 1 Municipality Split  (without taking into accoun "Koiki-renkei")
+## 3. Run Simulations with 1 Municipality Split  (without taking into account "Koiki-renkei")
+
+
+
 
 #II. Analysis
+#1. Calculate Max:Min Ratio
+
+#2. Count "Koiki-renkei" splits
+
+#3. Co-occurrence
+
 
