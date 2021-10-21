@@ -109,6 +109,10 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
   if("gun_code" %in% colnames(post_gappei_except_for_designated_city)){
     old_joined$gun_code <- old_joined$pre_gappei_code
   }
+  if("koiki_code" %in% colnames(post_gappei_except_for_designated_city)){
+      old_joined$koiki_code <- rep(pref$koiki_code[which(pref$code == old_joined$code[1])],
+                                   times = length(old_joined$code))
+  }
   old_joined <- as_tibble(old_joined)
   post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
 
