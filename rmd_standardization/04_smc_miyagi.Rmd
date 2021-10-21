@@ -8,9 +8,9 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = '/Users/kentoyamada/Desktop/ALARM Project/jcdf/')
 ```
 
-
-# 1. Set Up and Data Cleaning Process
-# 1.1 Set Up
+# I. Simulations
+## 1. Set Up and Data Cleaning Process
+### 1.1 Set Up
 ```{r}
 library(tidyverse)
 set.seed(12345)
@@ -24,7 +24,7 @@ sapply(files.sources, source)
 setwd("..")
 ```
 
-### Define Data on Prefecture
+#### Define Prefectural Data 
 ```{r}
 sim_type <- "smc"
 nsims <- 25000
@@ -36,7 +36,7 @@ ndists_old <- 6
 ```
 
 
-# 1.2.Download and Clean Census Data
+### 1.2.Download and Clean Census Data
 ```{r}
 # download census shapefile
 pref_raw <- download_shp(pref_code)
@@ -55,7 +55,7 @@ old_boundary <- download_old_shp(pref_code = pref_code)
 pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
 ```
 
-## 1.3 Use clean_jcdf() function to clean census data
+### 1.3 Use clean_jcdf() function to clean census data
 ```{r}
 pref <- pref_raw %>%
   clean_jcdf() %>%
@@ -66,7 +66,7 @@ pref <- pref_raw %>%
   dplyr::select(code, pop, geometry)
 ```
 
-### For Miyagi Prefecture only: reflect changes in municipality code
+#### For Miyagi Prefecture only: reflect changes in municipality code
 Tomiya-cho became Tomiya-shi in 2016. As we are dealing with census data both from 2015 and 2020, we must fix the municipality code of Tomiya-cho.
 ```{r}
 # fix 富谷町 --> 富谷市 (2016 changes)
@@ -74,14 +74,14 @@ pref[which(pref$code == 4423), ]$pop <-  (census2020 %>% dplyr::filter(code == 4
 pref[which(pref$code == 4423), ]$code <- 4216
 ```
 
-## 1.4 Use merge_gun() to make a new column for codes of guns
+### 1.4 Use merge_gun() to make a new column for codes of guns
 Miyagi-gun and Kurokawa-gun are split under the enacted plan. Thus, we allow those 2 guns to be split.
 ```{r}
 pref <- merge_gun(pref, c(4401, 4421))
 ```
 
-# 2. Run Simulations with 0 Municipality Splits
-# 2.1 Finalize pref object
+## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
+### 2.1 Finalize pref object
 In this case, we merge together the gun and treat them as one geographical unit, except for the guns that are split under the status quo.
 ```{r}
 pref_0 <- pref %>%
@@ -91,19 +91,19 @@ pref_0 <- pref %>%
                    code = gun_code[1])
 ```
 
-# 2.2 Make adjacency graph
+### 2.2 Make adjacency graph
 ```{r}
 prefadj_0 <- redist::redist.adjacency(pref_0)
 ```
 
-# 2.3 Add edges to adjacency graph
+### 2.3 Add edges to adjacency graph
 In this case, there are no edges to add as there are no areas disconnected from the mainland.
 ```{r}
 ferries_0 <- add_ferries(pref_0)
 prefadj_0 <- geomander::add_edge(prefadj_0, ferries_0$V1, ferries_0$V2)
 ```
 
-# 2.4 Define redist.map object
+### 2.4 Define redist.map object
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
@@ -112,15 +112,14 @@ pref_map_0 <- redist::redist_map(pref_0,
                                  adj = prefadj_0)
 ```
 
-
-#2.5 Run Simulation
+###2.5 Run Simulation
 ```{r}
 sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
                                      nsims = nsims,
                                      pop_temper = 0.05)
 ```
 
-# 2.6 Save results of simulation
+### 2.6 Save results of simulation
 ```{r}
 saveRDS(sim_smc_pref_0, paste("simulation/",
                               as.character(pref_code),
@@ -136,4 +135,7 @@ saveRDS(sim_smc_pref_0, paste("simulation/",
 ```
 
 
-# 3. Run Simulations with 1 Municipality Split
+## 3. Run Simulations with 1 Municipality Split  (without taking into accoun "Koiki-renkei")
+
+#II. Analysis
+
