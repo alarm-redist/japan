@@ -224,7 +224,91 @@ saveRDS(sim_smc_pref_1, paste("simulation/",
 ```
 
 #II. Analysis
-#1. Calculate Max:Min Ratio
+##1. Get Optimal Plan
+###1.1 Extract Plans
+```{r}
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+```
+
+###1.2 Calculate Max:min ratio
+```{r}
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+```
+
+###1.3 Calculate municipality/gun/koiki renkei splits
+```{r}
+num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+
+num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+
+num_koiki_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$koiki_code)
+koiki_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$koiki_code)
+```
+
+###1.4 Compile Results
+```{r}
+results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
+results_1$max_to_min <- wgt_smc_1$max_to_min
+results_1$splits <- n_split_1
+results_1$counties_split <- split_1
+results_1$index <- 1:nrow(wgt_smc_1)
+results_1$dif <-  results_1$splits - results_1$counties_split
+
+zero_multi_results_1 <- results_1 %>% filter(dif == 0)
+```
+
+###1.4  Optimal Plan
+```{r}
+optimal_0 <- wgt_smc_0$draw[which(wgt_smc_0$max_to_min == min(wgt_smc_0$max_to_min))][1]
+optimal_1 <- zero_multi_results_1$index[which(zero_multi_results_1$max_to_min == 
+                                                min(zero_multi_results_1$max_to_min))][1]
+```
+
+
+
+```{r}
+#get data on optimal plan
+matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
+colnames(matrix_optimal_1) <- "district"
+optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
+
+#get data on municipality boundary
+mun_boundary <- pref_0 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on gun boundary
+gun_boundary <- pref_0 %>%
+  filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(gun_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on koiki boundary
+koiki_boundary <- pref_0 %>%
+  filter(koiki_code < 10) %>%
+  group_by(koiki_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+
+#map with district data + municipality boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
+  scale_fill_manual(values = c("green", "purple", "blue", "yellow", "brown")) +
+  viridis::scale_color_viridis(discrete = TRUE, option = "turbo") +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.3, color = "plum1", lwd = 0.2) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+```
+
 
 #2. Count "Koiki-renkei" splits
 
