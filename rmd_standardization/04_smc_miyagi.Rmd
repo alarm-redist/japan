@@ -277,7 +277,7 @@ colnames(matrix_optimal_1) <- "district"
 optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
 
 #get data on municipality boundary
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
