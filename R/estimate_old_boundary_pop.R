@@ -23,8 +23,8 @@ estimate_old_boundary_pop <- function(old_code, new_code, pref, census2020) {
 
   # conduct estimates using simple rounding proportional method
   for (i in 1:length(old_code)) {
-    pref_new[which(pref_new$code == old_code[i]), ]$pop <-
-      round(pref_new[which(pref_new$code == old_code[i]), ]$pop / pop_2015 * nat_2020)
+    pref_new[which(pref_new$pre_gappei_code == old_code[i]), ]$pop <-
+      round(pref_new[which(pref_new$pre_gappei_code == old_code[i]), ]$pop / pop_2015 * nat_2020)
   }
 
   row.names(pref_new) <- NULL
