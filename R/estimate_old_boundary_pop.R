@@ -19,7 +19,7 @@ estimate_old_boundary_pop <- function(old_code, new_code, pref, census2020) {
 
   # population of Japanese nationals in municipality new_code for 2020
   nat_2020 <- (census2020 %>% dplyr::filter(code == as.numeric(new_code), ))$pop_national
-  pop_2015 <- sum(pref[which(pref$code %in% old_code), ]$pop)
+  pop_2015 <- sum(pref[which(pref$pre_gappei_code %in% old_code), ]$pop)
 
   # conduct estimates using simple rounding proportional method
   for (i in 1:length(old_code)) {
