@@ -114,7 +114,12 @@ reflect_old_boundaries <- function(pref, old_boundary, pop_by_old_boundary, old_
                                    times = length(old_joined$code))
   }
   old_joined <- as_tibble(old_joined)
-  post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
+
+  if("pre_gappei_code" %in% colnames(post_gappei_except_for_designated_city)){
+    post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$pre_gappei_code
+  }else{
+    post_gappei_except_for_designated_city$pre_gappei_code <- post_gappei_except_for_designated_city$code
+  }
 
   #merge with the data that excludes the designated city
   merged <- dplyr::bind_rows(old_joined, post_gappei_except_for_designated_city)
