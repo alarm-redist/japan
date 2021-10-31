@@ -156,7 +156,7 @@ if(check_ferries(pref_code) == TRUE){
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= (sq_maxmin - 1)/(1 + sq_maxmin),
+                                 pop_tol= 0.08,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
