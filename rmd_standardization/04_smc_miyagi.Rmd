@@ -36,7 +36,6 @@ pref_name <- "miyagi"
 lakes_removed <- c() 
 ndists_new <- 5
 ndists_old <- 6
-split_codes <- pref[order(-pref$pop), ]$code[1:nsplit]
 ```
 
 
