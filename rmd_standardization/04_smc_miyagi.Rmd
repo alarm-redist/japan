@@ -434,6 +434,7 @@ results_2[optimal_2,]
 
 
 #2. Visualize Optimal Plan
+##2.1 0 splits
 ```{r}
 #get data on optimal plan
 matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0))
@@ -464,7 +465,7 @@ ggplot() +
         panel.background = element_blank())
 ```
 
-
+##2.2 Allowing Up to 1 Municipality Split
 ```{r}
 #get data on optimal plan
 matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
@@ -479,7 +480,7 @@ mun_boundary <- pref_0 %>%
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("green", "orange", "blue", "yellow", "brown")) +
+  scale_fill_manual(values = c("1" = "green", "2" = "brown", "3" = "yellow", "4" = "orange","5" = "blue")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
@@ -490,6 +491,7 @@ ggplot() +
 
 ```
 
+##2.3 Allowing Up To 2 Municipality Splits
 ```{r}
 #get data on optimal plan
 matrix_optimal_2 <- redist::get_plans_matrix(sim_smc_pref_2 %>% filter(draw == optimal_2))
@@ -499,7 +501,7 @@ optimal_boundary_2 <- cbind(pref_map_2, as_tibble(matrix_optimal_2))
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_2, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("green", "orange", "blue", "yellow", "brown")) +
+  scale_fill_manual(values = c("1" = "green", "2" = "blue", "3" = "orange", "4" = "yellow", "5" = "brown")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
@@ -510,5 +512,111 @@ ggplot() +
 ```
 
 #3. Co-occurrence
+##3.1 Filter Out Plan with Low Max:min Ratio (Top 10%)
+```{r}
+good_num_0 <-  results_0 %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(nsims*0.1)) %>%
+  select(index)
+good_num_0 <- as.vector(t(good_num_0))
+sim_smc_pref_0_good <- sim_smc_pref_0 %>%
+  filter(draw %in% good_num_0)
+```
+
+##3.2 Obtain co-occurrence matrix
+```{r}
+m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+```
+
+
+##3.3 Use cluster::agnes() to create clusters
+```{r}
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) 
+prec_clusters_0 = cutree(cl_co_0, 5) #5: number of clusters
+```
+
+##3.4 Convert data on membership to tibble
+```{r}
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+names(pref_membership_0) <- "membership"
+```
+
+
+##3.5 Obtain co-occurrence ratio
+```{r}
+cooc_ratio <- vector(length = length(pref_0$code))
+#----define relcomp function--------
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+
+for (i in 1:length(pref_0$code))
+{
+  cooc_ratio[i] <- 1 -
+    sum(pref_0$pop[relcomp(prefadj_0[[i]]+1,
+                              which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj_0[[i]]+1,
+                                                                                                 which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
+}
+
+```
+
+
+##3.6 Match membership data with map object
+```{r}
+pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
+
+#sort membership data by group
+pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
+pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
+pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
+pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
+pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
+```
+
+##3.7 Plot
+```{r}
+ggplot() +
+  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="palegreen", high="green") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "lightsalmon", high = "orange") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "skyblue", high = "blue") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="yellow", high="yellow3") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="brown1", high="brown4") +
+
+  labs(color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
+  
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+```
+
 
 
