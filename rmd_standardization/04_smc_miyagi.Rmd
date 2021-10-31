@@ -498,7 +498,7 @@ matrix_optimal_2 <- redist::get_plans_matrix(sim_smc_pref_2 %>% filter(draw == o
 colnames(matrix_optimal_2) <- "district"
 optimal_boundary_2 <- cbind(pref_map_2, as_tibble(matrix_optimal_2))
 
-#map with district data + municipality/gun/koiki-renkei boundary
+#map with district data + municipality/gun/koiki-renkei boundaries
 ggplot() +
   geom_sf(data = optimal_boundary_2, aes(fill = factor(district))) +
   scale_fill_manual(values = c("1" = "green", "2" = "blue", "3" = "orange", "4" = "yellow", "5" = "brown")) +
