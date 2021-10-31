@@ -1,0 +1,514 @@
+---
+title: "Standard Process for Rural Prefectures"
+subtitle: "Shiga Prefecture as an Example"
+output: html_document:
+  toc: true
+  toc_float: true 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# I. Simulations
+## 1. Set Up and Data Cleaning Process
+### 1.1 Set Up
+```{r eval=FALSE}
+library(tidyverse)
+set.seed(12345)
+
+# pull functions from jcdf
+# set working directory to the function folder
+setwd("./R")
+files.sources = list.files()
+sapply(files.sources, source)
+# set working directory back to `jcdf`
+setwd("..")
+```
+
+#### Define Prefectural Data 
+```{r}
+sim_type <- "smc"
+nsims <- 25000
+pref_code <- 25
+pref_name <- "shiga"
+lakes_removed <- c() 
+ndists_new <- 3
+ndists_old <- 4
+n_split <- 1
+```
+
+
+### 1.2.Download and Clean Census Data
+```{r warning=FALSE, message=FALSE}
+# download census shapefile
+pref_raw <- download_shp(pref_code)
+dem_pops <- download_pop_demographics(pref_code)
+
+# download 2020 census data
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+#Clean 2020 census
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+
+# download historical boundary data
+old_boundary <- download_old_shp(pref_code = pref_code)
+
+# populations based on historical boundaries
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+```
+
+### 1.3 Use `clean_jcdf()` function to clean census data
+```{r}
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020, by = c('code')) %>%
+  dplyr::rename(pop = pop_national) %>%
+  dplyr::select(code, pop, geometry)
+```
+
+#### For Shiga Prefecture only: Remove the Lake Biwa
+```{r results='hide'}
+pref <- remove_lake(pref, "琵琶湖")
+```
+
+### 1.4 Use merge_gun() to make a new column for codes of guns
+merge_gun() assigns each gun a unique code.
+```{r}
+pref <- merge_gun(pref)
+```
+
+### 1.5 Define "Koiki-renkei" Areas
+```{r}
+koto_koiki <- c(25202, 25425, 25441, 25442, 25443)
+
+pref$koiki_code <- pref$code
+
+#filter out the municipalities that belong to this koiki_renkei area and assign new codes
+koiki_1 <- pref %>% filter(code %in% koto_koiki)
+koiki_1$koiki_code <- rep(1, times = length((pref %>% filter(code %in% koto_koiki))$koiki_code))
+
+#bind together with the remainder
+remainder <- pref %>% filter(code %in% c(koto_koiki) == FALSE)
+pref <- dplyr::bind_rows(koiki_1, remainder)
+```
+
+
+## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
+### 2.1 Finalize pref object
+We merge together the gun and treat them as one geographical unit, except for the guns that are split under the status quo. 
+For Shiga, no guns are split, so we will not allow any gun to be split.
+```{r}
+pref_0 <- sf::st_as_sf(
+  pref %>%
+    dplyr::group_by(gun_code) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry),
+                     pop = sum(pop),
+                     code = code[1],
+                     koiki_code = koiki_code[1])
+)
+```
+
+### 2.2 Make adjacency graph
+```{r}
+prefadj_0 <- redist::redist.adjacency(pref_0)
+```
+
+### 2.3 Add edges to adjacency graph
+In this case, there are no edges to add as there are no areas disconnected from the mainland.
+```{r}
+# add ferry if applicable
+if(check_ferries(pref_code) == TRUE){
+  # add ferries
+  ferries <- add_ferries(pref_0)
+  prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 ferries[, 1],
+                                 ferries[, 2],
+                                 zero = TRUE)
+  # check contiguity
+  suggest <-  geomander::suggest_component_connection(shp = pref_0,
+                                                      adj = prefadj_0)
+  prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)
+}
+```
+
+### 2.4 Define redist.map object
+```{r}
+pref_map_0 <- redist::redist_map(pref_0,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.35,
+                                 total_pop = pop,
+                                 adj = prefadj_0)
+```
+
+###2.5 Run Simulation
+```{r}
+sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
+                                     nsims = nsims,
+                                     #pop_temper = 0.5
+                                     )
+```
+
+### 2.6 Save results of simulation
+```{r eval=FALSE}
+saveRDS(sim_smc_pref_0, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_0",
+                              ".Rds",
+                              sep = ""))
+```
+
+
+## 3. Run Simulations with 1 Municipality Split
+### 3.1 Split the largest municipality based on its old municipality boundaries
+```{r}
+split_codes <- pref[order(-pref$pop), ]$code[1:n_split]
+new_1 <- as.character(split_codes[1])
+old_1 <- find_old_codes(new_1, pop_by_old_boundary)
+pref_1 <- reflect_old_boundaries(pref, old_boundary, pop_by_old_boundary, old_1, new_1)
+pref_1 <- estimate_old_boundary_pop(old_1, new_1, pref_1, census2020)
+```
+
+### 3.2 Finalize pref object
+We merge together the gun and treat them as one geographical unit, except for the guns that are split under the status quo. 
+For Shiga, no guns are split, so we will not allow any gun to be split.
+```{r}
+pref_1 <- sf::st_as_sf(
+  pref_1 %>%
+    dplyr::group_by(gun_code) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry),
+                   pop = sum(pop),
+                   code = code[1],
+                   pre_gappei_code = pre_gappei_code[1],
+                   koiki_code = koiki_code[1])
+)
+    
+```
+
+### 3.3 Make adjacency graph
+```{r}
+prefadj_1 <- redist::redist.adjacency(pref_1)
+```
+
+### 3.4 Add edges to adjacency graph
+```{r}
+# add ferry if applicable
+if(check_ferries(pref_code) == TRUE){
+  # add ferries
+  ferries <- add_ferries(pref_1)
+  prefadj_1 <- geomander::add_edge(prefadj_1,
+                                 ferries[, 1],
+                                 ferries[, 2],
+                                 zero = TRUE)
+  # check contiguity
+  suggest <-  geomander::suggest_component_connection(shp = pref_1,
+                                                      adj = prefadj_1)
+  prefadj_1 <- geomander::add_edge(prefadj_1,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)
+}
+```
+
+### 3.5 Define redist.map object
+```{r}
+pref_map_1 <- redist::redist_map(pref_1,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.35,
+                                 total_pop = pop,
+                                 adj = prefadj_1)
+```
+
+###3.6 Run Simulation
+```{r}
+sim_smc_pref_1 <- redist::redist_smc(pref_map_1,
+                                     nsims = nsims,
+                                     #pop_temper = 0.5
+                                     )
+```
+
+### 3.7 Save results of simulation
+```{r eval=FALSE}
+saveRDS(sim_smc_pref_1, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_1",
+                              ".Rds",
+                              sep = ""))
+```
+
+
+# II. Analysis
+## 1. Get Optimal Plan
+### 1.1 Extract Plans
+```{r}
+pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
+pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
+```
+
+### 1.2 Calculate Max:min ratio
+```{r}
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+```
+
+### 1.3 Count municipality/gun/koiki renkei splits
+Whereas `count_splits()` counts the total number of splits, `redist.splits()` counts the number of geographical units that are split.
+```{r}
+num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
+
+num_koiki_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$koiki_code)
+koiki_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$koiki_code)
+```
+
+```{r}
+num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+
+num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+
+num_koiki_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$koiki_code)
+koiki_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$koiki_code)
+```
+
+### 1.4 Compile Results
+The table created includes information on the max:min ratio as well as the number of municipality/gun/koiki-renkei splits. We also check whether there are cases where a municipality is split into more than 2 districts, in which case such results are filtered out.
+
+```{r}
+results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
+results_0$max_to_min <- wgt_smc_0$max_to_min
+
+#number of gun splits
+results_0$num_gun_split <- num_gun_split_0
+results_0$gun_split <- gun_split_0
+
+#number of koiki renkei area splits
+results_0$num_koiki_split <- num_koiki_split_0
+results_0$koiki_split <- koiki_split_0
+
+results_0$index <- 1:nrow(wgt_smc_0)
+```
+
+```{r}
+results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
+results_1$max_to_min <- wgt_smc_1$max_to_min
+
+#number of municipality splits
+results_1$nun_mun_split <- num_mun_split_1
+results_1$mun_split <- mun_split_1
+
+#check whether there are cases where a municipality is split into more than 2 districts
+results_1$multi <-  results_1$nun_mun_split - results_1$mun_split
+
+#number of gun splits
+results_1$num_gun_split <- num_gun_split_1
+results_1$gun_split <- gun_split_1
+
+#number of koiki renkei area splits
+results_1$num_koiki_split <- num_koiki_split_1
+results_1$koiki_split <- koiki_split_1
+
+results_1$index <- 1:nrow(wgt_smc_1)
+
+#filter out cases where a municipality is split into more than 2 districts
+zero_multi_results_1 <- results_1 %>% filter(multi == 0)
+```
+
+### 1.5 Optimal Plan
+```{r}
+optimal_0 <- results_0$index[which(results_0$max_to_min == min(results_0$max_to_min))][1]
+results_0[optimal_0,]
+```
+```{r}
+optimal_1 <- zero_multi_results_1$index[which(zero_multi_results_1$max_to_min == 
+                                                min(zero_multi_results_1$max_to_min))][1]
+results_1[optimal_1,]
+```
+
+# 2. Visualize Optimal Plan
+## 2.1 0 splits
+```{r}
+#get data on optimal plan
+matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>%
+                                               filter(draw == optimal_0))
+colnames(matrix_optimal_0) <- "district"
+optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
+
+#get data on gun boundary
+gun_boundary <- pref_0 %>%
+  filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(gun_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on koiki boundary
+koiki_boundary <- pref_0 %>%
+  filter(koiki_code < 10) %>%
+  group_by(koiki_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
+  scale_color_brewer() +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+```
+
+## 2.2 Allowing Up to 1 Municipality Split
+```{r}
+#get data on optimal plan
+matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% 
+                                               filter(draw == optimal_1))
+colnames(matrix_optimal_1) <- "district"
+optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
+
+#get data on municipality boundary
+mun_boundary <- pref_0 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
+  scale_color_brewer() +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+```
+
+# 3. Co-occurrence
+## 3.1 Filter Out Plan with Low Max:min Ratio (Top 10%)
+```{r}
+good_num_0 <-  results_0 %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(nsims*0.1)) %>%
+  select(index)
+good_num_0 <- as.vector(t(good_num_0))
+sim_smc_pref_0_good <- sim_smc_pref_0 %>%
+  filter(draw %in% good_num_0)
+```
+
+## 3.2 Obtain co-occurrence matrix
+```{r}
+m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+```
+
+
+##3.3 Use `cluster::agnes()` to create clusters
+```{r}
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) 
+prec_clusters_0 = cutree(cl_co_0, 5) #5: number of clusters
+```
+
+##3.4 Convert data on membership to tibble
+```{r}
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+names(pref_membership_0) <- "membership"
+```
+
+
+## 3.5 Obtain co-occurrence ratio
+```{r}
+cooc_ratio <- vector(length = length(pref_0$code))
+#----define relcomp function--------
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+
+for (i in 1:length(pref_0$code))
+{
+  cooc_ratio[i] <- 1 -
+    sum(pref_0$pop[relcomp(prefadj_0[[i]]+1,
+                              which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj_0[[i]]+1,
+                                                                                                 which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
+}
+
+```
+
+
+## 3.6 Match membership data with map object
+```{r}
+pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
+
+#sort membership data by group
+pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
+pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
+pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
+pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
+pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
+```
+
+## 3.7 Plot
+```{r}
+ggplot() +
+  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="palegreen", high="green") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "lightsalmon", high = "orange") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "skyblue", high = "blue") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="yellow", high="yellow3") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="brown1", high="brown4") +
+
+  labs(color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
+  
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+```
+
+
+
