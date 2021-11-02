@@ -36,6 +36,7 @@ pref_name <- "miyagi"
 lakes_removed <- c() 
 ndists_new <- 5
 ndists_old <- 6
+n_split <- 2
 ```
 
 
@@ -456,7 +457,6 @@ results_2$index <- 1:nrow(wgt_smc_2)
 
 #filter out cases where a municipality is split into more than 2 districts
 zero_multi_results_2 <- results_2 %>% filter(multi == 0)
-```
 ```
 
 ### 1.5  Optimal Plan
