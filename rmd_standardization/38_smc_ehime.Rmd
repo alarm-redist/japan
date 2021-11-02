@@ -35,6 +35,7 @@ pref_name <- "ehime"
 lakes_removed <- c() 
 ndists_new <- 3
 ndists_old <- 4
+n_split <- 1
 ```
 
 ### 1.2.Download and Clean Census Data
@@ -66,5 +67,126 @@ pref <- pref_raw %>%
   dplyr::rename(pop = pop_national) %>%
   dplyr::select(code, pop, geometry)
 ```
+
+### 1.4 Use `merge_gun()` to make a new column for codes of guns
+`merge_gun()` assigns each gun a unique code.
+```{r}
+pref <- merge_gun(pref)
+```
+
+### 1.5 Define "Koiki-renkei" Areas
+```{r}
+matsuyama_koiki <- c(38201, 38210, 38215, 38386, 38401, 38402)
+uwajima_koiki <- c(38203, 38484, 38488, 38506)
+
+pref$koiki_code <- pref$code
+
+#filter out the municipalities that belong to this koiki_renkei area and assign new codes
+koiki_1 <- pref %>% filter(code %in% matsuyama_koiki)
+koiki_1$koiki_code <- rep(1, times = length((pref %>% filter(code %in% matsuyama_koiki))$koiki_code))
+koiki_2 <- pref %>% filter(code %in% uwajima_koiki)
+koiki_2$koiki_code <- rep(2, times = length((pref %>% filter(code %in% uwajima_koiki))$koiki_code))
+
+#bind together with the remainder
+remainder <- pref %>% filter(code %in% c(matsuyama_koiki, uwajima_koiki) == FALSE)
+pref <- dplyr::bind_rows(koiki_1, koiki_2, remainder)
+```
+
+
+## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
+### 2.1 Finalize pref object
+We merge together the gun and treat them as one geographical unit. In Ehime Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
+```{r}
+pref_0 <- sf::st_as_sf(
+  pref %>%
+    dplyr::group_by(gun_code) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry),
+                     pop = sum(pop),
+                     code = code[1],
+                     koiki_code = koiki_code[1])
+)
+```
+
+### 2.2 Make adjacency graph
+```{r}
+prefadj_0 <- redist::redist.adjacency(pref_0)
+```
+
+### 2.3 Add edges to adjacency graph
+```{r}
+if(check_ferries(pref_code) == TRUE){
+  # add ferries
+  ferries_0 <- add_ferries(pref_0)
+  prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 ferries_0[, 1],
+                                 ferries_0[, 2],
+                                 zero = TRUE)
+  "# check contiguity
+  suggest_0 <-  geomander::suggest_component_connection(shp = pref_0,
+                                                      adj = prefadj_0)
+  prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 suggest_0$x,
+                                 suggest_0$y,
+                                 zero = TRUE)"
+}
+```
+
+
+### 2.4 Define redist.map object
+```{r}
+pref_map_0 <- redist::redist_map(pref_0,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.20,
+                                 total_pop = pop,
+                                 adj = prefadj_0)
+```
+
+###2.5 Run Simulation
+```{r}
+sim_smc_pref_0 <- redist::redist_smc(pref_map_0,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+```
+
+### 2.6 Save results of simulation
+```{r}
+saveRDS(sim_smc_pref_0, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_0",
+                              ".Rds",
+                              sep = ""))
+```
+
+## 3. Run Simulations with 1 Municipality Split
+### 3.1 Split the largest municipality based on its old municipality boundaries
+```{r}
+split_codes <- pref[order(-pref$pop), ]$code[1:n_split]
+new_1 <- as.character(split_codes[1])
+old_1 <- find_old_codes(new_1, pop_by_old_boundary)
+pref_1 <- reflect_old_boundaries(pref, old_boundary, pop_by_old_boundary, old_1, new_1)
+pref_1 <- estimate_old_boundary_pop(old_1, new_1, pref_1, census2020)
+```
+
+### 3.2 Finalize pref object
+We merge together the gun and treat them as one geographical unit, except for the guns that are split under the status quo. We merge together the gun and treat them as one geographical unit. In Ehime Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
+```{r}
+pref_1 <- sf::st_as_sf(
+  pref_1 %>%
+    dplyr::group_by(gun_code) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry),
+                   pop = sum(pop),
+                   code = code[1],
+                   pre_gappei_code = pre_gappei_code[1],
+                   koiki_code = koiki_code[1])
+)
+```
+
+finalized object.
 
 
