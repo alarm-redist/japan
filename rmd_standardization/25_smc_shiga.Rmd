@@ -1,7 +1,8 @@
 ---
 title: "Standard Process for Rural Prefectures"
 subtitle: "Shiga Prefecture as an Example"
-output: html_document:
+output: 
+  html_document:
   toc: true
   toc_float: true 
 ---
@@ -36,6 +37,7 @@ lakes_removed <- c()
 ndists_new <- 3
 ndists_old <- 4
 n_split <- 1
+lakes_removed <- c("琵琶湖") 
 ```
 
 
@@ -71,7 +73,7 @@ pref <- pref_raw %>%
 
 #### For Shiga Prefecture only: Remove the Lake Biwa
 ```{r results='hide'}
-pref <- remove_lake(pref, "琵琶湖")
+pref <- remove_lake(pref, lakes_removed)
 ```
 
 ### 1.4 Use merge_gun() to make a new column for codes of guns
@@ -128,12 +130,8 @@ if(check_ferries(pref_code) == TRUE){
                                  ferries[, 2],
                                  zero = TRUE)
   # check contiguity
-  suggest <-  geomander::suggest_component_connection(shp = pref_0,
-                                                      adj = prefadj_0)
-  prefadj_0 <- geomander::add_edge(prefadj_0,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)
+  ferries_1 <- add_ferries(pref_1)
+  prefadj_1 <- geomander::add_edge(prefadj_1, ferries_1$V1, ferries_1$V2)
 }
 ```
 
@@ -206,18 +204,8 @@ prefadj_1 <- redist::redist.adjacency(pref_1)
 # add ferry if applicable
 if(check_ferries(pref_code) == TRUE){
   # add ferries
-  ferries <- add_ferries(pref_1)
-  prefadj_1 <- geomander::add_edge(prefadj_1,
-                                 ferries[, 1],
-                                 ferries[, 2],
-                                 zero = TRUE)
-  # check contiguity
-  suggest <-  geomander::suggest_component_connection(shp = pref_1,
-                                                      adj = prefadj_1)
-  prefadj_1 <- geomander::add_edge(prefadj_1,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)
+ferries_1 <- add_ferries(pref_1)
+prefadj_1 <- geomander::add_edge(prefadj_1, ferries_1$V1, ferries_1$V2)
 }
 ```
 
@@ -425,7 +413,7 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 ```{r}
 cl_co_0 = cluster::agnes(m_co_0)
 plot(as.dendrogram(cl_co_0)) 
-prec_clusters_0 = cutree(cl_co_0, 5) #5: number of clusters
+prec_clusters_0 = cutree(cl_co_0, 3) #5: number of clusters
 ```
 
 ##3.4 Convert data on membership to tibble
@@ -470,8 +458,6 @@ pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
 pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
 pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
 pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
-pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
 ```
 
 ## 3.7 Plot
@@ -490,12 +476,6 @@ ggplot() +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="yellow", high="yellow3") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="brown1", high="brown4") +
-
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
   
