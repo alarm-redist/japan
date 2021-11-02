@@ -355,7 +355,7 @@ koiki_boundary <- pref_0 %>%
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_color_brewer() +
+  scale_fill_manual(values = c("orange", "green", "blue")) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
@@ -380,7 +380,7 @@ mun_boundary <- pref_0 %>%
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_color_brewer() +
+  scale_fill_manual(values = c("orange", "green", "blue")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
