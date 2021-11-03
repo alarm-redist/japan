@@ -142,13 +142,6 @@ if(check_ferries(pref_code) == TRUE){
                                  ferries_0[, 1],
                                  ferries_0[, 2],
                                  zero = TRUE)
-  # check contiguity
-  suggest_0 <-  geomander::suggest_component_connection(shp = pref_0,
-                                                      adj = prefadj_0)
-  prefadj_0 <- geomander::add_edge(prefadj_0,
-                                 suggest_0$x,
-                                 suggest_0$y,
-                                 zero = TRUE)
 }
 ```
 
@@ -234,13 +227,6 @@ if(check_ferries(pref_code) == TRUE){
                                  ferries_1[, 1],
                                  ferries_1[, 2],
                                  zero = TRUE)
-  # check contiguity
-  suggest_1 <-  geomander::suggest_component_connection(shp = pref_1,
-                                                      adj = prefadj_1)
-  prefadj_1 <- geomander::add_edge(prefadj_1,
-                                 suggest_1$x,
-                                 suggest_1$y,
-                                 zero = TRUE)
 }
 ```
 
@@ -302,13 +288,6 @@ if(check_ferries(pref_code) == TRUE){
   prefadj_2 <- geomander::add_edge(prefadj_2,
                                  ferries_2[, 1],
                                  ferries_2[, 2],
-                                 zero = TRUE)
-  # check contiguity
-  suggest_2 <-  geomander::suggest_component_connection(shp = pref_2,
-                                                      adj = prefadj_2)
-  prefadj_2 <- geomander::add_edge(prefadj_2,
-                                 suggest_2$x,
-                                 suggest_2$y,
                                  zero = TRUE)
 }
 ```
