@@ -1,5 +1,5 @@
 ---
-title: "38_smc_ehime"
+title: "34_smc_hiroshima"
 output: html_document
   toc: true
   toc_float: true 
