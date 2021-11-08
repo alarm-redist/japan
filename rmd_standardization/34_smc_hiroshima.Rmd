@@ -30,12 +30,12 @@ setwd("..")
 ```{r}
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 38
-pref_name <- "ehime"
+pref_code <- 34
+pref_name <- "hiroshima"
 lakes_removed <- c() 
-ndists_new <- 3
-ndists_old <- 4
-n_split <- 1
+ndists_new <- 6
+ndists_old <- 7
+n_split <- 4
 ```
 
 ### 1.2.Download and Clean Census Data
@@ -76,34 +76,54 @@ pref <- merge_gun(pref)
 
 ### 1.5 Define "Koiki-renkei" Areas
 ```{r}
-matsuyama_koiki <- c(38201, 38210, 38215, 38386, 38401, 38402)
-uwajima_koiki <- c(38203, 38484, 38488, 38506)
+#assign which municipality belongs to which koiki renkei area
+hiroshima_koiki <- c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
+                     34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
+                     34302, 34304, 34307, 34309, 34368, 34369, 34431, 34462)
+bingo_koiki <- c(34207, 34204, 34205, 34208, 34462, 34545)
+hiroshima_chuo_koiki <- c(34202, 34203, 34212, 34215, 34304, 34307, 34309, 34431)
 
-pref$koiki_code <- pref$code
 
-#filter out the municipalities that belong to this koiki_renkei area and assign new codes
-koiki_1 <- pref %>% filter(code %in% matsuyama_koiki)
-koiki_1$koiki_code <- rep(1, times = length((pref %>% filter(code %in% matsuyama_koiki))$koiki_code))
-koiki_2 <- pref %>% filter(code %in% uwajima_koiki)
-koiki_2$koiki_code <- rep(2, times = length((pref %>% filter(code %in% uwajima_koiki))$koiki_code))
-
-#bind together with the remainder
-remainder <- pref %>% filter(code %in% c(matsuyama_koiki, uwajima_koiki) == FALSE)
-pref <- dplyr::bind_rows(koiki_1, koiki_2, remainder)
+#assign which municipality/gun belongs to which koiki renkei area
+#make sure to convert municipality codes into to "gun" codes
+koiki_1_codes <-  c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
+                    34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
+                    34300, 34360, 34420, 34460)
+koiki_2_codes <- c(34207, 34204, 34205, 34208, 34460, 34540)
+koiki_3_codes <- c(34202, 34203, 34212, 34215, 34300, 34420)
 ```
 
+###For Hiroshima only: Merge together Aki-gun and Aki-ku to avoid splits
+Aki-gun and Aki-ku, Hiroshima-shi both are discontiguous geographical units. In order to avoid creating discontiguous districts, we merge together Aki-gun and Aki-ku and treat that area as one unit. 
+
+```{r}
+pref_avoid_enclave <- dplyr::bind_rows(
+  #Merge together Aki-gun and Aki-ku
+  pref %>% 
+    dplyr::filter(code %in% c(34107, 34302, 34304, 34307, 34309)) %>%
+    dplyr::mutate(code = replace(code, code %in% c(34107, 34302, 34304, 34307, 34309), 34000),
+                  gun_code = replace(gun_code, gun_code %in% c(34107, 34300), 34000)) %>%
+    dplyr::group_by(code) %>%
+    dplyr::summarize(geometry = sf::st_union(geometry),
+                     pop = sum(pop),
+                     code = code[1],
+                     gun_code = gun_code[1]),
+  #Rest of prefecture
+  pref %>% 
+    dplyr::filter(code %in% c(34107, 34302, 34304, 34307, 34309) == FALSE)
+)
+```
 
 ## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
 ### 2.1 Finalize pref object
 We merge together the gun and treat them as one geographical unit. In Ehime Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
 ```{r}
 pref_0 <- sf::st_as_sf(
-  pref %>%
+  pref_avoid_enclave %>%
     dplyr::group_by(gun_code) %>%
     dplyr::summarize(geometry = sf::st_union(geometry),
                      pop = sum(pop),
-                     code = code[1],
-                     koiki_code = koiki_code[1])
+                     code = code[1])
 )
 ```
 
@@ -116,7 +136,7 @@ prefadj_0 <- redist::redist.adjacency(pref_0)
 ```{r}
 if(check_ferries(pref_code) == TRUE){
   # add ferries
-  ferries_0 <- add_ferries(pref_0)
+  ferries_0 <- add_ferries(pref_0) 
   prefadj_0 <- geomander::add_edge(prefadj_0,
                                  ferries_0[, 1],
                                  ferries_0[, 2],
@@ -124,12 +144,11 @@ if(check_ferries(pref_code) == TRUE){
 }
 ```
 
-
 ### 2.4 Define redist.map object
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= 0.40,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
@@ -237,6 +256,7 @@ pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 ```
 
+
 ### 1.2 Calculate Max:min ratio
 ```{r}
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
@@ -246,11 +266,25 @@ wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 ### 1.3 Count municipality/gun/koiki renkei splits
 Whereas `count_splits()` counts the total number of splits, `redist.splits()` counts the number of geographical units that are split.
 ```{r}
+#assign koiki_renkei area codes
+koiki_1 <- pref_0$gun_code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+
+koiki_2 <- pref_0$gun_code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
+
+koiki_3 <- pref_0$gun_code
+koiki_3[koiki_3 %in% koiki_3_codes] <- 3
+```
+
+```{r}
 num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
 
-num_koiki_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$koiki_code)
-koiki_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$koiki_code)
+koiki_split_0 <- 
+  redist::redist.splits(pref_smc_plans_0, koiki_1) + 
+  redist::redist.splits(pref_smc_plans_0, koiki_2) +
+  redist::redist.splits(pref_smc_plans_0, koiki_3)
 ```
 
 ```{r}
@@ -277,7 +311,6 @@ results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 
 #number of koiki renkei area splits
-results_0$num_koiki_split <- num_koiki_split_0
 results_0$koiki_split <- koiki_split_0
 
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -336,10 +369,17 @@ gun_boundary <- pref_0 %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
-#get data on koiki boundary
-koiki_boundary <- pref_0 %>%
-  filter(koiki_code < 10) %>%
-  group_by(koiki_code) %>%
+#get data on koiki renkei area boundary
+koiki_boundary_1 <- pref %>%
+  filter(code %in% hiroshima_koiki) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+koiki_boundary_2 <- pref %>%
+  filter(code %in% bingo_koiki) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+koiki_boundary_2 <- pref %>%
+  filter(code %in% hiroshima_chuo_koiki) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #map with district data + municipality/gun/koiki-renkei boundary
@@ -347,7 +387,7 @@ ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
   scale_fill_manual(values = c("blue", "green", "brown")) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
