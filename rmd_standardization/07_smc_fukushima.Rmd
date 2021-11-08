@@ -197,11 +197,11 @@ for (i in 1:nrow(pref))
 {
   if (pref$code[i] %in% pref_0$code)
   {
-    index_0[i] = which(pref_0$code == pref$code[i])
+    index_0[i] = which(pref_0$code == pref$code[i])[1]
   }
   else
   {
-    index_0[i] = which(pref_0$gun_code == pref$gun_code[i])
+    index_0[i] = which(pref_0$gun_code == pref$gun_code[i])[1]
   }
 }
 pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
