@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_knit$set(root.dir = '/home/kentoyamada/R/jcdf/')
 knitr::opts_knit$set(root.dir = '/Users/kentoyamada/Desktop/ALARM Project/jcdf')
 ```
 
@@ -106,7 +107,6 @@ pref_avoid_enclave <- dplyr::bind_rows(
     dplyr::group_by(code) %>%
     dplyr::summarize(geometry = sf::st_union(geometry),
                      pop = sum(pop),
-                     code = code[1],
                      gun_code = gun_code[1]),
   #Rest of prefecture
   pref %>% 
@@ -148,7 +148,7 @@ if(check_ferries(pref_code) == TRUE){
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.40,
+                                 pop_tol= 0.80,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
