@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#knitr::opts_knit$set(root.dir = '/home/kentoyamada/R/jcdf/')
+knitr::opts_knit$set(root.dir = '/home/kentoyamada/R/jcdf/')
 knitr::opts_knit$set(root.dir = '/Users/kentoyamada/Desktop/ALARM Project/jcdf')
 ```
 
@@ -116,7 +116,7 @@ pref_avoid_enclave <- dplyr::bind_rows(
 
 ## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
 ### 2.1 Finalize pref object
-We merge together the gun and treat them as one geographical unit. In Ehime Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
+We merge together the gun and treat them as one geographical unit. In Hiroshima Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
 ```{r}
 pref_0 <- sf::st_as_sf(
   pref_avoid_enclave %>%
@@ -136,19 +136,20 @@ prefadj_0 <- redist::redist.adjacency(pref_0)
 ```{r}
 if(check_ferries(pref_code) == TRUE){
   # add ferries
-  ferries_0 <- add_ferries(pref_0) 
+  ferries_0 <- add_ferries(pref_0)
   prefadj_0 <- geomander::add_edge(prefadj_0,
                                  ferries_0[, 1],
                                  ferries_0[, 2],
                                  zero = TRUE)
 }
+
 ```
 
 ### 2.4 Define redist.map object
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.80,
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
