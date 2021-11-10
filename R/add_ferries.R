@@ -59,8 +59,26 @@ add_ferries <- function(pref){
   # delete routes where start/stop municipalities are the same
   pref_internal <- pref_internal[which(pref_internal[, 1] != pref_internal[, 2]), ]
 
+  # filter out the routes that connect isolated areas (islands) to the mainland
+  # obtain adjacency list
+  prefadj <- redist::redist.adjacency(pref)
+
+  # check the number of adjacencies per municipality
+  edges <- rep(0,time = length(prefadj))
+  for(i in 1:length(prefadj)){
+    edges[i] <- length(prefadj[[i]])
+  }
+
+  # check which municipalities are isolated
+  edges_mun <- as.data.frame(edges)
+  isolated_mun_index <- which(edges_mun$edges == 0)
+
+  # filter out routes that connect isolated municipalities
+  pref_internal_isolated <- pref_internal %>%
+      dplyr::filter(V1 %in% isolated_mun_index | V2 %in% isolated_mun_index)
+
   # return result
-  return(pref_internal)
+  return(pref_internal_isolated)
 
 }
 
