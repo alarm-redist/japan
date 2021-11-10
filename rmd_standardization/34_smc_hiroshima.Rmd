@@ -7,7 +7,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = '/home/kentoyamada/R/jcdf/')
 knitr::opts_knit$set(root.dir = '/Users/kentoyamada/Desktop/ALARM Project/jcdf')
 ```
 
@@ -94,32 +93,13 @@ koiki_2_codes <- c(34207, 34204, 34205, 34208, 34460, 34540)
 koiki_3_codes <- c(34202, 34203, 34212, 34215, 34300, 34420)
 ```
 
-###For Hiroshima only: Merge together Aki-gun and Aki-ku to avoid splits
-Aki-gun and Aki-ku, Hiroshima-shi both are discontiguous geographical units. In order to avoid creating discontiguous districts, we merge together Aki-gun and Aki-ku and treat that area as one unit. 
-
-```{r}
-pref_avoid_enclave <- dplyr::bind_rows(
-  #Merge together Aki-gun and Aki-ku
-  pref %>% 
-    dplyr::filter(code %in% c(34107, 34302, 34304, 34307, 34309)) %>%
-    dplyr::mutate(code = replace(code, code %in% c(34107, 34302, 34304, 34307, 34309), 34000),
-                  gun_code = replace(gun_code, gun_code %in% c(34107, 34300), 34000)) %>%
-    dplyr::group_by(code) %>%
-    dplyr::summarize(geometry = sf::st_union(geometry),
-                     pop = sum(pop),
-                     gun_code = gun_code[1]),
-  #Rest of prefecture
-  pref %>% 
-    dplyr::filter(code %in% c(34107, 34302, 34304, 34307, 34309) == FALSE)
-)
-```
 
 ## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
 ### 2.1 Finalize pref object
 We merge together the gun and treat them as one geographical unit. In Hiroshima Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
 ```{r}
 pref_0 <- sf::st_as_sf(
-  pref_avoid_enclave %>%
+  pref %>%
     dplyr::group_by(gun_code) %>%
     dplyr::summarize(geometry = sf::st_union(geometry),
                      pop = sum(pop),
@@ -138,11 +118,10 @@ if(check_ferries(pref_code) == TRUE){
   # add ferries
   ferries_0 <- add_ferries(pref_0)
   prefadj_0 <- geomander::add_edge(prefadj_0,
-                                 ferries_0[, 1],
-                                 ferries_0[, 2],
-                                 zero = TRUE)
+                                  ferries_0[, 1],
+                                  ferries_0[, 2],
+                                  zero = TRUE)
 }
-
 ```
 
 ### 2.4 Define redist.map object
@@ -257,7 +236,6 @@ pref_smc_plans_0 <- redist::get_plans_matrix(sim_smc_pref_0)
 pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 ```
 
-
 ### 1.2 Calculate Max:min ratio
 ```{r}
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
@@ -288,6 +266,7 @@ koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_3)
 ```
 
+
 ```{r}
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
@@ -317,6 +296,34 @@ results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
 ```
 
+
+```{r}
+# Post-processing: filter out plans with discontiguous districts
+
+#in this case, Aki-ku(Hiroshima-shi; code: 34107) and Aki-gun (code: 34300) must be in the same district to avoid creating discontiguous districts
+contiguous <- 1:25000
+for(i in 1:25000){
+   contiguous[i] <- 
+     as.integer(pref_smc_plans_0[,i][which(pref_0$gun_code == 34107)] == pref_smc_plans_0[,i][which(pref_0$gun_code == 34300)])
+}
+results_0$contiguous <- contiguous
+
+#Ferry routes connect Takehara-shi (34203), Higashihiroshima-shi (34212), and Kure-shi (34202) to Osakikamijima-cho.
+#However, Takehara-shi and Kure-shi are in different not connected by land.
+#Thus, we must make sure to avoid a situation in which Takehara-shi and Takehara-shi both belong to the district that is different from the district Higashihiroshima-shi belongs to.
+ferry_discontiguity <- 1:25000
+for(i in 1:25000){
+   ferry_discontiguity[i] <- 
+     as.integer(
+      #We must avoid a situation in which Kure-shi (34202) and Takehara-shi(34203) belong to the same district
+      pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] == pref_smc_plans_0[,i][which(pref_0$gun_code == 34203)]&
+      #whereby that district is differnt from the district Higashihiroshima-shi (34212) belongs to
+      pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] != pref_smc_plans_0[,i][which(pref_0$gun_code == 34212)]
+      )
+}
+results_0$ferry_discontiguity <- ferry_discontiguity
+```
+
 ```{r}
 results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
 results_1$max_to_min <- wgt_smc_1$max_to_min
@@ -342,25 +349,25 @@ results_1$index <- 1:nrow(wgt_smc_1)
 zero_multi_results_1 <- results_1 %>% filter(multi == 0)
 ```
 
-
 ### 1.5  Optimal Plan
 ```{r}
-optimal_0 <- results_0$index[which(results_0$max_to_min == min(results_0$max_to_min))][1]
-results_0[optimal_0,]
+contiguous_results_0 <- results_0[which(results_0$contiguous == 1 & results_0$ferry_discontiguity == 0), ]
+optimal_0_without_tobichi <- contiguous_results_0$index[which(contiguous_results_0$max_to_min ==
+                                                                min(contiguous_results_0$max_to_min))][1]
+results_0[optimal_0_without_tobichi,]
 ```
+
 ```{r}
 optimal_1 <- zero_multi_results_1$index[which(zero_multi_results_1$max_to_min == 
                                                 min(zero_multi_results_1$max_to_min))][1]
 results_1[optimal_1,]
 ```
 
-
-
 # 2. Visualize Optimal Plan
 ## 2.1 0 splits
 ```{r}
 #get data on optimal plan
-matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0))
+matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0_without_tobichi))
 colnames(matrix_optimal_0) <- "district"
 optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
 
@@ -386,9 +393,9 @@ koiki_boundary_2 <- pref %>%
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("blue", "green", "brown")) +
+  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  #geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
