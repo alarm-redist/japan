@@ -15,7 +15,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-nsims <- 250000
+nsims <- 25000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -56,37 +56,19 @@ pref_2020 <- pref_raw %>%
 
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
-
-pref_county <- pref_2020 %>%
-  merge_gun(., exception = merge_gun_exception) %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-# Group Iruma-gun (11326 and 11327) except Miyoshi-cho (11324) based on current plan
-iruma <- pref_county %>%
-  dplyr::filter(code == 11326 |
-                  code == 11327) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-pref_county_manually_edited <- pref_county %>%
-  dplyr::filter(!code %in% c(11326,
-                             11327)) %>%
-  dplyr::bind_rows(.,
-                   iruma) %>%
-  dplyr::select(code, geometry)
-
-########## Add `county` column to the `pref` data frame ###########
-koiki_code <- geomander::geo_match(from = pref_2020,
-                               to = pref_county_manually_edited,
-                               method = "center",
-                               tiebreaker = TRUE)
-
 pref <- pref_2020 %>%
-  dplyr::mutate(koiki_code = koiki_code) %>%
   merge_gun(., exception = merge_gun_exception)
+
+iruma <- pref %>%
+  dplyr::filter(code == 11326|
+           code == 11327) %>%
+  dplyr::mutate(gun_code = code[1])
+
+excp_iruna <- pref %>%
+  dplyr::filter(code != 11326 &
+                  code != 11327)
+
+pref <- bind_rows(iruma, excp_iruna)
 
 ############Simulation Prep########################
 #adjacency list
@@ -115,8 +97,7 @@ pref_ms <- redist::redist_mergesplit(
   nsims = nsims,
   counties = pref$gun_code,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 100),
-                     splits = list(strength = 10))
+  constraints = list(multissplits = list(strength = 10))
 )
 
 library(RColorBrewer)
@@ -196,11 +177,43 @@ results$gun_split <- gun_split
 results$num_koiki_split <- num_koiki_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_ms)
-results$contiguous <- 0
-for (i in 1:nrow(wgt_ms))
-{
-  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component) == 1
+
+contiguous <- 1:nsims
+for(i in 1:nsims){
+  contiguous[i] <- ifelse(as.integer(
+       # Iruma Gun except Miyoshi cho
+     pref_ms_plans[,i][which(pref$code == 11326)] ==
+       pref_ms_plans[,i][which(pref$code == 11327)]),1,
+
+     ifelse(as.integer(
+       # Hiki Gun
+     pref_ms_plans[,i][which(pref$code == 11341)] ==
+       pref_ms_plans[,i][which(pref$code == 11342)] ==
+       pref_ms_plans[,i][which(pref$code == 11343)] ==
+       pref_ms_plans[,i][which(pref$code == 11346)] ==
+       pref_ms_plans[,i][which(pref$code == 11347)] ==
+       pref_ms_plans[,i][which(pref$code == 11348)] ==
+       pref_ms_plans[,i][which(pref$code == 11349)]),1,
+     ifelse(as.integer(
+       # Chichibu Gun
+       pref_ms_plans[,i][which(pref$code == 11361)] ==
+       pref_ms_plans[,i][which(pref$code == 11362)] ==
+       pref_ms_plans[,i][which(pref$code == 11363)] ==
+       pref_ms_plans[,i][which(pref$code == 11365)] ==
+       pref_ms_plans[,i][which(pref$code == 11369)]),1,
+     ifelse(as.integer(
+       # Kodama Gun
+       pref_ms_plans[,i][which(pref$code == 11381)] ==
+       pref_ms_plans[,i][which(pref$code == 11383)] ==
+       pref_ms_plans[,i][which(pref$code == 11385)],1,
+     ifelse(as.integer(
+       # Kitakatsushika Gun
+       pref_ms_plans[,i][which(pref$code == 11464)] ==
+       pref_ms_plans[,i][which(pref$code == 11465)]),1,0
+    ))))))
 }
+
+results$contiguous <- contiguous
 
 ### 1.5  Optimal Plan
 contiguous_results <- results[which(results$contiguous == 1), ]
