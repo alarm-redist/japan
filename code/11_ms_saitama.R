@@ -56,20 +56,31 @@ pref_2020 <- pref_raw %>%
 
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
-pref <- pref_2020 %>%
+pref_guncode <- pref_2020 %>%
   merge_gun(., exception = merge_gun_exception)
 
-iruma <- pref %>%
+iruma <- pref_guncode %>%
   dplyr::filter(code == 11326|
            code == 11327) %>%
   dplyr::mutate(gun_code = code[1])
 
-excp_iruna <- pref %>%
+excp_iruna <- pref_guncode %>%
   dplyr::filter(code != 11326 &
                   code != 11327)
 
-pref <- bind_rows(iruma, excp_iruna)
+pref_guncode <- bind_rows(iruma, excp_iruna)
 
+pref_guncode_gun <- pref_guncode %>%
+  dplyr::filter(code >= 11300) %>%
+  dplyr::group_by(gun_code) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry),
+                   pop = sum(pop),
+                   code = code[1])
+
+pref_guncode_other <- pref_guncode %>%
+  dplyr::filter(code < 11300)
+
+pref <- sf::st_as_sf(bind_rows(pref_guncode_gun, pref_guncode_other))
 ############Simulation Prep########################
 #adjacency list
 prefadj <- redist::redist.adjacency(pref)
@@ -180,12 +191,12 @@ results$index <- 1:nrow(wgt_ms)
 
 contiguous <- 1:nsims
 for(i in 1:nsims){
-  contiguous[i] <- ifelse(as.integer(
+  contiguous[i] <- ifelse(
        # Iruma Gun except Miyoshi cho
      pref_ms_plans[,i][which(pref$code == 11326)] ==
-       pref_ms_plans[,i][which(pref$code == 11327)]),1,
+       pref_ms_plans[,i][which(pref$code == 11327)],1,
 
-     ifelse(as.integer(
+     ifelse(
        # Hiki Gun
      pref_ms_plans[,i][which(pref$code == 11341)] ==
        pref_ms_plans[,i][which(pref$code == 11342)] ==
@@ -193,24 +204,24 @@ for(i in 1:nsims){
        pref_ms_plans[,i][which(pref$code == 11346)] ==
        pref_ms_plans[,i][which(pref$code == 11347)] ==
        pref_ms_plans[,i][which(pref$code == 11348)] ==
-       pref_ms_plans[,i][which(pref$code == 11349)]),1,
-     ifelse(as.integer(
+       pref_ms_plans[,i][which(pref$code == 11349)],1,
+     ifelse(
        # Chichibu Gun
        pref_ms_plans[,i][which(pref$code == 11361)] ==
        pref_ms_plans[,i][which(pref$code == 11362)] ==
        pref_ms_plans[,i][which(pref$code == 11363)] ==
        pref_ms_plans[,i][which(pref$code == 11365)] ==
-       pref_ms_plans[,i][which(pref$code == 11369)]),1,
-     ifelse(as.integer(
+       pref_ms_plans[,i][which(pref$code == 11369)],1,
+     ifelse(
        # Kodama Gun
        pref_ms_plans[,i][which(pref$code == 11381)] ==
        pref_ms_plans[,i][which(pref$code == 11383)] ==
        pref_ms_plans[,i][which(pref$code == 11385)],1,
-     ifelse(as.integer(
+     ifelse(
        # Kitakatsushika Gun
        pref_ms_plans[,i][which(pref$code == 11464)] ==
-       pref_ms_plans[,i][which(pref$code == 11465)]),1,0
-    ))))))
+       pref_ms_plans[,i][which(pref$code == 11465)],1,0
+    )))))
 }
 
 results$contiguous <- contiguous
