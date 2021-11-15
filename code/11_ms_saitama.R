@@ -105,12 +105,16 @@ pref_map <- redist::redist_map(pref,
 ####### Mergesplit Simulation ######
 sim_type <- "ms"
 
+constr = redist_constr(pref_map)
+constr = add_constr_splits(constr, strength=10)
+constr = add_constr_multisplits(constr, strength = 10)
+
 pref_ms <- redist::redist_mergesplit(
   map = pref_map,
   nsims = nsims,
   counties = pref$gun_code,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 10))
+  constraints = constr
 )
 
 library(RColorBrewer)
@@ -194,7 +198,7 @@ koiki_split <-
 
 ### 1.4 Compile Results
 
-results <- data.frame(matrix(ncol = 0, nrow = nrow(pref_ms)))
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms)))
 results$max_to_min <- wgt_ms$max_to_min
 #number of gun splits
 results$num_gun_split <- num_gun_split
@@ -202,7 +206,7 @@ results$gun_split <- gun_split
 #number of koiki renkei area splits
 results$num_koiki_split <- num_koiki_split
 results$koiki_split <- koiki_split
-results$index <- 1:nrow(wgt_ms)
+results$draw <- wgt_ms$draw
 
 results$contiguous <- 0
 for (i in 1:nrow(wgt_ms)){
@@ -210,13 +214,13 @@ for (i in 1:nrow(wgt_ms)){
 }
 
 ### 1.5  Optimal Plan
-contiguous_results <- results[which(
-  (results$contiguous == 1) &
-    (results$num_gun_split == results$gun_split) &
-    (results$num_gun_split >= sq_splits)
-    ), ]
-rownames(contiguous_results) <- 1:nrow(contiguous_results)
-optimal <- contiguous_results$index[which(contiguous_results$max_to_min == min(contiguous_results$max_to_min))][1]
+qualifying_results <- results %>%
+  dplyr::group_by(max_to_min, num_gun_split, gun_split, contiguous) %>%
+  dplyr::summarise(draw = first(draw)) %>%
+  dplyr::filter(contiguous == 1) %>%
+  dplyr::filter(num_gun_split == gun_split) %>%
+  dplyr::filter(num_gun_split <= sq_splits) %>%
+  dplyr::arrange(max_to_min)
 
 # 2. Visualize Optimal Plan
 ## 2.1 0 splits
@@ -225,9 +229,6 @@ pref_boundaries <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
-matrix_optimal <- redist::get_plans_matrix(pref_ms %>% filter(draw == optimal))
-colnames(matrix_optimal) <- "district"
-optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 #get data on gun boundary
 gun_boundary <- pref %>%
   filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
@@ -238,6 +239,10 @@ koiki_boundary <- pref %>%
   group_by(koiki_code) %>%
   summarise(geometry = sf::st_union(geometry))
 #map with district data + municipality/gun/koiki-renkei boundary
+matrix_optimal <- redist::get_plans_matrix(pref_ms %>%
+                                             dplyr::filter(draw == qualifying_results$draw[3]))
+colnames(matrix_optimal) <- "district"
+optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 ggplot() +
   geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
