@@ -15,7 +15,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-nsims <- 25000
+nsims <- 250000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -23,6 +23,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 ndists_new <- 16
 ndists_old <- 15
 sq_maxmin <- 1.444
+sq_splits <- 8
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -81,6 +82,7 @@ pref_guncode_other <- pref_guncode %>%
   dplyr::filter(code < 11300)
 
 pref <- sf::st_as_sf(bind_rows(pref_guncode_gun, pref_guncode_other))
+
 ############Simulation Prep########################
 #adjacency list
 prefadj <- redist::redist.adjacency(pref)
@@ -175,7 +177,20 @@ orig_adj <- redist::redist.adjacency(pref)
 num_gun_split <- count_splits(pref_ms_plans, pref_map$gun_code)
 gun_split <- redist::redist.splits(pref_ms_plans, pref_map$gun_code)
 num_koiki_split <- count_splits(pref_ms_plans, pref_map$koiki_code)
-koiki_split <- redist::redist.splits(pref_ms_plans, pref_map$koiki_code)
+
+#make sure to convert municipality codes into to "gun" codes
+koiki_1_codes <-  c(11207, 11360)
+koiki_2_codes <- c(11211, 11380)
+
+#assign koiki_renkei area codes for simulation with 0 split
+koiki_1 <- pref$gun_code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+koiki_2 <- pref$gun_code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
+
+koiki_split <-
+  redist::redist.splits(pref_ms_plans, koiki_1) +
+  redist::redist.splits(pref_ms_plans, koiki_2)
 
 ### 1.4 Compile Results
 
@@ -189,45 +204,17 @@ results$num_koiki_split <- num_koiki_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_ms)
 
-contiguous <- 1:nsims
-for(i in 1:nsims){
-  contiguous[i] <- ifelse(
-       # Iruma Gun except Miyoshi cho
-     pref_ms_plans[,i][which(pref$code == 11326)] ==
-       pref_ms_plans[,i][which(pref$code == 11327)],1,
-
-     ifelse(
-       # Hiki Gun
-     pref_ms_plans[,i][which(pref$code == 11341)] ==
-       pref_ms_plans[,i][which(pref$code == 11342)] ==
-       pref_ms_plans[,i][which(pref$code == 11343)] ==
-       pref_ms_plans[,i][which(pref$code == 11346)] ==
-       pref_ms_plans[,i][which(pref$code == 11347)] ==
-       pref_ms_plans[,i][which(pref$code == 11348)] ==
-       pref_ms_plans[,i][which(pref$code == 11349)],1,
-     ifelse(
-       # Chichibu Gun
-       pref_ms_plans[,i][which(pref$code == 11361)] ==
-       pref_ms_plans[,i][which(pref$code == 11362)] ==
-       pref_ms_plans[,i][which(pref$code == 11363)] ==
-       pref_ms_plans[,i][which(pref$code == 11365)] ==
-       pref_ms_plans[,i][which(pref$code == 11369)],1,
-     ifelse(
-       # Kodama Gun
-       pref_ms_plans[,i][which(pref$code == 11381)] ==
-       pref_ms_plans[,i][which(pref$code == 11383)] ==
-       pref_ms_plans[,i][which(pref$code == 11385)],1,
-     ifelse(
-       # Kitakatsushika Gun
-       pref_ms_plans[,i][which(pref$code == 11464)] ==
-       pref_ms_plans[,i][which(pref$code == 11465)],1,0
-    )))))
+results$contiguous <- 0
+for (i in 1:nrow(wgt_ms)){
+  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component) == 1
 }
 
-results$contiguous <- contiguous
-
 ### 1.5  Optimal Plan
-contiguous_results <- results[which(results$contiguous == 1), ]
+contiguous_results <- results[which(
+  (results$contiguous == 1) &
+    (results$num_gun_split == results$gun_split) &
+    (results$num_gun_split >= sq_splits)
+    ), ]
 rownames(contiguous_results) <- 1:nrow(contiguous_results)
 optimal <- contiguous_results$index[which(contiguous_results$max_to_min == min(contiguous_results$max_to_min))][1]
 
@@ -248,7 +235,6 @@ gun_boundary <- pref %>%
   summarise(geometry = sf::st_union(geometry))
 #get data on koiki boundary
 koiki_boundary <- pref %>%
-  filter(koiki_code < 10) %>%
   group_by(koiki_code) %>%
   summarise(geometry = sf::st_union(geometry))
 #map with district data + municipality/gun/koiki-renkei boundary
@@ -257,7 +243,7 @@ ggplot() +
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
   geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 0.5) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  #geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
