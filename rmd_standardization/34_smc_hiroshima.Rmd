@@ -277,7 +277,7 @@ prefadj_2 <- geomander::add_edge(prefadj_2,
                                  which(pref_2$pre_gappei_code == 34215))
 ```
 
-### 3.5 Define redist.map object
+### 4.5 Define redist.map object
 ```{r}
 pref_map_2 <- redist::redist_map(pref_2,
                                  ndists = ndists_new,
@@ -286,14 +286,14 @@ pref_map_2 <- redist::redist_map(pref_2,
                                  adj = prefadj_2)
 ```
 
-### 3.6 Run Simulation
+### 4.6 Run Simulation
 ```{r}
 sim_smc_pref_2 <- redist::redist_smc(pref_map_2,
                                      nsims = nsims,
                                      pop_temper = 0.05)
 ```
 
-### 3.7 Save results of simulation
+### 4.7 Save results of simulation
 ```{r}
 saveRDS(sim_smc_pref_2, paste("simulation/",
                               as.character(pref_code),
@@ -304,6 +304,90 @@ saveRDS(sim_smc_pref_2, paste("simulation/",
                               "_",
                               as.character(nsims),
                               "_2",
+                              ".Rds",
+                              sep = ""))
+```
+
+## 5. Run Simulations with 3 Municipality Split
+### 5.1 Split the largest municipality based on its old municipality boundaries
+```{r}
+new_3 <- as.character(split_codes[3])
+old_3 <- find_old_codes(new_3, pop_by_old_boundary)
+pref_3 <- reflect_old_boundaries(pref_2, old_boundary, pop_by_old_boundary, old_3, new_3)
+pref_3 <- estimate_old_boundary_pop(old_3, new_3, pref_3, census2020)
+```
+
+### 5.2 Finalize pref object
+No additional steps are needed here; the guns have already been merged.
+
+### 5.3 Make adjacency graph
+```{r}
+prefadj_3 <- redist::redist.adjacency(pref_3)
+```
+
+### 4.4 Add edges to adjacency graph
+```{r}
+if(check_ferries(pref_code) == TRUE){
+  # add ferries
+   ferries_3 <- add_ferries(pref_3)
+   prefadj_3 <- geomander::add_edge(prefadj_3,
+                                  ferries_3[, 1],
+                                  ferries_3[, 2],
+                                  zero = TRUE)
+}
+```
+
+###For Hiroshima Only: 
+As a result of splitting Fukuyama-shi, Utsumi-cho, Fukuyama-shi appears to be disconnected from the mainland. To fix this, we must add an adjacency edge between Utsumi-cho(34481) and Numakuma-cho(34482).
+Similarly, as a result of splitting Kure-shi, Shimokamagari-cho and Kamagari-cho appear to be disconnected from the mainland. To fix this, we must add an adjacency edge between Shimokamagari-cho (34313) and Kure-shi (34202) as well as between Kamagari-cho (34314) and Shimokamagari-cho (34313).
+In addition, Otodo-cho appear to be disconnected from the mainland. Thus, we add an adjacency edge between Otodo-cho (34311) and Kure-shi (34202) as well as between Otodo-cho (34311) and Etajima-shi (34215)
+
+
+```{r}
+prefadj_3 <- geomander::add_edge(prefadj_3, 
+                                 which(pref_3$pre_gappei_code == 34481), 
+                                 which(pref_3$pre_gappei_code == 34482))
+prefadj_3 <- geomander::add_edge(prefadj_3, 
+                                 which(pref_3$pre_gappei_code == 34313), 
+                                 which(pref_3$pre_gappei_code == 34202))
+prefadj_3 <- geomander::add_edge(prefadj_3, 
+                                 which(pref_3$pre_gappei_code == 34313), 
+                                 which(pref_3$pre_gappei_code == 34314))
+prefadj_3 <- geomander::add_edge(prefadj_3, 
+                                 which(pref_3$pre_gappei_code == 34311), 
+                                 which(pref_3$pre_gappei_code == 34202))
+prefadj_3 <- geomander::add_edge(prefadj_3, 
+                                 which(pref_3$pre_gappei_code == 34311), 
+                                 which(pref_3$pre_gappei_code == 34215))
+```
+
+### 4.5 Define redist.map object
+```{r}
+pref_map_3 <- redist::redist_map(pref_3,
+                                 ndists = ndists_new,
+                                 pop_tol= 0.10,
+                                 total_pop = pop,
+                                 adj = prefadj_3)
+```
+
+### 4.6 Run Simulation
+```{r}
+sim_smc_pref_3 <- redist::redist_smc(pref_map_3,
+                                     nsims = nsims,
+                                     pop_temper = 0.05)
+```
+
+### 4.7 Save results of simulation
+```{r}
+saveRDS(sim_smc_pref_3, paste("simulation/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_3",
                               ".Rds",
                               sep = ""))
 ```
