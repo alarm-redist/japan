@@ -1,33 +1,35 @@
-# jcdf
+# 50-State Redistricting Simulations
 
-# Work Flow
+<img src="https://alarm-redist.github.io/assets/alarm_256_tr.png" align="right" height=128>
 
-## Download Data   
-1. `download_shp`
-2. `download_2020_census`
+### The ALARM Project (Japan)
 
-## Clean Data 
-1. `remove_lake`(case by case)
-2. `clean_jcdf`
-3. `clean_2020_census`
-4. Combine them. For example,   
-   `combined <- pref %>%   
-               dplyr::group_by(code, CITY_NAME) %>%  
-               summarise(geometry = sf::st_union(geometry)) %>%  
-               dplyr::left_join(census2020, by = c('code'))`
-               
-5. `get_municode`
-6. `merge_small`
-7. `merge_gun`
-8. `reflect_old_boundaries`
-9. Test if the maps make sense
-10. `status_quo_match`
-11. `add_ferries`
+[![License: CC0 1.0](https://img.shields.io/badge/Data%20License-Public%20domain-lightgrey.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
+[![License: MIT](https://img.shields.io/badge/Software%20License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Simulation
-1. `redist_smc` or `redist_enumration`
-2. 
+This repository contains code to sample districting plans for the 15 Japanese prefectures subject to 10増10減 (changes in the number of Lower House seats) following the demographic shifts reflected in the 2020 Census, according to relevant legal requirements.
 
-## Stat Summary
+The sampled plans and accompanying summary statistics may be downloaded from
+the dataverse (link forthcoming)
+for this project. These consist of four files for each analysis:
+- a documentation file describing data formats, analysis decisions, and data sources
+- a CSV file of summary statistics for each of the generated plans
+- two `.rds` files containing `redist_map` and `redist_plans` objects, which
+contain the actual shapefiles and district assignment matrices and may be used
+for further analysis.
 
-## Summary Plot
+## Repository Structure
+
+- `analyses/` contains the code for each self-contained analysis
+- `R/` contains common analysis and repository management code
+
+## Data Sources
+
+Unless otherwise noted, data (shapefiles and census) for each prefecture comes from the Japanese Ministry of Land, Infrastructure, Transport and Tourism (MLIT) or the Statistics Bureau of Japan:
+[2015 Census Files](https://github.com/reiy24/jcdf_data/releases/tag/06232021), 2020 Census Files are forthcoming.
+
+Exceptions to these data sources are listed in the individual documentation files 
+in the `analyses/` folder.
+
+## Contributing an Analysis
+Please read the contribution guidelines (forthcoming).
