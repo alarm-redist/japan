@@ -26,7 +26,7 @@ for further analysis.
 ## Data Sources
 
 Unless otherwise noted, data (shapefiles and census) for each prefecture comes from the Japanese Ministry of Land, Infrastructure, Transport and Tourism (MLIT) or the Statistics Bureau of Japan:
-[2015 Census Files](https://github.com/reiy24/jcdf_data/releases/tag/06232021), 2020 Census Files are forthcoming.
+[2015 Census Files](https://github.com/reiy24/jcdf_data/releases/tag/06232021), 2020 Census Files (forthcoming).
 
 Exceptions to these data sources are listed in the individual documentation files 
 in the `analyses/` folder.
