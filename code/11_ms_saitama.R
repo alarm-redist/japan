@@ -15,7 +15,7 @@ setwd("..")
 
 #-------- information set-up -----------#
 # prefectural information
-nsims <- 25000
+nsims <- 250000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c() # enter `c()` if not applicable
@@ -23,6 +23,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 ndists_new <- 16
 ndists_old <- 15
 sq_maxmin <- 1.444
+sq_splits <- 8
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -56,19 +57,31 @@ pref_2020 <- pref_raw %>%
 
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
-pref <- pref_2020 %>%
+pref_guncode <- pref_2020 %>%
   merge_gun(., exception = merge_gun_exception)
 
-iruma <- pref %>%
+iruma <- pref_guncode %>%
   dplyr::filter(code == 11326|
            code == 11327) %>%
   dplyr::mutate(gun_code = code[1])
 
-excp_iruna <- pref %>%
+excp_iruna <- pref_guncode %>%
   dplyr::filter(code != 11326 &
                   code != 11327)
 
-pref <- bind_rows(iruma, excp_iruna)
+pref_guncode <- bind_rows(iruma, excp_iruna)
+
+pref_guncode_gun <- pref_guncode %>%
+  dplyr::filter(code >= 11300) %>%
+  dplyr::group_by(gun_code) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry),
+                   pop = sum(pop),
+                   code = code[1])
+
+pref_guncode_other <- pref_guncode %>%
+  dplyr::filter(code < 11300)
+
+pref <- sf::st_as_sf(bind_rows(pref_guncode_gun, pref_guncode_other))
 
 ############Simulation Prep########################
 #adjacency list
@@ -92,12 +105,16 @@ pref_map <- redist::redist_map(pref,
 ####### Mergesplit Simulation ######
 sim_type <- "ms"
 
+constr = redist_constr(pref_map)
+constr = add_constr_splits(constr, strength=10)
+constr = add_constr_multisplits(constr, strength = 10)
+
 pref_ms <- redist::redist_mergesplit(
   map = pref_map,
   nsims = nsims,
   counties = pref$gun_code,
   warmup = 0,
-  constraints = list(multissplits = list(strength = 10))
+  constraints = constr
 )
 
 library(RColorBrewer)
@@ -164,11 +181,24 @@ orig_adj <- redist::redist.adjacency(pref)
 num_gun_split <- count_splits(pref_ms_plans, pref_map$gun_code)
 gun_split <- redist::redist.splits(pref_ms_plans, pref_map$gun_code)
 num_koiki_split <- count_splits(pref_ms_plans, pref_map$koiki_code)
-koiki_split <- redist::redist.splits(pref_ms_plans, pref_map$koiki_code)
+
+#make sure to convert municipality codes into to "gun" codes
+koiki_1_codes <-  c(11207, 11360)
+koiki_2_codes <- c(11211, 11380)
+
+#assign koiki_renkei area codes for simulation with 0 split
+koiki_1 <- pref$gun_code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+koiki_2 <- pref$gun_code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
+
+koiki_split <-
+  redist::redist.splits(pref_ms_plans, koiki_1) +
+  redist::redist.splits(pref_ms_plans, koiki_2)
 
 ### 1.4 Compile Results
 
-results <- data.frame(matrix(ncol = 0, nrow = nrow(pref_ms)))
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms)))
 results$max_to_min <- wgt_ms$max_to_min
 #number of gun splits
 results$num_gun_split <- num_gun_split
@@ -176,49 +206,21 @@ results$gun_split <- gun_split
 #number of koiki renkei area splits
 results$num_koiki_split <- num_koiki_split
 results$koiki_split <- koiki_split
-results$index <- 1:nrow(wgt_ms)
+results$draw <- wgt_ms$draw
 
-contiguous <- 1:nsims
-for(i in 1:nsims){
-  contiguous[i] <- ifelse(as.integer(
-       # Iruma Gun except Miyoshi cho
-     pref_ms_plans[,i][which(pref$code == 11326)] ==
-       pref_ms_plans[,i][which(pref$code == 11327)]),1,
-
-     ifelse(as.integer(
-       # Hiki Gun
-     pref_ms_plans[,i][which(pref$code == 11341)] ==
-       pref_ms_plans[,i][which(pref$code == 11342)] ==
-       pref_ms_plans[,i][which(pref$code == 11343)] ==
-       pref_ms_plans[,i][which(pref$code == 11346)] ==
-       pref_ms_plans[,i][which(pref$code == 11347)] ==
-       pref_ms_plans[,i][which(pref$code == 11348)] ==
-       pref_ms_plans[,i][which(pref$code == 11349)]),1,
-     ifelse(as.integer(
-       # Chichibu Gun
-       pref_ms_plans[,i][which(pref$code == 11361)] ==
-       pref_ms_plans[,i][which(pref$code == 11362)] ==
-       pref_ms_plans[,i][which(pref$code == 11363)] ==
-       pref_ms_plans[,i][which(pref$code == 11365)] ==
-       pref_ms_plans[,i][which(pref$code == 11369)]),1,
-     ifelse(as.integer(
-       # Kodama Gun
-       pref_ms_plans[,i][which(pref$code == 11381)] ==
-       pref_ms_plans[,i][which(pref$code == 11383)] ==
-       pref_ms_plans[,i][which(pref$code == 11385)],1,
-     ifelse(as.integer(
-       # Kitakatsushika Gun
-       pref_ms_plans[,i][which(pref$code == 11464)] ==
-       pref_ms_plans[,i][which(pref$code == 11465)]),1,0
-    ))))))
+results$contiguous <- 0
+for (i in 1:nrow(wgt_ms)){
+  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component) == 1
 }
 
-results$contiguous <- contiguous
-
 ### 1.5  Optimal Plan
-contiguous_results <- results[which(results$contiguous == 1), ]
-rownames(contiguous_results) <- 1:nrow(contiguous_results)
-optimal <- contiguous_results$index[which(contiguous_results$max_to_min == min(contiguous_results$max_to_min))][1]
+qualifying_results <- results %>%
+  dplyr::group_by(max_to_min, num_gun_split, gun_split, contiguous) %>%
+  dplyr::summarise(draw = first(draw)) %>%
+  dplyr::filter(contiguous == 1) %>%
+  dplyr::filter(num_gun_split == gun_split) %>%
+  dplyr::filter(num_gun_split <= sq_splits) %>%
+  dplyr::arrange(max_to_min)
 
 # 2. Visualize Optimal Plan
 ## 2.1 0 splits
@@ -227,9 +229,6 @@ pref_boundaries <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
-matrix_optimal <- redist::get_plans_matrix(pref_ms %>% filter(draw == optimal))
-colnames(matrix_optimal) <- "district"
-optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 #get data on gun boundary
 gun_boundary <- pref %>%
   filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
@@ -237,16 +236,19 @@ gun_boundary <- pref %>%
   summarise(geometry = sf::st_union(geometry))
 #get data on koiki boundary
 koiki_boundary <- pref %>%
-  filter(koiki_code < 10) %>%
   group_by(koiki_code) %>%
   summarise(geometry = sf::st_union(geometry))
 #map with district data + municipality/gun/koiki-renkei boundary
+matrix_optimal <- redist::get_plans_matrix(pref_ms %>%
+                                             dplyr::filter(draw == qualifying_results$draw[3]))
+colnames(matrix_optimal) <- "district"
+optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 ggplot() +
   geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
   scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
   geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 0.5) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  #geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
