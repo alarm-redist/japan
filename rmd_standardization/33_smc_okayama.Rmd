@@ -32,8 +32,8 @@ nsims <- 25000
 pref_code <- 33
 pref_name <- "okayama"
 lakes_removed <- c() 
-ndists_new <- 5
-ndists_old <- 4
+ndists_new <- 4
+ndists_old <- 5
 n_split <- 4
 ```
 
@@ -109,7 +109,7 @@ There are no ferry-related adjacencies to add in Okayama prefecture.
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new,
-                                 pop_tol= 0.50,
+                                 pop_tol= 0.30,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
