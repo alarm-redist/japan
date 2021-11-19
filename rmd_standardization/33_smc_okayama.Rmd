@@ -171,7 +171,7 @@ There are no ferry-related adjacencies to add in Okayama prefecture.
 ```{r}
 pref_map_1 <- redist::redist_map(pref_1,
                                  ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 pop_tol= 0.20,
                                  total_pop = pop,
                                  adj = prefadj_1)
 ```
