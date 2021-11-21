@@ -85,11 +85,20 @@ tsuyama_koiki <- c(33203, 33606, 33622, 33623, 33663, 33666)
 ```
 
 ## 2. Run Simulations with 0 Municipality Splits (without taking into accoun "Koiki-renkei")
+### For Okayama only: Set aside Kurashiki-shi
+```{r}
+pref$code[which(pref$pop > sum(pref$pop)/ndists_new)]
+```
+
+The population of Kurashiki-shi (33202) is larger than the target population. Thus, for the simulation without any municipality splits, we set aside Kurashiki-shi and treat it as one district. Otherwise, redist_smc is unable to conduct redistricting. We will subsequently run simulations that allows split Kurashiki-shi to be split based on its boundaries before 平成の大合併.
+
 ### 2.1 Finalize pref object
-We merge together the gun and treat them as one geographical unit. In Okayama Prefecture, all the gun are kept together in the same district, so we will merge together all the gun.
+We merge together the gun and treat them as one geographical unit. In Okayama Prefecture, all the gun are kept together in the same district, so we will merge together all the gun. Also, we set aside Kurashiki-shi, the municipality whose population is larger than the target population.
 ```{r}
 pref_0 <- sf::st_as_sf(
   pref %>%
+    #set aside Kurashiki-shi
+    dplyr::filter(code %in% pref$code[which(pref$pop > sum(pref$pop)/ndists_new)] == FALSE) %>% 
     dplyr::group_by(gun_code) %>%
     dplyr::summarize(geometry = sf::st_union(geometry),
                      pop = sum(pop),
@@ -108,8 +117,9 @@ There are no ferry-related adjacencies to add in Okayama prefecture.
 ### 2.4 Define redist.map object
 ```{r}
 pref_map_0 <- redist::redist_map(pref_0,
-                                 ndists = ndists_new,
-                                 pop_tol= 0.30,
+                                 ndists = ndists_new - 1, 
+                                 #Kurashiki-shi is treated as one municipality.
+                                 pop_tol= 0.10,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
@@ -208,8 +218,23 @@ pref_smc_plans_1 <- redist::get_plans_matrix(sim_smc_pref_1)
 ```
 
 ### 1.2 Calculate Max:min ratio
+### For Okayama only: Bind together Kurashiki-shi
+Since we set aside Kurashiki-shi, we need to consider Kurashiki-shi as one district.
 ```{r}
-wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+sim_smc_pref_0_with_Kurashiki <- NULL
+for(i in 1:nsims){
+ with_Kurashiki <- 
+    dplyr::bind_rows(as_tibble(sim_smc_pref_0 %>% filter(draw == i)), 
+                    data.frame(draw = as.factor(i), 
+                               district = as.integer(4), 
+                               total_pop = pref$pop[which(pref$code == 33202)]))
+ sim_smc_pref_0_with_Kurashiki <- rbind(sim_smc_pref_0_with_Kurashiki, with_Kurashiki)
+}
+```
+
+
+```{r}
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0_with_Kurashiki)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 ```
 
@@ -232,7 +257,8 @@ koiki_4_codes <- c(33203, 33600, 33620, 33660)
 koiki_1_0 <- pref_0$gun_code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
 koiki_2_0 <- pref_0$gun_code
-koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
+#count all municipalities except for Kurashiki-shi since it was set aside
+koiki_2_0[koiki_2_0 %in% koiki_2_codes[koiki_2_codes %in% 33202 == FALSE]] <- 2
 koiki_3_0 <- pref_0$gun_code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 koiki_4_0 <- pref_0$gun_code
@@ -342,18 +368,26 @@ gun_boundary <- pref_0 %>%
 #get data on koiki renkei area boundary
 koiki_boundary_1 <- pref %>%
   filter(code %in% okayama_koiki) %>%
+  mutate(code = okayama_koiki[1]) %>%
+  group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 koiki_boundary_2 <- pref %>%
   filter(code %in% takahashigawa_koiki) %>%
+  mutate(code = takahashigawa_koiki[1]) %>%
+  group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 koiki_boundary_3 <- pref %>%
   filter(code %in% bingo_koiki) %>%
+  mutate(code = bingo_koiki[1]) %>%
+  group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 koiki_boundary_4 <- pref %>%
   filter(code %in% tsuyama_koiki) %>%
+  mutate(code = tsuyama_koiki[1]) %>%
+  group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #get data on municipality boundary
@@ -361,10 +395,16 @@ mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
+#Kurashiki-shi
+kurashiki <- pref %>%
+  filter(code == 33202)
+
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue", "yellow")) +
+  scale_fill_manual(values = c("orange", "green", "blue")) +
+  #add Kurashikishi
+  geom_sf(data = kurashiki, fill = "yellow") +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = koiki_boundary_2, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
