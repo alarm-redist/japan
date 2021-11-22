@@ -63,3 +63,125 @@ pref <- calc_kokumin(pref, dem_pops)
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 ```
 
+### 1.4 Merge together gun
+Under the enacted plan, all the gun in Aichi prefecture are respected under the status quo. Thus, we merge together the gun so as not to split them.
+```{r}
+#merge Aichi gun
+aichi <- pref %>%
+  dplyr::filter(code == 23302)
+aichi$code <- 23300
+aichi <- aichi %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+aichi$subcode <- "0000"
+
+#merge Nishikasugai gun
+nishikasugai <- pref %>%
+  dplyr::filter(code == 23342)
+nishikasugai$code <- 23340
+nishikasugai <- nishikasugai %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+nishikasugai$subcode <- "0000"
+
+#merge Niwa gun
+niwa <- pref %>%
+  dplyr::filter(code %in% c(23361, 23362))
+niwa$code <- 23360
+niwa <- niwa %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+niwa$subcode <- "0000"
+
+#merge Ama gun
+ama <- pref %>%
+  dplyr::filter(code %in% c(23424, 23425, 23427))
+ama$code <- 23420
+ama <- ama %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+ama$subcode <- "0000"
+
+#merge Chita gun
+chita <- pref %>%
+  dplyr::filter(code %in% c(23441, 23442, 23445, 23446, 23447))
+chita$code <- 23440
+chita <- chita %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+chita$subcode <- "0000"
+
+#merge Nukata gun
+nukata <- pref %>%
+  dplyr::filter(code == 23501)
+nukata$code <- 23500
+nukata <- nukata %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+nukata$subcode <- "0000"
+
+#merge Kitashitara gun
+kitashitara <- pref %>%
+  dplyr::filter(code %in% c(23561, 23562, 23563))
+kitashitara$code <- 23560
+kitashitara <- kitashitara %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+kitashitara$subcode <- "0000"
+
+#merge back together
+pref_non_gun <- pref %>%
+  dplyr::filter(code %in% c(23302, 
+                           23342,
+                           23361, 23362,
+                           23424, 23425, 23427,
+                           23441, 23442, 23445, 23446, 23447,
+                           23501,
+                           23561, 23562, 23563) == FALSE)
+
+#now pref is an object with 0 gun splits
+pref <- dplyr::bind_rows(pref_non_gun, aichi, nishikasugai, niwa, ama, chita, 
+                         nukata, kitashitara)
+```
+
+### 1.5 Define "Koiki-renkei" Areas
+```{r}
+#assign which municipality belongs to which koiki renkei area
+kinuura_koiki <- c(23210, 23225, 23227, 23300)  #23300 Aichigun, Togo cho
+```
+
+## 2. Run Simulations 
+
+### 2.1 Finalize pref object
+No additional steps needed
+
+### 2.2 Make adjacency graph
+```{r}
+prefadj <- redist::redist.adjacency(pref)
+```
+
+### 2.3 Add edges to adjacency graph
+Connects 西尾市一色町坂田新田 (no: 4239, code: 23213, subcode: 7120)	with 一色町佐久島 (no: 4251, code: 23213, subcode: 7240)
+
+
+Need to add 973 and 4403
+```{r}
+if(check_ferries(pref_code) == TRUE){
+  # add ferries
+  ferries <- add_ferries(pref)
+  prefadj <- geomander::add_edge(prefadj,
+                                 ferries[, 1],
+                                 ferries[, 2],
+                                 zero = TRUE)
+}
+```
+
+
+### 2.4 Define redist.map object
+```{r}
+pref_map <- redist::redist_map(pref,
+                               ndists = ndists_new,
+                               pop_tol= 0.15,
+                               total_pop = pop,
+                               adj = prefadj)
+```
