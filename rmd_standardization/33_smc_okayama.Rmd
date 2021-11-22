@@ -119,7 +119,7 @@ There are no ferry-related adjacencies to add in Okayama prefecture.
 pref_map_0 <- redist::redist_map(pref_0,
                                  ndists = ndists_new - 1, 
                                  #Kurashiki-shi is treated as one municipality.
-                                 pop_tol= 0.10,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj_0)
 ```
@@ -163,9 +163,9 @@ pref_1 <- sf::st_as_sf(
   pref_1 %>%
     dplyr::group_by(gun_code) %>%
     dplyr::summarize(geometry = sf::st_union(geometry),
-                    pop = sum(pop),
-                   code = code[1],
-                   pre_gappei_code = pre_gappei_code[1])
+                     pop = sum(pop),
+                     code = code[1],
+                     pre_gappei_code = pre_gappei_code[1])
 )
 ```
 
@@ -181,7 +181,7 @@ There are no ferry-related adjacencies to add in Okayama prefecture.
 ```{r}
 pref_map_1 <- redist::redist_map(pref_1,
                                  ndists = ndists_new,
-                                 pop_tol= 0.20,
+                                 pop_tol= 0.15,
                                  total_pop = pop,
                                  adj = prefadj_1)
 ```
@@ -407,7 +407,7 @@ ggplot() +
   geom_sf(data = kurashiki, fill = "yellow") +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
-  geom_sf(data = koiki_boundary_2, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  #geom_sf(data = koiki_boundary_2, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
@@ -421,11 +421,10 @@ matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == o
 colnames(matrix_optimal_1) <- "district"
 optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
 
-
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("1" = "blue", "2" = "green", "3" = "yellow", 
+  scale_fill_manual(values = c("1" = "green", "2" = "yellow", "3" = "blue", 
                                "4" = "orange")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
@@ -438,7 +437,7 @@ ggplot() +
 # 3. Co-occurrence
 ## 3.1 Filter Out Plan with Low Max:min Ratio (Top 10%)
 ```{r}
-good_num_0 <-  functioning_results_0 %>%
+good_num_0 <-  results_0 %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(nsims*0.1)) %>%
   select(index)
@@ -456,7 +455,7 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 ```{r}
 cl_co_0 = cluster::agnes(m_co_0)
 plot(as.dendrogram(cl_co_0)) 
-prec_clusters_0 = cutree(cl_co_0, 6) #6: number of clusters
+prec_clusters_0 = cutree(cl_co_0, 3) #3: number of clusters
 ```
 
 ## 3.4 Convert data on membership to tibble
@@ -464,7 +463,6 @@ prec_clusters_0 = cutree(cl_co_0, 6) #6: number of clusters
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 ```
-
 
 ## 3.5 Obtain co-occurrence ratio
 ```{r}
@@ -499,40 +497,29 @@ pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
 pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
 pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
 pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
-pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
-pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
 ```
 
 ##3.7 Plot
 ```{r}
 ggplot() +
   geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="palegreen", high="green") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "skyblue", high = "blue") +
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "lightsalmon", high = "orange") +
-  
+
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "brown1", high = "brown4") +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="palegreen", high="green") +
   
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "purple", high = "purple4") +
-  
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="yellow", high="yellow3") +
+  #add Kurashikishi
+  geom_sf(data = kurashiki, fill = "grey") +
   
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
   
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
 
   theme(legend.box = "vertical",
@@ -543,4 +530,3 @@ ggplot() +
         axis.title = element_blank(),
         panel.background = element_blank())
 ```
-
