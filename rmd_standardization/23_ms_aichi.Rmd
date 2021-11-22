@@ -1,0 +1,65 @@
+---
+title: "23_ms_aichi"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_knit$set(root.dir = '/Users/kentoyamada/Desktop/ALARM Project/jcdf')
+#knitr::opts_knit$set(root.dir = '/home/kentoyamada/R/jcdf/')
+```
+
+# I. Simulations
+## 1. Set Up and Data Cleaning Process
+### 1.1 Set Up
+```{r eval=FALSE}
+library(tidyverse)
+set.seed(12345)
+# pull functions from jcdf
+# set working directory to the function folder
+setwd("R")
+files.sources = list.files()
+sapply(files.sources, source)
+# set working directory back to `jcdf`
+setwd("..")
+```
+
+#### Define Prefectural Data 
+```{r}
+sim_type <- "ms"
+nsims <- 25000
+pref_code <- 23
+pref_name <- "aichi"
+lakes_removed <- c() 
+ndists_new <- 16
+ndists_old <- 15
+n_split <- 3
+```
+
+### 1.2.Download and Clean Census Data
+```{r warning=FALSE, message=FALSE}
+# download census shapefile
+pref_raw <- download_shp(pref_code)
+dem_pops <- download_pop_demographics(pref_code)
+# download 2020 census data
+total <- download_2020_census(type = "total")
+foreigner <- download_2020_census(type = "foreigner")
+#Clean 2020 census
+census2020 <- clean_2020_census(total = total, foreigner = foreigner)
+# download historical boundary data
+old_boundary <- download_old_shp(pref_code = pref_code)
+# populations based on historical boundaries
+pop_by_old_boundary <- download_2015pop_old(pref_code = pref_code)
+```
+
+### 1.3 Use `clean_jcdf()` function to clean census data
+```{r warning=FALSE, message=FALSE}
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+pref <- calc_kokumin(pref, dem_pops)
+#Estimate 2020 pop. <- estimate_2020_pop(pref, census2020) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+```
+
