@@ -54,7 +54,6 @@ pref_2020 <- pref_raw %>%
   dplyr::select(code, pop_estimate, geometry) %>%
   dplyr::rename(pop = pop_estimate)
 
-
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
 pref_guncode <- pref_2020 %>%
@@ -106,7 +105,7 @@ pref_map <- redist::redist_map(pref,
 sim_type <- "ms"
 
 constr = redist_constr(pref_map)
-constr = add_constr_splits(constr, strength=10)
+constr = add_constr_splits(constr, strength=5)
 constr = add_constr_multisplits(constr, strength = 10)
 
 pref_ms <- redist::redist_mergesplit(
@@ -209,8 +208,9 @@ results$koiki_split <- koiki_split
 results$draw <- wgt_ms$draw
 
 results$contiguous <- 0
+
 for (i in 1:nrow(wgt_ms)){
-  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component) == 1
+  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component)
 }
 
 ### 1.5  Optimal Plan
@@ -240,7 +240,7 @@ koiki_boundary <- pref %>%
   summarise(geometry = sf::st_union(geometry))
 #map with district data + municipality/gun/koiki-renkei boundary
 matrix_optimal <- redist::get_plans_matrix(pref_ms %>%
-                                             dplyr::filter(draw == qualifying_results$draw[3]))
+                                             dplyr::filter(draw == qualifying_results$draw[1]))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 ggplot() +
@@ -252,7 +252,11 @@ ggplot() +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
+        panel.background = element_blank())+
+  ggtitle(paste("mergeplit #", qualifying_results$draw[1]," max/min=", round(qualifying_results$max_to_min[1], 3), "splits=", qualifying_results$gun_split[1]))
+
+split_county <- pref %>%
+  mutate(split = redist::is_county_split(matrix_optimal, pref$gun_code))
 
 
 ##########Co-occurrence ############
