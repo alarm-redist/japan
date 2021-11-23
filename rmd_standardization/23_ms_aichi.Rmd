@@ -233,4 +233,104 @@ saveRDS(pref_smc, paste("simulation/",
                         sep = ""))
 ```
 
+# II. Analysis
+## 1. Get Optimal Plan
+### 1.1 Extract Plans
+```{r}
+pref_smc_plans <- redist::get_plans_matrix(pref_smc)
+```
+
+### 1.2 Calculate Max:min ratio
+```{r}
+wgt_smc <- simulation_weight_disparity_table(pref_smc)
+```
+
+### 1.3 Count municipality/gun/koiki renkei splits
+Whereas `count_splits()` counts the total number of splits, `redist.splits()` counts the number of geographical units that are split.
+```{r}
+#assign koiki_renkei area codes for simulation with 0 split
+koiki_1 <- pref$code
+koiki_1[koiki_1 %in% kinuura_koiki] <- 1
+koiki_1[koiki_1 %in% kinuura_koiki == FALSE] <- 0
+
+#count the number of koiki-renkei areas that are split
+koiki_split <- redist::redist.splits(pref_smc_plans, koiki_1)
+
+#count the number of municipality splits
+num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
+```
+
+### 1.4 Compile Results
+The table created includes information on the max:min ratio as well as the number of municipality/gun/koiki-renkei splits. We also check whether there are cases where a municipality is split into more than 2 districts, in which case such results are filtered out.
+
+```{r}
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results$max_to_min <- wgt_smc$max_to_min
+#number of municipality splits
+results$nun_mun_split <- num_mun_split
+results$mun_split <- mun_split
+#check whether there are cases where a municipality is split into more than 2 districts
+results$multi <-  results$nun_mun_split - results$mun_split
+#number of koiki renkei area splits
+results$koiki_split <- koiki_split
+results$index <- 1:nrow(wgt_smc)
+```
+
+### 1.5  Optimal Plan
+The optimal plan is the plan that has the smallest max:min ratio out of all plans that do not have discontiguous districts and do not split a municipality into more than 2 districts.
+```{r}
+functioning_results <- results[which(results$multi == 0 ), ]
+optimal <- functioning_results$index[which(functioning_results$max_to_min ==
+                                     min(functioning_results$max_to_min))][1]
+results[optimal,]
+```
+
+# 2. Visualize Optimal Plan
+## 2.1 0 splits
+```{r}
+#get data on optimal plan
+matrix_optimal <- redist::get_plans_matrix(pref_smc %>% filter(draw == 1))
+colnames(matrix_optimal) <- "district"
+optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
+
+#get data on gun boundary
+gun_boundary <- pref %>%
+  filter(code >= (pref$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on koiki renkei area boundary (i.e. 刈谷市(23210)、知立市(23225)、高浜市(23227)、東浦町(23442))
+koiki_boundary <- pref_raw %>%
+  filter(CITY %in% c("210", "225", "227", "442")) %>% 
+  summarise(geometry = sf::st_union(geometry))
+
+#get data on municipality boundary
+mun_boundary <- pref %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+#map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  #scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 3.0) +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 1.4) +
+  #geom_sf(data = koiki_boundary, fill = "grey", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+```
+
+
+```{r}
+multi_by_mun <- NULL
+for(i in unique(optimal_boundary$code)){
+  a <- length(unique((optimal_boundary %>% filter(code == i))$district))
+  multi_by_mun <- c(multi_by_mun, a)
+}
+
+unique(optimal_boundary$code)[11]
+```
 
