@@ -26,7 +26,7 @@ setwd("..")
 
 #### Define Prefectural Data 
 ```{r}
-sim_type <- "ms"
+sim_type <- "smc"
 nsims <- 25000
 pref_code <- 23
 pref_name <- "aichi"
@@ -205,14 +205,14 @@ pref_map <- redist::redist_map(pref,
 ###2.5 Run Simulation
 ```{r}
 #define constraints
-constr = redist_constr(pref_map)
-constr = add_constr_splits(constr, strength=2)
-constr = add_constr_multisplits(constr, strength = 10)
+constr = redist::redist_constr(pref_map)
+constr = redist::add_constr_splits(constr, strength=2)
+constr = redist::add_constr_multisplits(constr, strength = 10)
 
 #run redist_smc
 pref_smc <- redist::redist_smc(
   map = pref_map,
-  nsims = nsims,
+  nsims = 10,
   counties = pref$code,
   constraints = constr
 )
