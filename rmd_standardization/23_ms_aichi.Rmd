@@ -161,10 +161,11 @@ prefadj <- redist::redist.adjacency(pref)
 ```
 
 ### 2.3 Add edges to adjacency graph
-Connects 西尾市一色町坂田新田 (no: 4239, code: 23213, subcode: 7120)	with 一色町佐久島 (no: 4251, code: 23213, subcode: 7240)
+The add_ferries() function connects 西尾市一色町佐久島 (no: 4251, code: 23213, subcode: 7240) with 西尾市一色町坂田新田 (no: 4239, code: 23213, subcode: 7120).
 
+In addition, 名古屋市港区金城ふ頭 (no: 973, code: 23111, subcode: 0460) appears to be disconnected. We manually connect it to three areas: 名古屋市港区空見町(code: 23111, subcode: 1080), 名古屋市港区潮見町 (code: 23111, subcode: 0740), and 愛知県海部郡飛島村金岡(code: 23420)
 
-Need to add 973 and 4403
+We also manually connect 常滑市セントレア町(no: 4403, code: 23216, subcode: 0960) to 常滑市りんくう町 (code: code: 23216, subcode: 0950)
 ```{r}
 if(check_ferries(pref_code) == TRUE){
   # add ferries
@@ -176,6 +177,21 @@ if(check_ferries(pref_code) == TRUE){
 }
 ```
 
+```{r}
+prefadj <- geomander::add_edge(prefadj, 
+                               which(pref$code == 23111 & pref$subcode == "0460"), #名古屋市港区金城ふ頭 
+                               which(pref$code == 23111 & pref$subcode == "1080")) #名古屋市港区空見町
+prefadj <- geomander::add_edge(prefadj, 
+                               which(pref$code == 23111 & pref$subcode == "0460"), #名古屋市港区金城ふ頭 
+                               which(pref$code == 23111 & pref$subcode == "0740")) #名古屋市港区潮見町
+prefadj <- geomander::add_edge(prefadj, 
+                               which(pref$code == 23111 & pref$subcode == "0460"),  #名古屋市港区金城ふ頭 
+                               which(pref$code == 23420)) #愛知県海部郡飛島村金岡
+prefadj <- geomander::add_edge(prefadj, 
+                               which(pref$code == 23216 & pref$subcode == "0960"), #常滑市セントレア町 
+                               which(pref$code == 23216 & pref$subcode == "0950")) #常滑市りんくう町
+```
+
 
 ### 2.4 Define redist.map object
 ```{r}
@@ -185,3 +201,36 @@ pref_map <- redist::redist_map(pref,
                                total_pop = pop,
                                adj = prefadj)
 ```
+
+###2.5 Run Simulation
+```{r}
+#define constraints
+constr = redist_constr(pref_map)
+constr = add_constr_splits(constr, strength=2)
+constr = add_constr_multisplits(constr, strength = 10)
+
+#run redist_smc
+pref_smc <- redist::redist_smc(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$code,
+  constraints = constr
+)
+```
+
+### 2.6 Save results of simulation
+```{r}
+saveRDS(pref_smc, paste("simulation/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(sim_type),
+                        "_",
+                        as.character(nsims),
+                        "_0",
+                        ".Rds",
+                        sep = ""))
+```
+
+
