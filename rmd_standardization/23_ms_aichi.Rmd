@@ -197,7 +197,7 @@ prefadj <- geomander::add_edge(prefadj,
 ```{r}
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.15,
+                               pop_tol= 0.10,
                                total_pop = pop,
                                adj = prefadj)
 ```
@@ -206,8 +206,8 @@ pref_map <- redist::redist_map(pref,
 ```{r}
 #define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength=2)
-constr = redist::add_constr_multisplits(constr, strength = 10)
+constr = redist::add_constr_splits(constr, strength= 20)
+constr = redist::add_constr_multisplits(constr, strength = 100)
 
 #run redist_smc
 pref_smc <- redist::redist_smc(
@@ -277,10 +277,49 @@ results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 ```
 
+```{r}
+# Amagun (code: 23420) is consisted of three disconnected municipalities. There are four ways to avoid separating Amagun into different districts:
+#1. Ensuring that Amagun (code: 23420), Yatomishi (code: 23235),and Amashi (code: 23237) are in the same district
+#2. Ensuring that Amagun (code: 23420), Minatoku (code: 23111), and Amashi (code: 23237) are in the same district
+#3. Ensuring that Amagun (code: 23420), Yatomishi (code: 23235),and Nakagawaku (code: 23110) are in the same district
+#4. Ensuring that Amagun (code: 23420), Minatoku (code: 23111), and Nakagawaku (code: 23110) are in the same district
+
+contiguous_1 <- 1:25000
+for(i in 1:25000){
+   contiguous_1[i] <- 
+     #Returns 1 if  Amagun (code: 23420), Yatomishi (code: 23235), and Amashi (code: 23237) are in the same district
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23235)])) *
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23237)])) +
+     #Returns 1 if  Amagun (code: 23420), Minatoku (code: 23111), and Amashi (code: 23237) are in the same district
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23111)])) *
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23237)])) +
+     #Returns 1 if  Amagun (code: 23420), Yatomishi (code: 23235), and Nakagawaku (code: 23110) are in the same district
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23235)])) *
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23110)])) +
+     #Returns 1 if Amagun (code: 23420), Minatoku (code: 23111), and Nakagawaku (code: 23110) are in the same district
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23111)])) *
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23110)])) 
+}
+results$contiguous_1 <- contiguous_1
+
+# Chitagun (code: 23440) is consisted of two disconnected parts. In order to avoid separating Chitagun into different districts, we must ensure that Chitagun is in the same district as either Handa-shi or Tokoname-shi.
+
+contiguous_2 <- 1:25000
+for(i in 1:25000){
+   contiguous_2[i] <- 
+     #Returns 1 if  Chitagun (code: 23440) and Handa-shi (code: 23205) are in the same district.
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23440)] == pref_smc_plans[,i][which(pref$code == 23205)])) +
+     #Returns 1 if  Chitagun (code: 23440) and Tokoname-shi (code: 23216) are in the same district
+     max(as.integer(pref_smc_plans[,i][which(pref$code == 23440)] == pref_smc_plans[,i][which(pref$code == 23216)])) 
+}
+results$contiguous_2 <- contiguous_2
+```
+
+
 ### 1.5  Optimal Plan
 The optimal plan is the plan that has the smallest max:min ratio out of all plans that do not have discontiguous districts and do not split a municipality into more than 2 districts.
 ```{r}
-functioning_results <- results[which(results$multi == 0 ), ]
+functioning_results <- results[which(results$multi == 0 & results$contiguous_1 > 0 & results$contiguous_2 > 0), ]
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
                                      min(functioning_results$max_to_min))][1]
 results[optimal,]
@@ -290,7 +329,7 @@ results[optimal,]
 ## 2.1 0 splits
 ```{r}
 #get data on optimal plan
-matrix_optimal <- redist::get_plans_matrix(pref_smc %>% filter(draw == 1))
+matrix_optimal <- redist::get_plans_matrix(pref_smc %>% filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
@@ -323,14 +362,4 @@ ggplot() +
         panel.background = element_blank())
 ```
 
-
-```{r}
-multi_by_mun <- NULL
-for(i in unique(optimal_boundary$code)){
-  a <- length(unique((optimal_boundary %>% filter(code == i))$district))
-  multi_by_mun <- c(multi_by_mun, a)
-}
-
-unique(optimal_boundary$code)[11]
-```
 
