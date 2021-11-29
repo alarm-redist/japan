@@ -9,12 +9,13 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/home/sho_miyazaki/redist_japan')
 ```
 
 # I. Simulations
 ## 1. Set Up and Data Cleaning Process
 ### 1.1 Set Up
-```{r eval=FALSE}
+```{r}
 library(tidyverse)
 set.seed(12345)
 
@@ -284,7 +285,6 @@ pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
 #sort membership data by group
 pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
 pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
-pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
 ```
 
 ## 3.7 Plot
@@ -297,9 +297,6 @@ ggplot() +
   geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "lightsalmon", high = "orange") +
 
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "skyblue", high = "blue") +
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
   
