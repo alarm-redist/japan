@@ -192,27 +192,24 @@ prefadj <- geomander::add_edge(prefadj,
                                which(pref$code == 23216 & pref$subcode == "0950")) #常滑市りんくう町
 ```
 
-
 ### 2.4 Define redist.map object
 ```{r}
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.10,
+                               pop_tol= 0.15,
                                total_pop = pop,
                                adj = prefadj)
 ```
 
 ###2.5 Run Simulation
 ```{r}
-#define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength= 20)
-constr = redist::add_constr_multisplits(constr, strength = 100)
+constr = redist::add_constr_splits(constr, strength= 100)
+constr = redist::add_constr_multisplits(constr, strength = 200)
 
-#run redist_smc
 pref_smc <- redist::redist_smc(
   map = pref_map,
-  nsims = 10,
+  nsims = nsims,
   counties = pref$code,
   constraints = constr
 )
@@ -284,8 +281,8 @@ results$index <- 1:nrow(wgt_smc)
 #3. Ensuring that Amagun (code: 23420), Yatomishi (code: 23235),and Nakagawaku (code: 23110) are in the same district
 #4. Ensuring that Amagun (code: 23420), Minatoku (code: 23111), and Nakagawaku (code: 23110) are in the same district
 
-contiguous_1 <- 1:25000
-for(i in 1:25000){
+contiguous_1 <- 1:nsims
+for(i in 1:nsims){
    contiguous_1[i] <- 
      #Returns 1 if  Amagun (code: 23420), Yatomishi (code: 23235), and Amashi (code: 23237) are in the same district
      max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23235)])) *
@@ -304,8 +301,8 @@ results$contiguous_1 <- contiguous_1
 
 # Chitagun (code: 23440) is consisted of two disconnected parts. In order to avoid separating Chitagun into different districts, we must ensure that Chitagun is in the same district as either Handa-shi or Tokoname-shi.
 
-contiguous_2 <- 1:25000
-for(i in 1:25000){
+contiguous_2 <- 1:nsims
+for(i in 1:nsims){
    contiguous_2[i] <- 
      #Returns 1 if  Chitagun (code: 23440) and Handa-shi (code: 23205) are in the same district.
      max(as.integer(pref_smc_plans[,i][which(pref$code == 23440)] == pref_smc_plans[,i][which(pref$code == 23205)])) +
@@ -314,7 +311,6 @@ for(i in 1:25000){
 }
 results$contiguous_2 <- contiguous_2
 ```
-
 
 ### 1.5  Optimal Plan
 The optimal plan is the plan that has the smallest max:min ratio out of all plans that do not have discontiguous districts and do not split a municipality into more than 2 districts.
@@ -329,9 +325,9 @@ results[optimal,]
 ## 2.1 0 splits
 ```{r}
 #get data on optimal plan
-matrix_optimal <- redist::get_plans_matrix(pref_smc %>% filter(draw == optimal))
+matrix_optimal <- redist::get_plans_matrix(pref_smc %>% dplyr::filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
-optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
+optimal_boundary <- cbind(pref_map, dplyr::as_tibble(matrix_optimal))
 
 #get data on gun boundary
 gun_boundary <- pref %>%
@@ -345,14 +341,15 @@ koiki_boundary <- pref_raw %>%
   summarise(geometry = sf::st_union(geometry))
 
 #get data on municipality boundary
-mun_boundary <- pref %>%
+mun_boundary <- pref_raw %>%
+  clean_jcdf() %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
-  #scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
+  scale_fill_manual(values = as.vector(pals::polychrome(ndists_new)))+
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 3.0) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 1.4) +
   #geom_sf(data = koiki_boundary, fill = "grey", alpha = 0.5, color = "plum1", lwd = 0.2) +
@@ -361,5 +358,167 @@ ggplot() +
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
 ```
+
+# 3. Co-occurrence
+## 3.1 Filter Out Plan with Low Max:min Ratio (Top 10%)
+```{r}
+good_num_0 <-  functioning_results %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
+  select(index)
+good_num_0 <- as.vector(t(good_num_0))
+sim_smc_pref_0_good <- pref_smc %>%
+  filter(draw %in% good_num_0)
+```
+
+## 3.2 Obtain co-occurrence matrix
+```{r}
+m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+```
+
+## 3.3 Use `cluster::agnes()` to create clusters
+```{r}
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) 
+prec_clusters_0 = cutree(cl_co_0, 16) #16: number of clusters
+```
+
+## 3.4 Convert data on membership to tibble
+```{r}
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+names(pref_membership_0) <- "membership"
+```
+
+## 3.5 Obtain co-occurrence ratio
+```{r}
+cooc_ratio <- vector(length = length(pref$code))
+#----define relcomp function--------
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+for (i in 1:length(pref$code)){
+  cooc_ratio[i] <- 1 -
+    sum(pref$pop[relcomp(prefadj[[i]]+1,
+                              which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1,
+                                                                                                 which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref$pop[prefadj[[i]]+1] * m_co_0[i, prefadj[[i]]+1])
+}
+```
+
+
+##3.6 Match membership data with map object
+```{r}
+pref_0_membership <- cbind(pref, cooc_ratio, pref_membership_0)
+
+#sort membership data by group
+pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
+pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
+pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
+pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
+pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
+pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
+pref_0_membership_7 <- pref_0_membership %>% dplyr::filter(membership == 7)
+pref_0_membership_8 <- pref_0_membership %>% dplyr::filter(membership == 8)
+pref_0_membership_9 <- pref_0_membership %>% dplyr::filter(membership == 9)
+pref_0_membership_10 <- pref_0_membership %>% dplyr::filter(membership == 10)
+pref_0_membership_11 <- pref_0_membership %>% dplyr::filter(membership == 11)
+pref_0_membership_12 <- pref_0_membership %>% dplyr::filter(membership == 12)
+pref_0_membership_13 <- pref_0_membership %>% dplyr::filter(membership == 13)
+pref_0_membership_14 <- pref_0_membership %>% dplyr::filter(membership == 14)
+pref_0_membership_15 <- pref_0_membership %>% dplyr::filter(membership == 15)
+pref_0_membership_16 <- pref_0_membership %>% dplyr::filter(membership == 16)
+```
+
+##3.7 Plot
+```{r}
+ggplot() +
+  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="plum1", high="plum4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "paleturquoise", high = "paleturquoise3") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "grey40", high = "grey25") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "sienna1", high = "sienna4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "dodgerblue", high = "dodgerblue3") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="moccasin", high="lightsalmon") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_7, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "grey90", high = "grey60") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_8, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "darkolivegreen1", high = "darkolivegreen4") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_9, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="deepskyblue", high="blue") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_10, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "darkslategray1", high = "cyan2") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_11, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="hotpink", high="magenta") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_12, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "greenyellow", high = "lawngreen") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_13, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "violetred1", high = "violetred4") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_14, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="red", high="red3") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_15, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="purple1", high="purple4") +
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_16, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="gold1", high="darkgoldenrod1") +
+
+  labs(color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
+  
+ geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 3.0) +
+ geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 1.4) +
+ 
+
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+```
+
+
+
 
 
