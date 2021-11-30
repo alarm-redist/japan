@@ -27,7 +27,7 @@ download_shp <- function(pref_code){
                       as.character(pref_code), '&coordSys=1&format=shape&downloadType=5', sep = ''), 'data-raw/shp_data.zip')
 
   # unzip the downloaded zip file
-  unzip("data-raw/shp_data.zip", exdir = "data-raw")
+  unzip("data-raw/shp_data.zip", exdir = "data-raw/")
 
   # remove the zip file after zip is decompressed
   file.remove("data-raw/shp_data.zip")
