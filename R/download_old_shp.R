@@ -27,7 +27,7 @@ download_old_shp <- function(pref_code){
                       pref_code, '_GML.zip', sep = ''), 'data-raw/old_shp_data.zip')
   
   # unzip the downloaded zip file
-  unzip("data-raw/old_shp_data.zip", exdir = "data-raw")
+  unzip("data-raw/old_shp_data.zip", exdir = "data-raw/")
   
   # remove the zip file after zip is decompressed
   file.remove("data-raw/old_shp_data.zip")
