@@ -66,6 +66,14 @@ for (i in 0:n_split)
                                      zero = TRUE)
   }
   
+  # Suggest connection between disconnected groups
+  suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                      adj = prefadj)
+  prefadj <- geomander::add_edge(prefadj,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)
+  
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
@@ -74,8 +82,8 @@ for (i in 0:n_split)
                                    adj = prefadj_n)
   
   constr_n = redist::redist_constr(pref_map_n)
-  constr_n = redist::add_constr_splits(constr_n, strength = 100)
-  constr_n = redist::add_constr_multisplits(constr_n, strength = 200)
+  constr_n = redist::add_constr_splits(constr_n, strength = 10)
+  constr_n = redist::add_constr_multisplits(constr_n, strength = 20)
   
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
