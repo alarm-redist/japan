@@ -33,6 +33,9 @@ ndists_new <- 0
 ndists_old <- 0
 n_split <- 0
 
+# Change time limit
+options(timeout = 300) 
+
 # Download census shapefile
 pref_raw <- download_shp(pref_code)
 dem_pops <- download_pop_demographics(pref_code)
