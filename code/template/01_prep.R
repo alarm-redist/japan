@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for ```SLUG``` analysis
-# ``COPYRIGHT``
+# Download and prepare data for `[TODO]` analysis
+# © ALARM Project, November 2021
 ###############################################################################
 
 suppressMessages({

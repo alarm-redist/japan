@@ -1,3 +1,8 @@
+###############################################################################
+# Data visualization for `[TODO]`
+# © ALARM Project, November 2021
+###############################################################################
+
 # Clean census data
 pref <- pref_raw %>%
   clean_jcdf() %>%
@@ -16,9 +21,31 @@ b_koiki <- c()
 c_koiki <- c()
 koiki <- c(a_koiki, b_koiki, c_koiki)
 
+# Find codes that are splittable
+valid_codes <- unique(pref$code)
+for (i in length(valid_codes):1)
+{
+  if (length(find_old_codes(valid_codes[i], pop_by_old_boundary)) < 1)
+  {
+    valid_codes <- valid_codes[-i]
+  }
+}
+
+# Order splittable municipalities by population
+split_codes <- pref[order(-pref$pop), ][which(pref$code %in% valid_codes), ]$code
+
 # Run simulations for n splits
 for (i in 0:n_split)
 {
+  
+  # Split relevant municipalities
+  if (i > 0)
+  {
+    new_n <- split_codes[0:i]
+    old_n <- find_old_codes(new_n, pop_by_old_boundary)
+    pref_n <- reflect_old_boundaries(pref, old_boundary, pop_by_old_boundary, old_n, new_n)
+    pref_n <- estimate_old_boundary_pop(old_n, new_n, pref_n, census2020)
+  }
   
   # Create sf object and adjacency list
   pref_n <- sf::st_as_sf(
@@ -29,7 +56,11 @@ for (i in 0:n_split)
                        code = code[1])
   )
   
+  # TODO If necessary, manually merge together municipalities in simulation
+  
   prefadj_n <- redist::redist.adjacency(pref_n)
+  
+  # TODO Repair adjacencies if necessary, and document these changes.
   
   # Modify according to ferry adjacencies
   if(check_ferries(pref_code) == TRUE){
@@ -59,11 +90,6 @@ for (i in 0:n_split)
     constraints = constr_n,
     pop_temper = 0.05
   )
-  
-  # Run simulation
-  sim_smc_pref_n <- redist::redist_smc(pref_map_n,
-                                       nsims = nsims,
-                                       pop_temper = 0.05)
   
   # Save map and simulation data
   saveRDS(pref_map_n, paste("data-out/maps/",
