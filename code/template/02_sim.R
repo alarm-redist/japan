@@ -15,12 +15,6 @@ pref <- pref_raw %>%
 # Add information about gun (郡)
 pref <- merge_gun(pref)
 
-# TODO Define the koiki-renkei areas (広域連携)
-a_koiki <- c()
-b_koiki <- c()
-c_koiki <- c()
-koiki <- c(a_koiki, b_koiki, c_koiki)
-
 # Find codes that are splittable
 valid_codes <- unique(pref$code)
 for (i in length(valid_codes):1)
