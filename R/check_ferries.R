@@ -12,9 +12,10 @@
 check_ferries <- function(pref_code){
 
   pref_code <- sprintf("%02d", pref_code)
-
-  data("route_data")
-  data("port_data")
+  
+  # import route and port data
+  load(file = "./data-raw/route_data.rda")
+  load(file = "./data-raw/port_data.rda")
 
   # selecting columns of route data (start port, stop port)
   route_data <- route_data %>% dplyr::select(N09_011, N09_014)
