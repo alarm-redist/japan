@@ -48,6 +48,18 @@ for (i in 0:n_split)
                                    total_pop = pop,
                                    adj = prefadj_n)
   
+  constr_n = redist::redist_constr(pref_map_n)
+  constr_n = redist::add_constr_splits(constr_n, strength = 100)
+  constr_n = redist::add_constr_multisplits(constr_n, strength = 200)
+  
+  sim_smc_pref_n <- redist::redist_smc(
+    map = pref_map_n,
+    nsims = nsims,
+    counties = pref_n$code,
+    constraints = constr_n,
+    pop_temper = 0.05
+  )
+  
   # Run simulation
   sim_smc_pref_n <- redist::redist_smc(pref_map_n,
                                        nsims = nsims,
