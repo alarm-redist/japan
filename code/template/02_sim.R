@@ -82,8 +82,8 @@ for (i in 0:n_split)
                                    adj = prefadj_n)
   
   constr_n = redist::redist_constr(pref_map_n)
-  constr_n = redist::add_constr_splits(constr_n, strength = 10)
-  constr_n = redist::add_constr_multisplits(constr_n, strength = 20)
+  constr_n = redist::add_constr_splits(constr_n, strength = 5)
+  constr_n = redist::add_constr_multisplits(constr_n, strength = 10)
   
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
