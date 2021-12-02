@@ -204,8 +204,8 @@ pref_map <- redist::redist_map(pref,
 ###2.5 Run Simulation
 ```{r}
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength= 100)
-constr = redist::add_constr_multisplits(constr, strength = 200)
+constr = redist::add_constr_splits(constr, strength= 6)
+constr = redist::add_constr_multisplits(constr, strength = 8)
 
 pref_smc <- redist::redist_smc(
   map = pref_map,
@@ -319,6 +319,9 @@ functioning_results <- results[which(results$multi == 0 & results$contiguous_1 >
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
                                      min(functioning_results$max_to_min))][1]
 results[optimal,]
+```
+```{r}
+hist(redist::plans_diversity(pref_smc %>% dplyr::filter(draw %in% functioning_results$index)))
 ```
 
 # 2. Visualize Optimal Plan
