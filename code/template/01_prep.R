@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for ```SLUG``` analysis
-# ``COPYRIGHT``
+# Download and prepare data for `[TODO]` analysis
+# © ALARM Project, November 2021
 ###############################################################################
 
 suppressMessages({
@@ -32,6 +32,9 @@ lakes_removed <- c()
 ndists_new <- 0
 ndists_old <- 0
 n_split <- 0
+
+# Change time limit
+options(timeout = 300) 
 
 # Download census shapefile
 pref_raw <- download_shp(pref_code)

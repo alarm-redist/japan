@@ -20,7 +20,7 @@ status_quo_match <- function(pref){
   pref_num <- floor(pref$code[1]/1000)
 
   # import district data
-  data("district_data")
+  load(file = "./data-raw/district_data.rda")
 
   # subset to the interested prefecture
   district_data <- district_data %>%

@@ -14,8 +14,8 @@ add_ferries <- function(pref){
   pref_num <- floor(pref$code[1]/1000)
 
   # import route and port data
-  data("route_data")
-  data("port_data")
+  load(file = "./data-raw/route_data.rda")
+  load(file = "./data-raw/port_data.rda")
 
   # re-projecting port and route data to match pref's CRS.
   sf::st_crs(route_data) <- sf::st_crs(pref)

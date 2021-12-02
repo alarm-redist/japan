@@ -2,7 +2,7 @@
 #'
 #' @param pref_code administrative code for prefecture of choice (eg. Hokkaido: 01, Okinawa: 47)
 #'
-#' @return shapefile csv downloaded in data/ directory and resulting csv
+#' @return shapefile csv downloaded in data-raw/ directory and resulting csv
 #'
 #' @concept downloaddata
 #'
@@ -13,10 +13,10 @@ download_2015pop_old <- function(pref_code){
   pref_code <- as.numeric(pref_code)
   
   # check if data/ folder exists in working directory
-  if(!file.exists("data")){
+  if(!file.exists("data-raw")){
     
     # if not, create data folder
-    dir.create("data")
+    dir.create("data-raw")
     
   }
   
@@ -26,7 +26,7 @@ download_2015pop_old <- function(pref_code){
     n <- 73281 + (pref_code - 1)*65
     n <- as.character(n)
     download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                        n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                        n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
     
   }else{
     if(pref_code == 16){
@@ -34,7 +34,7 @@ download_2015pop_old <- function(pref_code){
       n <- 72179 + pref_code
       n <- as.character(n)
       download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                          n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                          n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
       
     }else{
       if(pref_code > 16 & pref_code < 31){
@@ -42,7 +42,7 @@ download_2015pop_old <- function(pref_code){
         n <- 72300 + (pref_code - 17)*65
         n <- as.character(n)
         download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                            n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                            n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
         
       }else{
         if(pref_code == 31){
@@ -50,7 +50,7 @@ download_2015pop_old <- function(pref_code){
           n <- 69936 + pref_code
           n <- as.character(n)
           download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                              n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                              n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
          
           }else{
           if(pref_code > 31 & pref_code < 47){
@@ -58,14 +58,14 @@ download_2015pop_old <- function(pref_code){
             n <- 71152 + (pref_code - 32)*65
             n <- as.character(n)
             download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                                n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                                n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
             
           }else{
             #Okinawa(pref_code: 47) is an exception
             n <- 72080 + pref_code
             n <- as.character(n)
             download.file(paste('https://www.e-stat.go.jp/stat-search/file-download?statInfId=0000314' , 
-                                n, '&fileKind=1', sep = ''), 'data/2015pop_old.csv')
+                                n, '&fileKind=1', sep = ''), 'data-raw/2015pop_old.csv')
           }
         }
       }
@@ -73,7 +73,7 @@ download_2015pop_old <- function(pref_code){
   }
   
   # read csv
-  pop_by_old_boundary <- read.csv("data/2015pop_old.csv", fileEncoding = "shift-jis")
+  pop_by_old_boundary <- read.csv("data-raw/2015pop_old.csv", fileEncoding = "shift-jis")
   
   return(pop_by_old_boundary)
 }
