@@ -119,7 +119,7 @@ ggplot(pref) +
 
 sim_type <- "smc"
 
-pref_ms <- redist::redist_smc(
+pref_smc <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
   counties = pref$gun_code,
@@ -127,7 +127,7 @@ pref_ms <- redist::redist_smc(
   constraints = constr
 )
 # save it
-saveRDS(pref_ms, paste("simulation/",
+saveRDS(pref_smc, paste("simulation/",
                        sprintf("%02d", pref_code),
                        "_",
                        as.character(pref_name),
@@ -140,7 +140,7 @@ saveRDS(pref_ms, paste("simulation/",
                        ".Rds",
                        sep = ""))
 
-#pref_ms <- readRDS(paste("simulation/",
+#pref_smc <- readRDS(paste("simulation/",
 #                         sprintf("%02d", pref_code),
 #                         "_",
 #                         as.character(pref_name),
@@ -167,23 +167,23 @@ for (i in 1:nrow(pref))
     index[i] = which(pref$gun_code == pref$gun_code[i])[1]
   }
 }
-pref_ms_plans <- redist::get_plans_matrix(pref_ms)
-pref_ms_indexed <- pref_ms_plans[index, ]
+pref_smc_plans <- redist::get_plans_matrix(pref_smc)
+pref_smc_indexed <- pref_smc_plans[index, ]
 prefadj <- redist::redist.adjacency(pref)
 
 
 ### 1.2 Calculate Max:min ratio
 
-wgt_ms <- simulation_weight_disparity_table(pref_ms)
+wgt_smc <- simulation_weight_disparity_table(pref_smc)
 
 
 orig_adj <- redist::redist.adjacency(pref)
 
 ### 1.3 Count municipality/gun/koiki renkei splits
 
-num_gun_split <- count_splits(pref_ms_plans, pref_map$gun_code)
-gun_split <- redist::redist.splits(pref_ms_plans, pref_map$gun_code)
-num_koiki_split <- count_splits(pref_ms_plans, pref_map$koiki_code)
+num_gun_split <- count_splits(pref_smc_plans, pref_map$gun_code)
+gun_split <- redist::redist.splits(pref_smc_plans, pref_map$gun_code)
+num_koiki_split <- count_splits(pref_smc_plans, pref_map$koiki_code)
 
 #make sure to convert municipality codes into to "gun" codes
 koiki_1_codes <-  c(11207, 11360)
@@ -196,25 +196,25 @@ koiki_2 <- pref$gun_code
 koiki_2[koiki_2 %in% koiki_2_codes] <- 2
 
 koiki_split <-
-  redist::redist.splits(pref_ms_plans, koiki_1) +
-  redist::redist.splits(pref_ms_plans, koiki_2)
+  redist::redist.splits(pref_smc_plans, koiki_1) +
+  redist::redist.splits(pref_smc_plans, koiki_2)
 
 ### 1.4 Compile Results
 
-results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_ms)))
-results$max_to_min <- wgt_ms$max_to_min
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results$max_to_min <- wgt_smc$max_to_min
 #number of gun splits
 results$num_gun_split <- num_gun_split
 results$gun_split <- gun_split
 #number of koiki renkei area splits
 results$num_koiki_split <- num_koiki_split
 results$koiki_split <- koiki_split
-results$draw <- wgt_ms$draw
+results$draw <- wgt_smc$draw
 
 results$contiguous <- 0
 
-for (i in 1:nrow(wgt_ms)){
-  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_ms_indexed[, i])$component)
+for (i in 1:nrow(wgt_smc)){
+  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_smc_indexed[, i])$component)
 }
 
 ### 1.5  Optimal Plan
@@ -245,7 +245,7 @@ koiki_boundary <- pref %>%
   group_by(koiki_code) %>%
   summarise(geometry = sf::st_union(geometry))
 #map with district data + municipality/gun/koiki-renkei boundary
-matrix_optimal <- redist::get_plans_matrix(pref_ms %>%
+matrix_optimal <- redist::get_plans_matrix(pref_smc %>%
                                              dplyr::filter(draw == qualifying_results$draw[1]))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
@@ -272,15 +272,15 @@ library(network)
 library(ggnetwork)
 
 #add column "n" as an indicator of the plans
-all <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_ms)))
-all$max_to_min <- weight_pref_ms$max_to_min
-all$splits <- pref_ms_splits
-all$code_split <- pref_ms_codesplit
-all$counties_split <- pref_ms_countiessplit
-all$draw <- weight_pref_ms$draw
+all <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_smc)))
+all$max_to_min <- weight_pref_smc$max_to_min
+all$splits <- pref_smc_splits
+all$code_split <- pref_smc_codesplit
+all$counties_split <- pref_smc_countiessplit
+all$draw <- weight_pref_smc$draw
 
 good_num_0 <- all %>%
-  dplyr::filter(splits <= 8) %>%
+  dplyr::filter(splits <= sq_splits) %>%
   dplyr::filter(splits == code_split) %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(floor(nrow(.)*0.1))) %>%
@@ -288,7 +288,7 @@ good_num_0 <- all %>%
 
 good_num_0 <- as.vector(t(good_num_0))
 
-sim_smc_pref_0_good <- pref_ms %>%
+sim_smc_pref_0_good <- pref_smc %>%
   filter(draw %in% good_num_0)
 
 #obtain co-occurrence matrix
