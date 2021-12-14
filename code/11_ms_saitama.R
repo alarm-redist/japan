@@ -102,19 +102,12 @@ pref_map <- redist::redist_map(pref,
                                adj = prefadj)
 
 ####### Mergesplit Simulation ######
-sim_type <- "ms"
 
 constr = redist_constr(pref_map)
-constr = add_constr_splits(constr, strength=5)
-constr = add_constr_multisplits(constr, strength = 10)
+constr = add_constr_splits(constr, strength = 2)
+constr = add_constr_multisplits(constr, strength = 5)
 
-pref_ms <- redist::redist_mergesplit(
-  map = pref_map,
-  nsims = nsims,
-  counties = pref$gun_code,
-  warmup = 0,
-  constraints = constr
-)
+
 
 library(RColorBrewer)
 n <- 60
@@ -124,6 +117,15 @@ ggplot(pref) +
   geom_sf(aes(fill = as.factor(gun_code), label = FALSE))+
   scale_fill_manual(values=as.vector(col_vector))
 
+sim_type <- "smc"
+
+pref_ms <- redist::redist_smc(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$gun_code,
+  #warmup = 0,
+  constraints = constr
+)
 # save it
 saveRDS(pref_ms, paste("simulation/",
                        sprintf("%02d", pref_code),
@@ -133,6 +135,8 @@ saveRDS(pref_ms, paste("simulation/",
                        as.character(sim_type),
                        "_",
                        as.character(nsims),
+                       "_",
+                       "constr_2split_5multi",
                        ".Rds",
                        sep = ""))
 
@@ -221,7 +225,9 @@ qualifying_results <- results %>%
   dplyr::filter(num_gun_split == gun_split) %>%
   dplyr::filter(num_gun_split <= sq_splits) %>%
   dplyr::arrange(max_to_min)
-
+all <- results %>%
+  dplyr::group_by(max_to_min, num_gun_split, gun_split, contiguous) %>%
+  dplyr::summarise(draw = first(draw))
 # 2. Visualize Optimal Plan
 ## 2.1 0 splits
 #get data on optimal plan
@@ -253,11 +259,10 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())+
-  ggtitle(paste("mergeplit #", qualifying_results$draw[1]," max/min=", round(qualifying_results$max_to_min[1], 3), "splits=", qualifying_results$gun_split[1]))
+  ggtitle(paste("SMC #", qualifying_results$draw[1]," max/min=", round(qualifying_results$max_to_min[1], 3), "splits=", qualifying_results$gun_split[1]))
 
 split_county <- pref %>%
   mutate(split = redist::is_county_split(matrix_optimal, pref$gun_code))
-
 
 ##########Co-occurrence ############
 #load packages
