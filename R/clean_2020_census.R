@@ -1,56 +1,71 @@
 #' Clean latest 2020 data frame
 #'
-#' @param total downloaded data frame of the total population of 2020 census
-#' @param foreigner downloaded data frame of the foreigner population data of 2020 census
+#' @param pref_code prefecture code
 #'
-#' @return a data frame object of combined and cleaned 2020 census data
+#' @return a data frame object of cleaned 2020 census data
 #'
 #' @concept getdata
 #'
 #' @export
 #'
 
-clean_2020_census <- function(total, foreigner) {
+clean_2020_census <- function(pref_code){
 
-  # clean total data set
-  clean_total <- total %>%
+  #prefecture code
+  pref_code <- as.numeric(pref_code)
+
+  #check if data/ folder exists in working directory
+  if(!file.exists("data-raw/2020census")){
+
+    # if not, create data folder
+    dir.create("data-raw/2020census")
+
+  }
+
+  #check if 2020 census data exists in working directory
+  if(!file.exists("data-raw/2020census/b02_05.xlsx")){
+
+    #if it does not exist, download excel spreadsheet from the Japanese Government Statistics Portal
+    #spreadsheet includes data for total population as well as population of Japanese nationals
+    download.file("https://www.e-stat.go.jp/stat-search/file-download?statInfId=000032142408&fileKind=0",
+                  "data-raw/2020census/b02_05.xlsx")
+
+
+  }
+
+  #read the excel spreadsheet
+  census2020_raw <- readxl::read_excel("data-raw/2020census/b02_05.xlsx")
+
+  #clean dataframe
+  cencus2020 <- census2020_raw %>%
     # remove non-data columns
     dplyr::slice(-(1:12)) %>%
-    # rename the column names of the population
-    dplyr::mutate(pop_total = ...4 ) %>%
-    # separate prefecture code and name
-    # R cannot treat Japanese character
-    # thus, CITY_NAME will be removed later
-    tidyr::separate(...3, into = c("code", "CITY_NAME")) %>%
-    # subset data with converting objects to numeric
-    dplyr::summarise(code = as.numeric(code),
-                     pop_total = as.numeric(pop_total))
+    #select relevant columns
+    dplyr::select(c(1, 2, 3, 5, 8, 10))
 
-  # clean foreigner data set
-  # same process with above
-  clean_foreigner <- foreigner %>%
-    # remove non-data columns
-    dplyr::slice(-(1:2)) %>%
-    # rename the column names of the population
-    dplyr::mutate(pop_foreigner = ...3) %>%
-    # separate prefecture code and name
-    # R cannot treat Japanese character
-    # thus, CITY_NAME will be removed later
-    tidyr::separate(...2, into = c("code", "CITY_NAME")) %>%
-    # subset data
-    dplyr::summarise(code = as.numeric(code),
-                     pop_foreigner = as.numeric(pop_foreigner))
+  #rename columns
+  names(cencus2020)[1] <- "total_vs_Japanese"
+  names(cencus2020)[2] <- "total_vs_by_gender"
+  names(cencus2020)[3] <- "type_of_municipality"
+  names(cencus2020)[4] <- "pre_gappei_code"
+  names(cencus2020)[5] <- "code"
+  names(cencus2020)[6] <- "pop"
 
-  # combine those two with using `code` column as key
-  combined <- clean_total %>%
-    dplyr::left_join(clean_foreigner, by = c('code')) %>%
-    # calculate the population of nationals
-    dplyr::mutate(pop_national = pop_total - pop_foreigner)
+  #filter out data on the size of the population of Japanese nationals
+  cencus2020 <- cencus2020 %>%
+    filter(total_vs_Japanese == "1_うち日本人") %>%
+    filter(total_vs_by_gender == "0_総数")
 
-  # 双葉町, the location of the 2011 Japan Triple Disaster has a population of 0,
-  # as a result of the evacuation. We wish them well.
-  combined[is.na(combined)] <- 0
+  #prepare data for output
+  cencus2020 <- cencus2020 %>%
+    dplyr::select(type_of_municipality, pre_gappei_code, code, pop) %>%
+    dplyr::summarise(type_of_municipality = type_of_municipality,
+                     pre_gappei_code = as.numeric(pre_gappei_code),
+                     code = as.numeric(code),
+                     pop = as.numeric(pop)) %>%
+    #filter out the data for the designated prefecture
+    dplyr::filter(code > pref_code*1000 & code < (pref_code +1) *1000)
 
-  # return final
-  return(combined)
+  return(cencus2020)
+
 }

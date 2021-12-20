@@ -1,7 +1,7 @@
 #' Estimate 2020 Populations For Lower-Level Census Units from Municipality-Level Data
 #'
 #' @param pref an sf object with cleaned, collated version of the census data
-#' @param census2020 the output of clean_2020_census
+#' @param census2020 the output of clean_2020_census()
 #'
 #' @return vector of population estimates
 #'
@@ -29,7 +29,7 @@ estimate_2020_pop <- function(pref, census2020) {
     # multiply 2015 population by municipality-level population growth factor (from 2015 to 2020) for estimates
     estimates[i] <- round(pref$pop_national[i] /
                             (totals_2015 %>% dplyr::filter(totals_2015$code == pref$code[i], ))$pop_2015 *
-                            (census2020 %>% dplyr::filter(census2020$code == pref$code[i], ))$pop_national)
+                            (census2020 %>% dplyr::filter(census2020$code == pref$code[i], ))$pop)
 
   }
 
