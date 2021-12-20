@@ -23,6 +23,7 @@ lakes_removed <- c() # enter `c()` if not applicable
 ndists_new <- 16
 ndists_old <- 15
 sq_maxmin <- 1.444
+sq_splits <- 8
 #------- Specify municipality splits -------------
 # enter `c()` if not applicable
 # number of splits
@@ -53,86 +54,34 @@ pref_2020 <- pref_raw %>%
   dplyr::select(code, pop_estimate, geometry) %>%
   dplyr::rename(pop = pop_estimate)
 
-
 ############## Set County Level Data frame ###################
 # Group by municipalities (city and gun)
-pref_county <- pref_2020 %>%
-  merge_gun(., exception = merge_gun_exception) %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(pop = sum(pop),
-                   geometry = sf::st_union(geometry))
+pref_guncode <- pref_2020 %>%
+  merge_gun(., exception = merge_gun_exception)
 
-# Group Iruma-gun (11326 and 11327) except Miyoshi-cho (11324) based on current plan
-iruma <- pref_county %>%
-  dplyr::filter(code == 11326 |
+iruma <- pref_guncode %>%
+  dplyr::filter(code == 11326|
                   code == 11327) %>%
-  dplyr::summarise(code = code[1],
+  dplyr::mutate(gun_code = code[1])
+
+excp_iruna <- pref_guncode %>%
+  dplyr::filter(code != 11326 &
+                  code != 11327)
+
+pref_guncode <- bind_rows(iruma, excp_iruna)
+
+pref_guncode_gun <- pref_guncode %>%
+  dplyr::filter(code >= 11300) %>%
+  dplyr::group_by(gun_code) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry),
                    pop = sum(pop),
-                   geometry = sf::st_union(geometry))
+                   code = code[1])
 
-# Group Chichibu City (11207) and Chichibu-gun (11360) based on Teiju-jiritsuken
-chichibu <- pref_county %>%
-  dplyr::filter(code == 11207 |
-                  code == 11360) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
+pref_guncode_other <- pref_guncode %>%
+  dplyr::filter(code < 11300)
 
-# Group Honjo City (11211) and Kodama-gun (11380) based on Teiju-jiritsuken
-honjo <- pref_county %>%
-  dplyr::filter(code == 11211 |
-                  code == 11380) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
+pref <- sf::st_as_sf(bind_rows(pref_guncode_gun, pref_guncode_other))
 
-# Group Kasukabe City (11214) and KitaKatsushika-gun (11460)
-kasukabe <- pref_county %>%
-  dplyr::filter(code == 11214 |
-                  code == 11460) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-# Group Higashi-matsuyama City (11212) and Hiki-gun (11340)
-higashimatsuyama <- pref_county %>%
-  dplyr::filter(code == 11212 |
-                  code == 11340) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-pref_county_manually_edited <- pref_county %>%
-  dplyr::filter(!code %in% c(11326,
-                            11327,
-                            11207,
-                            11360,
-                            11211,
-                            11380,
-                            11214,
-                            11460,
-                            11212,
-                            11340)) %>%
-  dplyr::bind_rows(.,
-                   iruma,
-                   chichibu,
-                   honjo,
-                   kasukabe,
-                   higashimatsuyama) %>%
-  dplyr::select(code, geometry)
-
-########## Add `county` column to the `pref` data frame ###########
-county <- geomander::geo_match(from = pref_2020,
-                             to = pref_county_manually_edited,
-                             method = "center",
-                             tiebreaker = TRUE)
-
-pref <- pref_2020 %>%
-  dplyr::mutate(county = county)
-
-pref_boundaries <- pref %>%
-  group_by(code) %>%
-  summarise(geometry = sf::st_union(geometry))
 ############Simulation Prep########################
 #adjacency list
 prefadj <- redist::redist.adjacency(pref)
@@ -152,97 +101,31 @@ pref_map <- redist::redist_map(pref,
                                total_pop = pop,
                                adj = prefadj)
 
-
-
-
 ####### Mergesplit Simulation ######
-sim_type <- "ms"
 
-pref_ms <- redist::redist_mergesplit(
-  map = pref_map,
-  nsims = nsims,
-  counties = pref$county,
-  warmup = 0,
-  constraints = list(multissplits = list(strength = 140),
-                     splits = list(strength = 10))
-)
-
-# save it
-saveRDS(pref_ms, paste("simulation/",
-                       sprintf("%02d", pref_code),
-                       "_",
-                       as.character(pref_name),
-                       "_",
-                       as.character(sim_type),
-                       "_",
-                       as.character(nsims),
-                       ".Rds",
-                       sep = ""))
-
-# get disparity data
-weight_pref_ms <- simulation_weight_disparity_table(pref_ms)
-plans_pref_ms <- redist::get_plans_matrix(pref_ms)
-redist_plans <- redist::redist_plans(plans = plans_pref_ms,
-                                     map = pref_map,
-                                     algorithm = "ms")
-
-# get splits
-pref_ms_splits <- count_splits(plans_pref_ms, pref_map$code)
-pref_ms_codesplit <- redist::redist.splits(plans_pref_ms,
-                                           pref_map$code)
-pref_ms_countiessplit <- redist::redist.splits(plans_pref_ms,
-                                               pref_map$county)
-
-pref_ms_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_ms)))
-pref_ms_results$max_to_min <- weight_pref_ms$max_to_min
-pref_ms_results$splits <- pref_ms_splits
-pref_ms_results$code_split <- pref_ms_codesplit
-pref_ms_results$counties_split <- pref_ms_countiessplit
-pref_ms_results$draw <- weight_pref_ms$draw
-
-pref_ms_results <- pref_ms_results %>%
-  dplyr::group_by(max_to_min, splits, code_split) %>%
-  dplyr::summarise(draw = first(draw)) %>%
-  dplyr::arrange(splits)
-
-min(pref_ms_results$max_to_min[which(pref_ms_results$splits == pref_ms_results$code_split)])
-
-satisfying_plan_ms <- pref_ms_results %>%
-  dplyr::filter(splits <= 8) %>%
-  dplyr::filter(splits == code_split) %>%
-  dplyr::arrange(max_to_min)
-
-# Draw Map
-
-optimal_matrix_plan_ms <- redist::get_plans_matrix(pref_ms %>%
-                                                     filter(draw == satisfying_plan_ms$draw[1]))
-colnames(optimal_matrix_plan_ms) <- "district"
-optimal_boundary_ms <- cbind(pref, as_tibble(optimal_matrix_plan_ms))
-
-ggplot() +
-  geom_sf(data = optimal_boundary_ms, aes(fill = factor(district))) +
-  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        panel.background = element_blank(), legend.position = "None")+
-  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
-  ggtitle(paste("mergeplit #", satisfying_plan_ms$draw[1]," max/min=", satisfying_plan_ms$max_to_min[1], "splits=", satisfying_plan_ms$splits[1]))
+constr = redist_constr(pref_map)
+constr = add_constr_splits(constr, strength = 2)
+constr = add_constr_multisplits(constr, strength = 5)
 
 
-### SMC Simulation #####
+
+library(RColorBrewer)
+n <- 60
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+ggplot(pref) +
+  geom_sf(aes(fill = as.factor(gun_code), label = FALSE))+
+  scale_fill_manual(values=as.vector(col_vector))
 
 sim_type <- "smc"
 
-pref_smc <- redist::redist_smc(pref_map,
-                              nsims = nsims,
-                              counties = county
-                              #,
-                             # constraints = list(multisplits = list(strength = 1000)
-                                                # ,splits = list(strength = 20)
-                              #                  )
-                              #pop_temper = 0.05
-                              )
-
+pref_smc <- redist::redist_smc(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$gun_code,
+  #warmup = 0,
+  constraints = constr
+)
 # save it
 saveRDS(pref_smc, paste("simulation/",
                        sprintf("%02d", pref_code),
@@ -252,66 +135,312 @@ saveRDS(pref_smc, paste("simulation/",
                        as.character(sim_type),
                        "_",
                        as.character(nsims),
+                       "_",
+                       "constr_2split_5multi",
                        ".Rds",
                        sep = ""))
 
-pref_smc <- readRDS(paste("simulation/",
-                          sprintf("%02d", pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_",
-                          as.character(sim_type),
-                          "_",
-                          as.character(nsims),
-                          ".Rds",
-                          sep = ""))
+#pref_smc <- readRDS(paste("simulation/",
+#                         sprintf("%02d", pref_code),
+#                         "_",
+#                         as.character(pref_name),
+#                         "_",
+#                         as.character(sim_type),
+#                         "_",
+#                         as.character(nsims),
+#                         ".Rds",
+#                         sep = ""))
 
-# get disparity data
-weight_pref_smc <- simulation_weight_disparity_table(pref_smc)
-plans_pref_smc <- redist::get_plans_matrix(pref_smc)
-redist_plans <- redist::redist_plans(plans = plans_pref_smc,
-                                     map = pref_map,
-                                     algorithm = "smc")
+# II. Analysis
+## 1. Get Optimal Plan
+### 1.1 Extract Plans
 
-# get splits
-pref_smc_splits <- count_splits(plans_pref_smc, pref_map$code)
-pref_smc_codesplit <- redist::redist.splits(plans_pref_smc,
-                                                pref_map$code)
-pref_smc_countiessplit <- redist::redist.splits(plans_pref_smc,
-                                                pref_map$county)
+index <- vector(length = nrow(pref))
+for (i in 1:nrow(pref))
+{
+  if (pref$code[i] %in% pref$code)
+  {
+    index[i] = which(pref$code == pref$code[i])[1]
+  }
+  else
+  {
+    index[i] = which(pref$gun_code == pref$gun_code[i])[1]
+  }
+}
+pref_smc_plans <- redist::get_plans_matrix(pref_smc)
+pref_smc_indexed <- pref_smc_plans[index, ]
+prefadj <- redist::redist.adjacency(pref)
 
-pref_smc_results <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_smc)))
-pref_smc_results$max_to_min <- weight_pref_smc$max_to_min
-pref_smc_results$splits <- pref_smc_splits
-pref_smc_results$code_split <- pref_smc_codesplit
-pref_smc_results$counties_split <- pref_smc_countiessplit
-pref_smc_results$draw <- weight_pref_smc$draw
 
-pref_smc_results <- pref_smc_results %>%
-  dplyr::group_by(max_to_min, splits, code_split) %>%
+### 1.2 Calculate Max:min ratio
+
+wgt_smc <- simulation_weight_disparity_table(pref_smc)
+
+
+orig_adj <- redist::redist.adjacency(pref)
+
+### 1.3 Count municipality/gun/koiki renkei splits
+
+num_gun_split <- count_splits(pref_smc_plans, pref_map$gun_code)
+gun_split <- redist::redist.splits(pref_smc_plans, pref_map$gun_code)
+num_koiki_split <- count_splits(pref_smc_plans, pref_map$koiki_code)
+
+#make sure to convert municipality codes into to "gun" codes
+koiki_1_codes <-  c(11207, 11360)
+koiki_2_codes <- c(11211, 11380)
+
+#assign koiki_renkei area codes for simulation with 0 split
+koiki_1 <- pref$gun_code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+koiki_2 <- pref$gun_code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
+
+koiki_split <-
+  redist::redist.splits(pref_smc_plans, koiki_1) +
+  redist::redist.splits(pref_smc_plans, koiki_2)
+
+### 1.4 Compile Results
+
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results$max_to_min <- wgt_smc$max_to_min
+#number of gun splits
+results$num_gun_split <- num_gun_split
+results$gun_split <- gun_split
+#number of koiki renkei area splits
+results$num_koiki_split <- num_koiki_split
+results$koiki_split <- koiki_split
+results$draw <- wgt_smc$draw
+
+results$contiguous <- 0
+
+for (i in 1:nrow(wgt_smc)){
+  results$contiguous[i] <- max(geomander::check_contiguity(prefadj, pref_smc_indexed[, i])$component)
+}
+
+### 1.5  Optimal Plan
+qualifying_results <- results %>%
+  dplyr::group_by(max_to_min, num_gun_split, gun_split, contiguous) %>%
   dplyr::summarise(draw = first(draw)) %>%
-  dplyr::arrange(splits)
-
-min(pref_smc_results$max_to_min[which(pref_smc_results$splits == pref_smc_results$code_split)])
-
-satisfying_plan_smc <- pref_smc_results %>%
- # dplyr::filter(splits <= 8) %>%
-  dplyr::filter(splits == code_split) %>%
+  dplyr::filter(contiguous == 1) %>%
+  dplyr::filter(num_gun_split == gun_split) %>%
+  dplyr::filter(num_gun_split <= sq_splits) %>%
   dplyr::arrange(max_to_min)
+all <- results %>%
+  dplyr::group_by(max_to_min, num_gun_split, gun_split, contiguous) %>%
+  dplyr::summarise(draw = first(draw))
+# 2. Visualize Optimal Plan
+## 2.1 0 splits
+#get data on optimal plan
+pref_boundaries <- pref %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
 
-###### Draw Map#########
-# (694) -> 1.22 max_min
-optimal_matrix_plan_smc <- redist::get_plans_matrix(pref_smc %>%
-                                                     filter(draw == satisfying_plan_smc$draw[1]))
-colnames(optimal_matrix_plan_smc) <- "district"
-optimal_boundary_smc <- cbind(pref, as_tibble(optimal_matrix_plan_smc))
-
+#get data on gun boundary
+gun_boundary <- pref %>%
+  filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(gun_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+#get data on koiki boundary
+koiki_boundary <- pref %>%
+  group_by(koiki_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+#map with district data + municipality/gun/koiki-renkei boundary
+matrix_optimal <- redist::get_plans_matrix(pref_smc %>%
+                                             dplyr::filter(draw == qualifying_results$draw[1]))
+colnames(matrix_optimal) <- "district"
+optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 ggplot() +
-  geom_sf(data = optimal_boundary_smc, aes(fill = factor(district))) +
-  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 1) +
+  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
+  geom_sf(data = pref_boundaries, fill = NA, color = "black", lwd = 0.5) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  #geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
-        panel.background = element_blank(), legend.position = "None")+
-  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))+
-  ggtitle(paste("SMC #", satisfying_plan_smc$draw[1]," max/min=", satisfying_plan_smc$max_to_min[1], "splits=", satisfying_plan_smc$splits[1]))
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())+
+  ggtitle(paste("SMC #", qualifying_results$draw[1]," max/min=", round(qualifying_results$max_to_min[1], 3), "splits=", qualifying_results$gun_split[1]))
 
+split_county <- pref %>%
+  mutate(split = redist::is_county_split(matrix_optimal, pref$gun_code))
+
+##########Co-occurrence ############
+#load packages
+library(cluster)
+library(viridis)
+library(network)
+library(ggnetwork)
+
+#add column "n" as an indicator of the plans
+all <- data.frame(matrix(ncol = 0, nrow = nrow(weight_pref_smc)))
+all$max_to_min <- weight_pref_smc$max_to_min
+all$splits <- pref_smc_splits
+all$code_split <- pref_smc_codesplit
+all$counties_split <- pref_smc_countiessplit
+all$draw <- weight_pref_smc$draw
+
+good_num_0 <- all %>%
+  dplyr::filter(splits <= sq_splits) %>%
+  dplyr::filter(splits == code_split) %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(floor(nrow(.)*0.1))) %>%
+  select(draw)
+
+good_num_0 <- as.vector(t(good_num_0))
+
+sim_smc_pref_0_good <- pref_smc %>%
+  filter(draw %in% good_num_0)
+
+#obtain co-occurrence matrix
+m_co_0 <- redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+
+###calculate the centroids of each municipality/gun to plot population size
+pref_map_0 <- pref %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop), county = first(county))
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
+
+###Draw lines between municipalities that tend to be in the same district
+m_co_sig_0 <- m_co_0
+#extract co-occurrence > 90%
+rownames(m_co_sig_0) <- pref$code
+colnames(m_co_sig_0) <- pref$code
+m_co_sig_0 <- as_tibble(as.data.frame(as.table(m_co_sig_0)))
+m_co_sig_0$Freq <- as.numeric(m_co_sig_0$Freq)
+
+#Clean up dataframe
+m_co_sig_0 <- m_co_sig_0 %>%
+  mutate(Var1 = as.character(Var1), Var2 = as.character(Var2)) %>%
+  filter(Var1 != Var2, Freq > 0.9)
+#Only the municipalities that are in the same district more than 90% of the time are included
+
+#Creat 0 x 3 tibble
+m_co_sig_0_adj <- m_co_sig_0
+m_co_sig_0_adj <- m_co_sig_0_adj[ !(m_co_sig_0_adj$Var1 %in% m_co_sig_0$Var1), ]
+
+#filter out the co-occurrence between adjacent municipalities
+for(i in 1:length(pref_map_0$code)){
+  p <- m_co_sig_0 %>%
+    filter(Var1 == pref_map_0$code[i]) %>%
+    filter(Var2 %in% c(as.character(pref_map_0$code[prefadj[[i]]+1])))
+  m_co_sig_0_adj <- dplyr::bind_rows(p, m_co_sig_0_adj)
+}
+
+#use network package to obtain network
+network_0_adj <- network(m_co_sig_0_adj, directed = FALSE, multiple = TRUE)
+
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, ndists_new) # change 6 to the number of clusters you want
+
+#convert to tibble
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+pref_membership_0 <- bind_cols(pref$code, pref_membership_0)
+names(pref_membership_0) <- c("code", "membership")
+pref_membership_0$membership <- as.factor(pref_membership_0$membership)
+
+#match membership data with pref_map_0
+pref_map_0 <- cbind(pref_map, pref_membership_0$membership) %>%
+  dplyr::rename(membership = pref_membership_0.membership) %>%
+  dplyr::group_by(code, membership) %>%
+  dplyr::summarize(geometry = sf::st_union(geometry), pop = sum(pop))
+pref_map_0$CENTROID <- sf::st_centroid(pref_map_0$geometry)
+
+pref_map_pop_centroid_0 <- pref_map_0 %>%
+  as_tibble() %>%
+  dplyr::select(code, CENTROID, pop, geometry) %>%
+  separate(CENTROID, into = c("long", "lat"), sep = c(" "))
+pref_map_pop_centroid_0$long <- str_remove_all(pref_map_pop_centroid_0$long, "[c(,]")
+pref_map_pop_centroid_0$lat <- str_remove_all(pref_map_pop_centroid_0$lat, "[)]")
+pref_map_pop_centroid_0$long <- as.numeric(pref_map_pop_centroid_0$long)
+pref_map_pop_centroid_0$lat <- as.numeric(pref_map_pop_centroid_0$lat)
+
+#prepare to bind together with network dataframe
+lat <- pref_map_pop_centroid_0$lat
+names(lat) <- as.character(pref_map_pop_centroid_0$code)
+long <- pref_map_pop_centroid_0$long
+names(long) <- as.character(pref_map_pop_centroid_0$code)
+
+#Prepare geometry/edges for plotting
+geometry_0_adj <- cbind(long[ network.vertex.names(network_0_adj) ],
+                        lat[ network.vertex.names(network_0_adj) ])
+edges_0_adj <- ggnetwork(network_0_adj, layout = geometry_0_adj, scale = FALSE)
+
+###plot
+pref_map_0 %>%
+  ggplot() +
+  geom_sf(aes(fill = membership), show.legend = FALSE) +
+  #size of the circles corresponds to population size in the municipality/gun
+  geom_point(data = pref_map_pop_centroid_0, aes(long, lat, size = 10*pop/10000000),
+             color = "grey") +
+  #size of the circles corresponds to population size in the municipality/gun
+  #color of the edges corresponds to the strength of the co-occurrence
+  geom_edges(data = edges_0_adj, mapping = aes(x, y, xend = xend, yend = yend, color = Freq),
+             size = 0.2) +
+  scale_color_gradient(low = "grey", high = "white") +
+  labs(size = "Population (10,000)",
+       color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio and Less Splits than SQ",
+       caption = "Lines represent co-occurrence between adjacent municipalities.") +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+
+#### Cooccurence Visualisation#####
+### Color municipalities that tend to be in the same district
+#cluster
+cl_co_0 = cluster::agnes(m_co_0)
+plot(as.dendrogram(cl_co_0)) # pick a number of clusters from the dendrogram.
+prec_clusters_0 = cutree(cl_co_0, ndists_new) # change 6 to the number of clusters you want
+
+relcomp <- function(a, b) {
+
+  comp <- vector()
+
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+
+  return(comp)
+}
+
+cooc_ratio <- vector(length = length(pref$code))
+
+for (i in 1:length(pref$code))
+{
+  cooc_ratio[i] <- 1 - sum(pref$pop[relcomp(prefadj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1, which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref$pop[prefadj[[i]]+1] * m_co_0[i, prefadj[[i]]+1])
+}
+
+pref_block <- merge_gun(pref)
+
+pref$cluster = prec_clusters_0
+pref$strength = cooc_ratio
+
+redist::redist.plot.map(pref, plan = pref$cluster, fill = pref$strength) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)
+
+pref %>%
+  ggplot() +
+  geom_sf(aes(color = cluster, alpha = strength), show.legend = FALSE) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5) +
+  theme(legend.box = "vertical",
+        legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        panel.background = element_blank())
+
+redist::redist.plot.map(pref, plan = prec_clusters_0, fill = cooc_ratio) +
+  geom_sf(data = pref_block, fill = NA, color = "black", lwd = 0.5)+
+  scale_fill_manual(values=as.vector(pals::polychrome(ndists_new)))

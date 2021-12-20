@@ -380,7 +380,7 @@ mun_boundary <- pref_0 %>%
 #map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue")) +
+  scale_fill_manual(values = c("blue", "green", "orange")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = koiki_boundary, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
@@ -413,7 +413,7 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 ```{r}
 cl_co_0 = cluster::agnes(m_co_0)
 plot(as.dendrogram(cl_co_0)) 
-prec_clusters_0 = cutree(cl_co_0, 3) #5: number of clusters
+prec_clusters_0 = cutree(cl_co_0, 3) #3: number of clusters
 ```
 
 ##3.4 Convert data on membership to tibble
@@ -473,9 +473,6 @@ ggplot() +
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "skyblue", high = "blue") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
   
