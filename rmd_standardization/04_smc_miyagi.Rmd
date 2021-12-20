@@ -74,7 +74,9 @@ pref <- pref_raw %>%
 Tomiya-cho became Tomiya-shi in 2016. As we are dealing with census data both from 2015 and 2020, we must fix the municipality code of Tomiya-cho.
 ```{r}
 # fix 富谷町 --> 富谷市 (2016 changes)
-pref[which(pref$code == 4423), ]$pop <-  (census2020 %>% dplyr::filter(code == 4216, ))$pop_national
+pref[which(pref$code == 4423), ]$pop <-  (census2020 %>% 
+                                            dplyr::filter(code == 4216, ) %>%
+                                            dplyr::filter(type_of_municipality == 2))$pop
 pref[which(pref$code == 4423), ]$code <- 4216
 ```
 
