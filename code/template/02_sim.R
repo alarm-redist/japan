@@ -6,10 +6,8 @@
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Clean census data
 census2020_current_municipalities <- census2020 %>%
+  #filter out irrelevant data
   filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-      #filter out irrelevant data
-      #type_of_municipality: a: prefecture, 1. 政令指定都市及び東京都特別区,
-      #9. 平成12年(2000年)現在の市区町村
 
 pref <- pref_raw %>%
   clean_jcdf() %>%
@@ -18,7 +16,7 @@ pref <- pref_raw %>%
   dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
   dplyr::select(code, pop, geometry)
 
-# Add information about gun (郡)
+# Add information about 郡
 pref <- merge_gun(pref)
 
 # Define pref_0
@@ -38,7 +36,7 @@ pref_0 <-  sf::st_as_sf(
   )
 )
 
-# pref_1: Split largest municipality
+# Define pref_1: Split largest municipality
 # Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
 split_code <- (pref %>%
                 dplyr::filter(code >=
@@ -143,10 +141,9 @@ pref <- pref_raw %>%
 # Calculate population of Japanese nationals as of 2015 at the 小地域 level
 pref <- calc_kokumin(pref, dem_pops)
 
-# Filter out relevant data from 2020 Census (i.e. exclude municipalities pre-平成の大合併)
+# Filter out relevant data from 2020 Census
 census2020_current_municipalities <- census2020 %>%
   filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-  #a: prefecture #1. 政令指定都市及び東京都特別区 #9. 平成12年(2000年)現在の市区町村
 
 # Estimate 2020 pop. at the 小地域 level
 pref <- estimate_2020_pop(pref, census2020_current_municipalities) %>%
@@ -156,31 +153,36 @@ pref <- estimate_2020_pop(pref, census2020_current_municipalities) %>%
 # Obtain codes of 郡 to merge
 pref <- merge_gun(pref)
 gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-gun_codes <- setdiff(gun_code, gun_exception)
+# Filter out exceptions
+gun_codes <- setdiff(gun_codes, gun_exception)
 
-# Separate non-郡 municipalities
+# Set aside non-郡 municipalities
 pref_non_gun <- pref %>%
-  dplyr::filter(gun_code %in% gun_codes == FALSE )
+  dplyr::filter(gun_code %in% gun_codes == FALSE)
 
-for(i in 1:length(gun_code)){
-
+# Merge together 郡
+pref_gun <- NULL
+for(i in 1:length(gun_codes)){
+  # filter out gun
   gun <- pref %>%
     dplyr::filter(gun_code == gun_codes[i])
 
-  gun$code <- gun_code[i]
-
+  # merge together gun
+  gun$code <- gun_codes[i]
   gun <- gun %>%
     dplyr::group_by(code) %>%
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
+  # merge back together
   gun$subcode <- "0000"
-
-  pref <- dplyr::bind_rows(pref_non_gun, gun)
-
+  gun$gun_code <- gun_codes[i]
+  pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
 
+# Bind together 郡 and non-郡 municipalities
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
-
+# Make adjacency list
 prefadj <- redist::redist.adjacency(pref)
 
 # Modify according to ferry adjacencies
@@ -201,17 +203,22 @@ prefadj <- geomander::add_edge(prefadj,
                                suggest$y,
                                zero = TRUE)
 
+# TODO Repair adjacencies if necessary, and document these changes.
 
+
+# Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
                                pop_tol= 0.10,
                                total_pop = pop,
                                adj = prefadj)
 
+# Define constraints
 constr = redist::redist_constr(pref_map)
 constr = redist::add_constr_splits(constr, strength = 5)
 constr = redist::add_constr_multisplits(constr, strength = 10)
 
+# Run simulation
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
@@ -219,3 +226,23 @@ sim_smc_pref <- redist::redist_smc(
   constraints = constr,
   pop_temper = 0.05)
 
+# Save map and simulation data
+saveRDS(pref_map, paste("data-out/maps/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_map_",
+                        as.character(nsims),
+                        ".Rds",
+                        sep = ""))
+
+saveRDS(sim_smc_pref, paste("data-out/plans/",
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(sim_type),
+                            "_",
+                            as.character(nsims),
+                            ".Rds",
+                            sep = ""))
