@@ -31,7 +31,9 @@ pref_name <- ""
 lakes_removed <- c()
 ndists_new <- 0
 ndists_old <- 0
-n_split <- 0
+
+# Code of 郡 that are split under the status quo
+gun_exception <- c()
 
 # Change time limit
 options(timeout = 300)

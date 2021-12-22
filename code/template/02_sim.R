@@ -3,59 +3,56 @@
 # © ALARM Project, November 2021
 ###############################################################################
 
+####-------------- 1. Method for Rural Prefectures-------------------------####
 # Clean census data
+census2020_current_municipalities <- census2020 %>%
+  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
+      #filter out irrelevant data
+      #type_of_municipality: a: prefecture, 1. 政令指定都市及び東京都特別区,
+      #9. 平成12年(2000年)現在の市区町村
+
 pref <- pref_raw %>%
   clean_jcdf() %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020, by = c('code')) %>%
-  dplyr::rename(pop = pop_national) %>%
+  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
   dplyr::select(code, pop, geometry)
 
 # Add information about gun (郡)
 pref <- merge_gun(pref)
 
-# Find codes that are splittable
-valid_codes <- unique(pref$code)
-for (i in length(valid_codes):1)
-{
-  if (length(find_old_codes(valid_codes[i], pop_by_old_boundary)) < 1)
-  {
-    valid_codes <- valid_codes[-i]
-  }
-}
+# Define pref_0
+pref_0 <-  sf::st_as_sf(
+  dplyr::bind_rows(
 
-# Order splittable municipalities by population
-split_codes <- pref[order(-pref$pop), ][which(pref$code %in% valid_codes), ]$code
+    # Set aside gun that are not respected under the status quo
+    pref %>% filter(gun_code %in% as.numeric(gun_exception)),
 
-# Run simulations for n splits
-for (i in 0:n_split)
-{
-  
-  # Split relevant municipalities
-  if (i > 0)
-  {
-    new_n <- split_codes[0:i]
-    old_n <- find_old_codes(new_n, pop_by_old_boundary)
-    pref_n <- reflect_old_boundaries(pref, old_boundary, pop_by_old_boundary, old_n, new_n)
-    pref_n <- estimate_old_boundary_pop(old_n, new_n, pref_n, census2020)
-  }
-  
-  # Create sf object and adjacency list
-  pref_n <- sf::st_as_sf(
+    # Merge gun
     pref %>%
+      dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
       dplyr::group_by(gun_code) %>%
       dplyr::summarize(geometry = sf::st_union(geometry),
                        pop = sum(pop),
                        code = code[1])
   )
-  
-  # TODO If necessary, manually merge together municipalities in simulation
-  
+)
+
+# pref_1: Split largest municipality
+# Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
+split_code <- (pref %>%
+                dplyr::filter(code >=
+                               (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
+                                                                        dplyr::filter(code >=
+                                                                                      (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
+new_1 <- as.character(split_code)
+pref_1 <- reflect_old_boundaries(pref_0, old_boundary, census2020, new_1)
+
+# Add adjacency
+add_adjacency <- function(pref_n){
+
   prefadj_n <- redist::redist.adjacency(pref_n)
-  
-  # TODO Repair adjacencies if necessary, and document these changes.
-  
+
   # Modify according to ferry adjacencies
   if(check_ferries(pref_code) == TRUE){
     # add ferries
@@ -65,34 +62,49 @@ for (i in 0:n_split)
                                      ferries_n[, 2],
                                      zero = TRUE)
   }
-  
+
   # Suggest connection between disconnected groups
   suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                      adj = prefadj)
-  prefadj <- geomander::add_edge(prefadj,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)
-  
+                                                      adj = prefadj_n)
+  prefadj_n <- geomander::add_edge(prefadj_n,
+                                   suggest$x,
+                                   suggest$y,
+                                   zero = TRUE)
+
+  #return result
+  return(prefadj_n)
+}
+
+# Make adjacency list
+prefadj_0 <- add_adjacency(pref_0)
+prefadj_1 <- add_adjacency(pref_1)
+
+# TODO Repair adjacencies if necessary, and document these changes.
+
+
+# Run simulations
+run_simulations <- function(pref_n, prefadj_n){
+
+  if("pre_gappei_code" %in% colnames(pref_n)){
+    i <- 1
+  }else{
+    i <- 0
+  }
+
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.10,
+                                   pop_tol= 0.08,
                                    total_pop = pop,
                                    adj = prefadj_n)
-  
-  constr_n = redist::redist_constr(pref_map_n)
-  constr_n = redist::add_constr_splits(constr_n, strength = 5)
-  constr_n = redist::add_constr_multisplits(constr_n, strength = 10)
-  
+
+  # Run simulation
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
-    counties = pref_n$code,
-    constraints = constr_n,
     pop_temper = 0.05
   )
-  
+
   # Save map and simulation data
   saveRDS(pref_map_n, paste("data-out/maps/",
                             as.character(pref_code),
@@ -104,7 +116,7 @@ for (i in 0:n_split)
                             as.character(i),
                             ".Rds",
                             sep = ""))
-  
+
   saveRDS(sim_smc_pref_n, paste("data-out/plans/",
                                 as.character(pref_code),
                                 "_",
@@ -117,5 +129,46 @@ for (i in 0:n_split)
                                 as.character(i),
                                 ".Rds",
                                 sep = ""))
-  
 }
+
+run_simulations(pref_0, prefadj_0)
+run_simulations(pref_1, prefadj_1)
+
+####-------------- 2. Method for Urban Prefectures-------------------------####
+# Clean 2015 Census shapefile
+pref <- pref_raw %>%
+  clean_jcdf() %>%
+  dplyr::select(code, KIHON1, JINKO, geometry)
+
+# Calculate population of Japanese nationals as of 2015 at the 小地域 level
+pref <- calc_kokumin(pref, dem_pops)
+
+# Filter out relevant data from 2020 Census (i.e. exclude municipalities pre-平成の大合併)
+census2020_current_municipalities <- census2020 %>%
+  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
+  #a: prefecture #1. 政令指定都市及び東京都特別区 #9. 平成12年(2000年)現在の市区町村
+
+# Estimate 2020 pop. at the 小地域 level
+pref <- estimate_2020_pop(pref, census2020_current_municipalities) %>%
+  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
+  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
+
+
+
+pref_map <- redist::redist_map(pref,
+                               ndists = ndists_new,
+                               pop_tol= 0.10,
+                               total_pop = pop,
+                               adj = prefadj)
+
+constr = redist::redist_constr(pref_map)
+constr = redist::add_constr_splits(constr, strength = 5)
+constr = redist::add_constr_multisplits(constr, strength = 10)
+
+sim_smc_pref <- redist::redist_smc(
+  map = pref_map,
+  nsims = nsims,
+  counties = pref$code,
+  constraints = constr,
+  pop_temper = 0.05)
+

@@ -9,7 +9,7 @@ b_koiki <- c()
 c_koiki <- c()
 koiki <- c(a_koiki, b_koiki, c_koiki)
 
-for (i in 0:n_split)
+for (i in 0:1)
 {
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
                                   as.character(pref_code),
@@ -24,9 +24,9 @@ for (i in 0:n_split)
                                   ".Rds",
                                   sep = ""), refhook = NULL)
   pref_smc_plans_n <- redist::get_plans_matrix(sim_smc_pref_n)
-  
+
   assign(paste("pref_smc_plans_", i, sep = ""), pref_smc_plans_n)
-  
+
 }
 
 
