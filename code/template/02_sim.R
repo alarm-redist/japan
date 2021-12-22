@@ -153,6 +153,53 @@ pref <- estimate_2020_pop(pref, census2020_current_municipalities) %>%
   dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
   dplyr::rename(subcode = KIHON1, pop = pop_estimate)
 
+# Obtain codes of 郡 to merge
+pref <- merge_gun(pref)
+gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
+gun_codes <- setdiff(gun_code, gun_exception)
+
+# Separate non-郡 municipalities
+pref_non_gun <- pref %>%
+  dplyr::filter(gun_code %in% gun_codes == FALSE )
+
+for(i in 1:length(gun_code)){
+
+  gun <- pref %>%
+    dplyr::filter(gun_code == gun_codes[i])
+
+  gun$code <- gun_code[i]
+
+  gun <- gun %>%
+    dplyr::group_by(code) %>%
+    dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+
+  gun$subcode <- "0000"
+
+  pref <- dplyr::bind_rows(pref_non_gun, gun)
+
+}
+
+
+
+prefadj <- redist::redist.adjacency(pref)
+
+# Modify according to ferry adjacencies
+if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries <- add_ferries(pref)
+    prefadj <- geomander::add_edge(prefadj,
+                                   ferries[, 1],
+                                   ferries[, 2],
+                                   zero = TRUE)
+}
+
+# Suggest connection between disconnected groups
+suggest <-  geomander::suggest_component_connection(shp = pref,
+                                                    adj = prefadj)
+prefadj <- geomander::add_edge(prefadj,
+                               suggest$x,
+                               suggest$y,
+                               zero = TRUE)
 
 
 pref_map <- redist::redist_map(pref,
