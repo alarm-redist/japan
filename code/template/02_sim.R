@@ -78,7 +78,9 @@ prefadj_0 <- add_adjacency(pref_0)
 prefadj_1 <- add_adjacency(pref_1)
 
 # TODO Repair adjacencies if necessary, and document these changes.
-
+# prefadj_x <- geomander::add_edge(prefadj_x,
+                                 # which(pref_x$pre_gappei_code == xxxxx),
+                                 # which(pref_x$pre_gappei_code == xxxxx))
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
