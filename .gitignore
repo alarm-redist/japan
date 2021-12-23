@@ -3,3 +3,6 @@
 .Rhistory
 *.dat
 data-raw/**
+!data-raw/route_data.rda
+!data-raw/port_data.rda
+!data-raw/lake_data.rda
