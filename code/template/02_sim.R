@@ -61,14 +61,6 @@ add_adjacency <- function(pref_n){
                                      zero = TRUE)
   }
 
-  # Suggest connection between disconnected groups
-  suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                      adj = prefadj_n)
-  prefadj_n <- geomander::add_edge(prefadj_n,
-                                   suggest$x,
-                                   suggest$y,
-                                   zero = TRUE)
-
   #return result
   return(prefadj_n)
 }
@@ -76,6 +68,15 @@ add_adjacency <- function(pref_n){
 # Make adjacency list
 prefadj_0 <- add_adjacency(pref_0)
 prefadj_1 <- add_adjacency(pref_1)
+
+# Optional: Suggest connection between disconnected groups
+"suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                    adj = prefadj_n)
+prefadj_n <- geomander::add_edge(prefadj_n,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)"
+
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj_x <- geomander::add_edge(prefadj_x,
