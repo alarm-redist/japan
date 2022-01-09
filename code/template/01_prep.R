@@ -12,6 +12,7 @@ suppressMessages({
     library(cli)
     library(here)
     library(tidyverse)
+    library(nngeo)
     devtools::load_all() # load utilities
 })
 
