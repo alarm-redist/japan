@@ -86,6 +86,7 @@ prefadj_n <- geomander::add_edge(prefadj_n,
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
 
+  # 0 split or 1 split
   if("pre_gappei_code" %in% colnames(pref_n)){
     i <- 1
   }else{
@@ -95,7 +96,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.08,
+                                   pop_tol= 0.10,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
