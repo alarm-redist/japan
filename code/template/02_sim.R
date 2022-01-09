@@ -96,7 +96,11 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
+<<<<<<< Updated upstream
                                    pop_tol= 0.10,
+=======
+                                   pop_tol= 0.15,
+>>>>>>> Stashed changes
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -131,6 +135,15 @@ run_simulations <- function(pref_n, prefadj_n){
                                 as.character(i),
                                 ".Rds",
                                 sep = ""))
+  
+  assign(paste("pref", "map", i, sep = "_"), 
+         pref_map_n,
+         envir = .GlobalEnv)
+  
+  assign(paste("sim", "smc", "pref", i, sep = "_"), 
+         sim_smc_pref_n,
+         envir = .GlobalEnv)
+  
 }
 
 run_simulations(pref_0, prefadj_0)
@@ -250,3 +263,47 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             as.character(nsims),
                             ".Rds",
                             sep = ""))
+
+check_valid <- function(pref_n, plans_matrix, bridges) {
+  
+  pref_sep <- data.frame(unit = 1, geometry = sf::st_cast(pref_n[1, ]$geometry, "POLYGON"))
+  
+  for (i in 2:nrow(pref_n))
+  {
+    pref_sep <- rbind(pref_sep, data.frame(unit = i, geometry = sf::st_cast(pref_n[i, ]$geometry, "POLYGON")))
+  }
+  
+  pref_sep <- sf::st_as_sf(pref_sep)
+  pref_sep_adj <- redist::redist.adjacency(pref_sep)
+  
+  mainland <- pref_sep[which(unlist(lapply(pref_sep_adj, length)) > 0), ]
+  mainland_adj <- redist::redist.adjacency(mainland)
+  
+  for (j in 1:length(bridges))
+  {
+      start <- which(pref_n$pre_gappei_code == bridges[[j]][1])
+      end <- which(pref_n$pre_gappei_code == bridges[[j]][2])
+      
+      for (x in which(mainland$unit == start))
+      {
+        for (y in which(mainland$unit == end))
+        {
+          mainland_adj <- geomander::add_edge(mainland_adj, 
+                                              x, 
+                                              y, 
+                                              zero = TRUE)
+        }
+      }
+  }
+  
+  checks <- vector(length = ncol(plans_matrix))
+  
+  for (k in 1:ncol(plans_matrix))
+  {
+    mainland_plan <- plans_matrix[mainland$unit, k]
+    checks[k] <- max(geomander::check_contiguity(mainland_adj, mainland_plan)$component) == 1
+  }
+  
+  return(checks)
+  
+}
