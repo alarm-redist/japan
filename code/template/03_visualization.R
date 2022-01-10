@@ -129,6 +129,13 @@ matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == o
 colnames(matrix_optimal_0) <- "district"
 optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
 
+# Match district numbers
+optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
+                                   by = "code")
+sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
+                                        optimal_split$district,
+                                        col = "pop_overlap")
+
 # Gun/Municipality/Gun/Koiki-renkei boundaries
 mun_boundary <- pref_0 %>%
   group_by(code) %>%
@@ -167,8 +174,7 @@ optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
 # Map with district data + municipality/gun/koiki-renkei boundary
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("1" = "yellow", "2" = "brown", "3" = "orange",
-                               "4" = "purple", "5" = "green", "6" = "blue")) +
+  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   theme(axis.line = element_blank(), axis.text = element_blank(),
