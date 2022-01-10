@@ -136,7 +136,7 @@ sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
                                         optimal_split$district,
                                         col = "pop_overlap")
 
-# Gun/Municipality/Gun/Koiki-renkei boundaries
+# Gun/Municipality/Koiki-renkei boundaries
 mun_boundary <- pref_0 %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
@@ -265,3 +265,65 @@ ggplot() +
         axis.line = element_blank(), axis.text = element_blank(),
         axis.ticks = element_blank(), axis.title = element_blank(),
         panel.background = element_blank())
+
+####-------------- 1. Method for Urban Prefectures-------------------------####
+# Get plans matrix
+pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
+
+# Calculate max:min ratio
+wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
+
+# Count number of municipality splits
+num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
+
+# Count number of gun splits
+num_gun_split <- count_splits(pref_smc_plans, pref_map$gun_code)
+gun_split <- redist::redist.splits(pref_smc_plans, pref_map$gun_code)
+
+# Compile results: 0 split
+results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results$max_to_min <- wgt_smc$max_to_min
+results$num_gun_split <- num_gun_split
+results$gun_split <- gun_split
+results$nun_mun_split <- num_mun_split
+results$mun_split <- mun_split
+results$multi <-  results$nun_mun_split - results$mun_split
+results$index <- 1:nrow(wgt_smc)
+
+# To-do: filter out plans with discontiguities/multi-splits
+functioning_results <- results %>% dplyr::filter(multi == 0)
+
+# Find Optimal Plan
+optimal <- functioning_results$index[which(functioning_results$max_to_min ==
+                                           min(functioning_results$max_to_min))][1]
+results[optimal,]
+
+# Gun/Municipality boundaries
+mun_boundary <- pref %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+gun_boundary <- pref %>%
+  filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(gun_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+# District Boundary of Optimal Plan
+matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
+colnames(matrix_optimal) <- "district"
+optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
+
+# Map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
+  scale_fill_manual(values = as.vector(pals::polychrome(ndists_new)))+
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+
+
+
