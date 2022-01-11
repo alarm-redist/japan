@@ -280,6 +280,7 @@ check_valid <- function(pref_n, plans_matrix, bridges) {
 
   mainland <- pref_sep[which(unlist(lapply(pref_sep_adj, length)) > 0), ]
   mainland_adj <- redist::redist.adjacency(mainland)
+  mainland$component <- geomander::check_contiguity(mainland_adj)$component
 
   for (j in 1:length(bridges))
   {
@@ -303,7 +304,7 @@ check_valid <- function(pref_n, plans_matrix, bridges) {
   for (k in 1:ncol(plans_matrix))
   {
     mainland_plan <- plans_matrix[mainland$unit, k]
-    checks[k] <- max(geomander::check_contiguity(mainland_adj, mainland_plan)$component) == 1
+    checks[k] <- max(geomander::check_contiguity(mainland_adj, mainland_plan + (ndists_new-1)*mainland$component)$component) == 1
   }
 
   return(checks)

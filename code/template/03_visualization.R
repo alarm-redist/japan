@@ -112,9 +112,15 @@ results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
+# Add bridges and check if valid
+bridges_0 <- c()
+results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
+bridges_1 <- c()
+results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1) 
+
 # To-do: filter out plans with discontiguities
-functioning_results_0 <- results_0
-functioning_results_1 <- results_1
+functioning_results_0 <- results_0 %>% dplyr::filter(multi == 0 & valid)
+functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # Find Optimal Plan
 optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
@@ -291,8 +297,12 @@ results$mun_split <- mun_split
 results$multi <-  results$nun_mun_split - results$mun_split
 results$index <- 1:nrow(wgt_smc)
 
+# Add bridges and check if valid
+bridges <- c()
+results$valid <- check_valid(pref, pref_smc_plans, bridges)
+
 # To-do: filter out plans with discontiguities/multi-splits
-functioning_results <- results %>% dplyr::filter(multi == 0)
+functioning_results <- results %>% dplyr::filter(multi == 0 && valid)
 
 # Find Optimal Plan
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
