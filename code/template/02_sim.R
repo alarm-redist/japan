@@ -135,15 +135,15 @@ run_simulations <- function(pref_n, prefadj_n){
                                 as.character(i),
                                 ".Rds",
                                 sep = ""))
-  
-  assign(paste("pref", "map", i, sep = "_"), 
+
+  assign(paste("pref", "map", i, sep = "_"),
          pref_map_n,
          envir = .GlobalEnv)
-  
-  assign(paste("sim", "smc", "pref", i, sep = "_"), 
+
+  assign(paste("sim", "smc", "pref", i, sep = "_"),
          sim_smc_pref_n,
          envir = .GlobalEnv)
-  
+
 }
 
 run_simulations(pref_0, prefadj_0)
@@ -212,16 +212,18 @@ if(check_ferries(pref_code) == TRUE){
                                    zero = TRUE)
 }
 
-# Suggest connection between disconnected groups
-suggest <-  geomander::suggest_component_connection(shp = pref,
+# Optional: Suggest connection between disconnected groups
+"suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
-                               zero = TRUE)
+                               zero = TRUE)"
 
 # TODO Repair adjacencies if necessary, and document these changes.
-
+# prefadj <- geomander::add_edge(prefadj,
+                                # which(pref$code == xxxxx & pref$subcode == "xxxx"),
+                                # which(pref$code == xxxxx & pref$subcode == "xxxx"))
 
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
@@ -265,47 +267,46 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             sep = ""))
 
 check_valid <- function(pref_n, plans_matrix, bridges) {
-  
+
   pref_sep <- data.frame(unit = 1, geometry = sf::st_cast(pref_n[1, ]$geometry, "POLYGON"))
-  
+
   for (i in 2:nrow(pref_n))
   {
     pref_sep <- rbind(pref_sep, data.frame(unit = i, geometry = sf::st_cast(pref_n[i, ]$geometry, "POLYGON")))
   }
-  
+
   pref_sep <- sf::st_as_sf(pref_sep)
   pref_sep_adj <- redist::redist.adjacency(pref_sep)
-  
+
   mainland <- pref_sep[which(unlist(lapply(pref_sep_adj, length)) > 0), ]
   mainland_adj <- redist::redist.adjacency(mainland)
   mainland$component <- geomander::check_contiguity(mainland_adj)$component
-  
-  
+
   for (j in 1:length(bridges))
   {
       start <- which(pref_n$pre_gappei_code == bridges[[j]][1])
       end <- which(pref_n$pre_gappei_code == bridges[[j]][2])
-      
+
       for (x in which(mainland$unit == start))
       {
         for (y in which(mainland$unit == end))
         {
-          mainland_adj <- geomander::add_edge(mainland_adj, 
-                                              x, 
-                                              y, 
+          mainland_adj <- geomander::add_edge(mainland_adj,
+                                              x,
+                                              y,
                                               zero = TRUE)
         }
       }
   }
-  
+
   checks <- vector(length = ncol(plans_matrix))
-  
+
   for (k in 1:ncol(plans_matrix))
   {
     mainland_plan <- plans_matrix[mainland$unit, k]
     checks[k] <- max(geomander::check_contiguity(mainland_adj, mainland_plan + (ndists_new-1)*mainland$component)$component) == 1
   }
-  
+
   return(checks)
-  
+
 }
