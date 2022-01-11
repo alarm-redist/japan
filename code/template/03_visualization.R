@@ -106,7 +106,7 @@ results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
 results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$nun_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
-results_1$multi <-  results_1$nun_mun_split - results_1$mun_split
+results_1$multi <-  nun_mun_split - mun_split
 results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
@@ -116,7 +116,7 @@ results_1$index <- 1:nrow(wgt_smc_1)
 bridges_0 <- c()
 results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
 bridges_1 <- c()
-results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1) 
+results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # To-do: filter out plans with discontiguities
 functioning_results_0 <- results_0 %>% dplyr::filter(multi == 0 & valid)
@@ -272,7 +272,7 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         panel.background = element_blank())
 
-####-------------- 1. Method for Urban Prefectures-------------------------####
+####-------------- 2. Method for Urban Prefectures-------------------------####
 # Get plans matrix
 pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 
@@ -294,7 +294,7 @@ results$num_gun_split <- num_gun_split
 results$gun_split <- gun_split
 results$nun_mun_split <- num_mun_split
 results$mun_split <- mun_split
-results$multi <-  results$nun_mun_split - results$mun_split
+results$multi <-  nun_mun_split - mun_split
 results$index <- 1:nrow(wgt_smc)
 
 # Add bridges and check if valid
