@@ -90,7 +90,7 @@ results_rural$mun_split <- mun_split_rural
 results_rural$multi <-  num_mun_split_rural - mun_split_rural
 results_rural$index <- 1:nrow(wgt_smc_rural)
 
-# To-do: filter out plans with discontiguities/multi-splits
+# Filter out plans with discontiguities/multi-splits
 functioning_results_rural <- results_rural %>% dplyr::filter(multi == 0)
 
 # Find Optimal Plan
