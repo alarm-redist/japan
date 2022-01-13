@@ -188,8 +188,8 @@ rural_map <- redist::redist_map(rural,
 
 # Define constraints
 constr_rural = redist::redist_constr(rural_map)
-constr_rural = redist::add_constr_splits(constr_rural, strength = 5)
-constr_rural = redist::add_constr_multisplits(constr_rural, strength = 10)
+constr_rural = redist::add_constr_splits(constr_rural, strength = 2)
+constr_rural = redist::add_constr_multisplits(constr_rural, strength = 5)
 
 # Run simulation
 sim_smc_rural <- redist::redist_smc(
