@@ -104,9 +104,9 @@ results_0$index <- 1:nrow(wgt_smc_0)
 # Compile results: 1 split
 results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
 results_1$max_to_min <- wgt_smc_1$max_to_min
-results_1$nun_mun_split <- num_mun_split_1
+results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
-results_1$multi <-  nun_mun_split - mun_split
+results_1$multi <-  num_mun_split - mun_split
 results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
@@ -292,9 +292,9 @@ results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
 results$num_gun_split <- num_gun_split
 results$gun_split <- gun_split
-results$nun_mun_split <- num_mun_split
+results$num_mun_split <- num_mun_split
 results$mun_split <- mun_split
-results$multi <-  nun_mun_split - mun_split
+results$multi <-  num_mun_split - mun_split
 results$index <- 1:nrow(wgt_smc)
 
 # Add bridges and check if valid
