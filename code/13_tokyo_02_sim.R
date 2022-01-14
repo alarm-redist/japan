@@ -80,6 +80,14 @@ if(check_ferries(pref_code) == TRUE){
                                  zero = TRUE)
 }
 
+# Optional: Suggest connection between disconnected groups
+"suggest <-  geomander::suggest_component_connection(shp = pref_n,
+                                                    adj = prefadj_n)
+prefadj_n <- geomander::add_edge(prefadj_n,
+                                 suggest$x,
+                                 suggest$y,
+                                 zero = TRUE)"
+
 # Repair adjacencies
 urbanadj <- geomander::add_edge(urbanadj,
                                 which(urban$code == 13102 & urban$subcode == "0340"),
