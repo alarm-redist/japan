@@ -6,9 +6,10 @@
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
 # Make sure to convert municipality codes into to "gun" codes if "gun" was merged
-koiki_code_1 <- c()
-koiki_code_2 <- c()
-koiki_code_3 <- c()
+# Make sure to convert municipality codes into to "gun" codes
+koiki_1_codes <- c()
+koiki_2_codes <- c()
+koiki_3_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
@@ -48,12 +49,6 @@ for (i in 0:1)
 # Calculate max:min ratio
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
-
-# Assign koiki_renkei area codes
-# Make sure to convert municipality codes into to "gun" codes
-koiki_1_codes <- c()
-koiki_2_codes <- c()
-koiki_3_codes <- c()
 
 # Assign koiki_renkei area codes for simulation with 0 split
 koiki_1_0 <- pref_0$gun_code
@@ -279,6 +274,14 @@ pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 # Calculate max:min ratio
 wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
 
+# Assign koiki_renkei area codes for simulation with 0 split
+koiki_1_0 <- pref$gun_code
+koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
+koiki_2_0 <- pref$gun_code
+koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
+koiki_3_0 <- pref$gun_code
+koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
+
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
 mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
@@ -287,7 +290,13 @@ mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
 num_gun_split <- count_splits(pref_smc_plans, pref_map$gun_code)
 gun_split <- redist::redist.splits(pref_smc_plans, pref_map$gun_code)
 
-# Compile results: 0 split
+# Count number of koiki renkei splits
+koiki_split <-
+  redist::redist.splits(pref_smc_plans, koiki_1_0) +
+  redist::redist.splits(pref_smc_plans, koiki_2_0) +
+  redist::redist.splits(pref_smc_plans, koiki_3_0)
+
+# Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
 results$num_gun_split <- num_gun_split
@@ -295,6 +304,7 @@ results$gun_split <- gun_split
 results$num_mun_split <- num_mun_split
 results$mun_split <- mun_split
 results$multi <-  num_mun_split - mun_split
+results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
 # Add bridges and check if valid
@@ -333,7 +343,3 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
-
-
-
-
