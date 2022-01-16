@@ -114,7 +114,7 @@ bridges_1 <- c()
 results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # To-do: filter out plans with discontiguities
-functioning_results_0 <- results_0 %>% dplyr::filter(multi == 0 & valid)
+functioning_results_0 <- results_0 %>% dplyr::filter(valid)
 functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # Find Optimal Plan
