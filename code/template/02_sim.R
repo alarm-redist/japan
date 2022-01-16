@@ -16,6 +16,11 @@ pref <- pref_raw %>%
   dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
   dplyr::select(code, pop, geometry)
 
+# remove lake if needed
+ifelse(is.null(lakes_removed),
+       pref <- pref,
+       pref <- remove_lake(pref, lakes_removed))
+
 # Add information about 郡
 pref <- merge_gun(pref)
 
