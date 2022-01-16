@@ -5,24 +5,366 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+# pull functions
+setwd("R")
+files.sources = list.files()
+sapply(files.sources, source)
+setwd("..")
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r pref data, include = FALSE}
+sim_type <- "smc"
+nsims <- 25000
+pref_code <- 34
+pref_name <- "hiroshima"
+lakes_removed <- c() 
+ndists_new <- 6
+ndists_old <- 7
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+koiki_1_codes <-  c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
+                    34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
+                    34300, 34360, 34420, 34460)
+koiki_2_codes <- c(34207, 34204, 34205, 34208, 34460, 34540)
+koiki_3_codes <- c(34202, 34203, 34212, 34215, 34300, 34420)
 ```
 
-## Including Plots
+```{r load data, include = FALSE}
+for (i in 0:1)
+{
+  pref_n <- readRDS(paste("data-out/pref/",
+                    as.character(pref_code),
+                    "_",
+                    as.character(pref_name),
+                    "_",
+                    as.character(nsims),
+                    "_",
+                    as.character(i),
+                    ".Rds",
+                    sep = ""))
+  assign(paste("pref_", i, sep = ""), pref_n)
 
-You can also embed plots, for example:
+  pref_map_n <- readRDS(paste("data-out/maps/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_map_",
+                              as.character(nsims),
+                              "_",
+                              as.character(i),
+                              ".Rds",
+                              sep = ""))
+  assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+  prefadj_n <-readRDS(paste("data-out/pref/",
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(nsims),
+                            "_adj_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
+  assign(paste("prefadj_", i, sep = ""), prefadj_n)
+
+  sim_smc_pref_n <- readRDS(paste("data-out/plans/",
+                                  as.character(pref_code),
+                                  "_",
+                                  as.character(pref_name),
+                                  "_",
+                                  as.character(sim_type),
+                                  "_",
+                                  as.character(nsims),
+                                  "_",
+                                  as.character(i),
+                                  ".Rds",
+                                  sep = ""), refhook = NULL)
+  assign(paste("sim_smc_pref_", i, sep = ""), sim_smc_pref_n)
+
+  # Get plans matrix
+  pref_smc_plans_n <- redist::get_plans_matrix(sim_smc_pref_n)
+  assign(paste("pref_smc_plans_", i, sep = ""), pref_smc_plans_n)
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r calculate max:min, include = FALSE}
+wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
+wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+```
+
+```{r count koiki split, include = FALSE}
+# Assign koiki_renkei area codes for simulation with 0 split
+koiki_1_0 <- pref_0$gun_code
+koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
+koiki_2_0 <- pref_0$gun_code
+koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
+koiki_3_0 <- pref_0$gun_code
+koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
+
+# Assign koiki_renkei area codes for simulation with 1 split
+koiki_1_1 <- pref_1$gun_code
+koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
+# When a municipality that belongs to a koiki renkei area is split:
+koiki_2_1 <- pref_1$gun_code
+koiki_2_1[koiki_2_1 %in% c(koiki_2_codes,
+                           setdiff(pref_1$gun_code[which(pref_1$code == 34207)], 34207))] <- 2
+koiki_3_1 <- pref_1$gun_code
+koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
+
+# Count number of koiki renkei splits
+koiki_split_0 <-
+  redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
+  redist::redist.splits(pref_smc_plans_0, koiki_2_0) +
+  redist::redist.splits(pref_smc_plans_0, koiki_3_0)
+koiki_split_1 <-
+  redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
+  redist::redist.splits(pref_smc_plans_1, koiki_2_1) +
+  redist::redist.splits(pref_smc_plans_1, koiki_3_1)
+```
+
+```{r count gun/mun split, include = FALSE}
+# Count number of municipality splits
+num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+
+# Count number of gun splits
+num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
+num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+```
+
+```{r compile results, include = FALSE}
+results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
+results_0$max_to_min <- wgt_smc_0$max_to_min
+results_0$num_gun_split <- num_gun_split_0
+results_0$gun_split <- gun_split_0
+results_0$koiki_split <- koiki_split_0
+results_0$index <- 1:nrow(wgt_smc_0)
+
+results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
+results_1$max_to_min <- wgt_smc_1$max_to_min
+results_1$num_mun_split <- num_mun_split_1
+results_1$mun_split <- mun_split_1
+results_1$multi <-  num_mun_split_1 - mun_split_1
+results_1$num_gun_split <- num_gun_split_1
+results_1$gun_split <- gun_split_1
+results_1$koiki_split <- koiki_split_1
+results_1$index <- 1:nrow(wgt_smc_1)
+```
+
+```{r post-processing, include = FALSE}
+# Aki-ku　(34107) and Aki-gun (34300) must be in the same district to avoid creating discontiguous districts
+contiguous_0 <- 1:25000
+for(i in 1:25000){
+  contiguous_0[i] <-
+    as.integer(pref_smc_plans_0[,i][which(pref_0$gun_code == 34107)] ==
+                 pref_smc_plans_0[,i][which(pref_0$gun_code == 34300)])
+}
+results_0$contiguous <- contiguous_0
+
+contiguous_1 <- 1:25000
+for(i in 1:25000){
+  contiguous_1[i] <-
+    as.integer(pref_smc_plans_1[,i][which(pref_1$gun_code == 34107)] ==
+                 pref_smc_plans_1[,i][which(pref_1$gun_code == 34300)])
+}
+results_1$contiguous <- contiguous_1
+
+# Ferry routes connect Takehara-shi (34203), Higashihiroshima-shi (34212), and Kure-shi (34202) to Osakikamijima-cho.
+# However, Takehara-shi and Kure-shi are not connected by land.
+# Thus, we must make sure to avoid a situation in which Takehara-shi and Takehara-shi both belong to the district that is different from the district Higashihiroshima-shi belongs to.
+ferry_discontiguity_0 <- 1:25000
+for(i in 1:25000){
+  ferry_discontiguity_0[i] <-
+    as.integer(
+      #We must avoid a situation in which Kure-shi (34202) and Takehara-shi(34203) belong to the same district
+      pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] ==
+        pref_smc_plans_0[,i][which(pref_0$gun_code == 34203)]&
+      #whereby that district is different from the district Higashihiroshima-shi (34212) belongs to
+      pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] !=
+        pref_smc_plans_0[,i][which(pref_0$gun_code == 34212)]
+    )
+}
+results_0$ferry_discontiguity <- ferry_discontiguity_0
+
+ferry_discontiguity_1 <- 1:25000
+for(i in 1:25000){
+  ferry_discontiguity_1[i] <-
+    as.integer(
+      pref_smc_plans_1[,i][which(pref_1$gun_code == 34202)] ==
+        pref_smc_plans_1[,i][which(pref_1$gun_code == 34203)]&
+        pref_smc_plans_1[,i][which(pref_1$gun_code == 34202)] !=
+        pref_smc_plans_1[,i][which(pref_1$gun_code == 34212)]
+    )
+}
+results_1$ferry_discontiguity <- ferry_discontiguity_1
+```
+
+```{r optimal plan, include = FALSE}
+# Filter out plans with discontiguities
+functioning_results_0 <- results_0[which(results_0$contiguous == 1 & results_0$ferry_discontiguity == 0),]
+functioning_results_1 <- results_1[which(results_1$contiguous == 1 & results_1$ferry_discontiguity == 0 &
+                                           results_1$multi == 0), ]
+
+# Find Optimal Plan
+optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
+                                                 min(functioning_results_0$max_to_min))][1]
+results_0[optimal_0,]
+optimal_1 <- functioning_results_1$index[which(functioning_results_1$max_to_min ==
+                                                 min(functioning_results_1$max_to_min))][1]
+results_1[optimal_1,]
+```
+一票の格差は`r round(results_0[optimal_0,]$max_to_min, digits = 2) `まで軽減することができた。
+
+```{r optimal plan (0 split), echo = FALSE}
+# Optimal Plan: 0 split
+matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0))
+colnames(matrix_optimal_0) <- "district"
+optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
+
+# Gun/Municipality/Koiki-renkei boundaries
+mun_boundary <- pref_0 %>%
+  group_by(code) %>%
+  summarise(geometry = sf::st_union(geometry))
+gun_boundary <- pref_0 %>%
+  filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
+  group_by(gun_code) %>%
+  summarise(geometry = sf::st_union(geometry))
+koiki_boundary_1 <- pref_0 %>%
+  filter(gun_code %in% koiki_1_codes) %>%
+  summarise(geometry = sf::st_union(geometry))
+koiki_boundary_2 <- pref_0 %>%
+  filter(gun_code %in% koiki_2_codes) %>%
+  summarise(geometry = sf::st_union(geometry))
+koiki_boundary_3 <- pref_0 %>%
+  filter(gun_code %in% koiki_3_codes) %>%
+  summarise(geometry = sf::st_union(geometry))
+
+# Map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
+  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  #geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+
+```
+
+```{r optimal plan ( 1split), echo = FALSE}
+# Match district numbers
+optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
+                                   by = "code")
+sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
+                                        optimal_split$district,
+                                        col = "pop_overlap")
+# Optimal Plan: 1 split
+matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
+colnames(matrix_optimal_1) <- "district"
+optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
+
+# Map with district data + municipality/gun/koiki-renkei boundary
+ggplot() +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
+  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
+  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        legend.title = element_blank(), legend.position = "None",
+        panel.background = element_blank())
+```
+
+```{r co-occurrence, echo = FALSE}
+# Co-occurrence
+# Filter out plans with top 10% koiki-renkei areas
+good_num_0 <-  functioning_results_0 %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(nsims*0.1)) %>%
+  select(index)
+good_num_0 <- as.vector(t(good_num_0))
+sim_smc_pref_0_good <- sim_smc_pref_0 %>%
+  filter(draw %in% good_num_0)
+
+# Obtain co-occurrence matrix
+m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+
+# Create clusters
+cl_co_0 = cluster::agnes(m_co_0)
+prec_clusters_0 = cutree(cl_co_0, ndists_new)
+pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
+names(pref_membership_0) <- "membership"
+
+# Obtain co-occurrenc ratio
+cooc_ratio <- vector(length = length(pref_0$code))
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+for (i in 1:length(pref_0$code))
+{
+  cooc_ratio[i] <- 1 -
+    sum(pref_0$pop[relcomp(prefadj_0[[i]]+1,
+                           which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj_0[[i]]+1,
+                                                                                              which(prec_clusters_0 == prec_clusters_0[i]))])/
+    sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
+}
+
+# Match membership data with map object
+pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
+pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
+pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
+pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
+pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
+pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
+pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
+
+# Co-occurrence plot
+ggplot() +
+  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "skyblue", high = "blue") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "purple", high = "purple4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "brown1", high = "brown4") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="yellow", high="yellow3") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "lightsalmon", high = "orange") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "palegreen", high="green") +
+
+  labs(color = "Co-occurrence",
+       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
+
+  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+
+  theme(legend.box = "vertical", legend.title = element_text(color = "black", size = 7),
+        axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(), axis.title = element_blank(),
+        panel.background = element_blank())
+```
+

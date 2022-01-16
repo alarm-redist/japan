@@ -116,7 +116,7 @@ run_simulations <- function(pref_n, prefadj_n){
     pop_temper = 0.05
   )
 
-  # Save pref object, pref_map object, and simulation data
+  # Save pref object, pref_map object, adjacency list, and simulation data
   saveRDS(pref_n, paste("data-out/pref/",
                         as.character(pref_code),
                         "_",
@@ -127,6 +127,17 @@ run_simulations <- function(pref_n, prefadj_n){
                         as.character(i),
                         ".Rds",
                         sep = ""))
+
+  saveRDS(prefadj_n, paste("data-out/pref/",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_",
+                          as.character(nsims),
+                          "_adj_",
+                          as.character(i),
+                          ".Rds",
+                          sep = ""))
 
   saveRDS(pref_map_n, paste("data-out/maps/",
                             as.character(pref_code),

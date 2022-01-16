@@ -26,6 +26,18 @@ for (i in 0:1)
                             sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
+  prefadj_n <-readRDS(paste("data-out/pref/",
+                           as.character(pref_code),
+                           "_",
+                           as.character(pref_name),
+                           "_",
+                           as.character(nsims),
+                           "_adj_",
+                           as.character(i),
+                           ".Rds",
+                           sep = ""))
+  assign(paste("prefadj_", i, sep = ""), prefadj_n)
+
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
                                   as.character(pref_code),
                                   "_",
@@ -231,8 +243,6 @@ pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
 pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
 pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
 
-"orange", "green", "blue", "yellow", "brown", "purple"
-
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
@@ -240,7 +250,7 @@ ggplot() +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="palegreen", high="green") +
+  scale_fill_gradient(low = "purple", high = "purple4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
@@ -256,7 +266,7 @@ ggplot() +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "purple", high = "purple4") +
+  scale_fill_gradient(low = "palegreen", high="green") +
 
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
