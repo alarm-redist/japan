@@ -186,7 +186,7 @@ ggplot() +
 # Filter out plans with top 10% koiki-renkei areas
 good_num_0 <-  functioning_results_0 %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(nsims*0.1)) %>%
+  slice(1: as.numeric(length(functioning_results_0$index)*0.1)) %>%
   select(index)
 good_num_0 <- as.vector(t(good_num_0))
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
@@ -231,30 +231,32 @@ pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
 pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
 pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
 
+"orange", "green", "blue", "yellow", "brown", "purple"
+
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="palegreen", high="green") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "skyblue", high = "blue") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "lightsalmon", high = "orange") +
 
   ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low="palegreen", high="green") +
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  scale_fill_gradient(low = "skyblue", high = "blue") +
+
+  ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "brown1", high = "brown4") +
+  scale_fill_gradient(low="yellow", high="yellow3") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "purple", high = "purple4") +
+  scale_fill_gradient(low = "brown1", high = "brown4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="yellow", high="yellow3") +
+  scale_fill_gradient(low = "purple", high = "purple4") +
 
   labs(color = "Co-occurrence",
        title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
