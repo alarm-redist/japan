@@ -101,7 +101,7 @@ results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
 results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
-results_1$multi <-  num_mun_split - mun_split
+results_1$multi <-  num_mun_split_1 - mun_split_1
 results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
