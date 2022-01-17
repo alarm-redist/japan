@@ -101,11 +101,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-<<<<<<< Updated upstream
                                    pop_tol= 0.10,
-=======
-                                   pop_tol= 0.15,
->>>>>>> Stashed changes
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -286,6 +282,16 @@ saveRDS(pref_map, paste("data-out/maps/",
                         ".Rds",
                         sep = ""))
 
+saveRDS(prefadj, paste("data-out/pref/",
+                       as.character(pref_code),
+                       "_",
+                       as.character(pref_name),
+                       "_",
+                       as.character(nsims),
+                       "_adj",
+                       ".Rds",
+                       sep = ""))
+
 saveRDS(sim_smc_pref, paste("data-out/plans/",
                             as.character(pref_code),
                             "_",
@@ -297,6 +303,8 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             ".Rds",
                             sep = ""))
 
+
+####-------------- check_valid() function -------------------------####
 check_valid <- function(pref_n, plans_matrix, bridges) {
 
   pref_sep <- data.frame(unit = 1, geometry = sf::st_cast(pref_n[1, ]$geometry, "POLYGON"))

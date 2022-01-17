@@ -124,7 +124,7 @@ results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
 bridges_1 <- c()
 results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
-# To-do: filter out plans with discontiguities
+# TODO: filter out plans with discontiguities
 functioning_results_0 <- results_0 %>% dplyr::filter(valid)
 functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
@@ -166,33 +166,10 @@ koiki_boundary_3 <- pref_0 %>%
   filter(gun_code %in% koiki_3_codes) %>%
   summarise(geometry = sf::st_union(geometry))
 
-# Map with district data + municipality/gun/koiki-renkei boundary
-ggplot() +
-  geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
-  #geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
-
 # Optimal Plan: 1 split
 matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
 colnames(matrix_optimal_1) <- "district"
 optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
-
-# Map with district data + municipality/gun/koiki-renkei boundary
-ggplot() +
-  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
-  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
 
 # Co-occurrence
 # Filter out plans with top 10% koiki-renkei areas
@@ -234,51 +211,65 @@ for (i in 1:length(pref_0$code))
     sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
 }
 
-# Match membership data with map object
-pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
-pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
-pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
-pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
-pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
-pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
-
-# Co-occurrence plot
-ggplot() +
-  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "lightsalmon", high = "orange") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "purple", high = "purple4") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "skyblue", high = "blue") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="yellow", high="yellow3") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "brown1", high = "brown4") +
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "palegreen", high="green") +
-
-  labs(color = "Co-occurrence",
-       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
-
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-
-  theme(legend.box = "vertical", legend.title = element_text(color = "black", size = 7),
-        axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        panel.background = element_blank())
+# Save files
+rm(pref_smc_plan_0,
+   pref_smc_plan_1,
+   pref_smc_plan_n,
+   sim_smc_pref_0,
+   sim_smc_pref_1,
+   sim_smc_pref_n,
+   wgt_smc_0,
+   wgt_smc_1,
+   num_mun_split_1,
+   mun_split_1,
+   num_gun_split_0,
+   gun_split_0,
+   num_gun_split_1,
+   gun_split_1,
+   koiki_split_0,
+   koiki_split_1,
+   matrix_optimal_0,
+   matrix_optimal_1
+   )
+save.image(paste("data-out/pref/",
+                 as.character(pref_code),
+                 "_",
+                 as.character(pref_name),
+                 "_data",
+                 ".Rdata",
+                 sep = ""))
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
+pref_map <- readRDS(paste("data-out/maps/",
+                           as.character(pref_code),
+                           "_",
+                           as.character(pref_name),
+                           "_map_",
+                           as.character(nsims),
+                           ".Rds",
+                           sep = ""))
+
+prefadj <- readRDS(paste("data-out/pref/",
+                         as.character(pref_code),
+                         "_",
+                         as.character(pref_name),
+                         "_",
+                         as.character(nsims),
+                         "_adj",
+                         ".Rds",
+                         sep = ""))
+
+sim_smc_pref <- readRDS(paste("data-out/plans/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              ".Rds",
+                              sep = ""), refhook = NULL)
+
 # Get plans matrix
 pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 
@@ -354,3 +345,64 @@ ggplot() +
         axis.ticks = element_blank(), axis.title = element_blank(),
         legend.title = element_blank(), legend.position = "None",
         panel.background = element_blank())
+
+# Co-occurrence
+# Filter out plans with top 10% koiki-renkei areas
+good_num <-  functioning_results %>%
+  arrange(max_to_min) %>%
+  slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
+  select(index)
+good_num <- as.vector(t(good_num))
+sim_smc_pref_good <- sim_smc_pref %>%
+  filter(draw %in% good_num)
+
+# Obtain co-occurrence matrix
+m_co = redist::prec_cooccurrence(sim_smc_pref_good, sampled_only=TRUE)
+
+# Create clusters
+cl_co = cluster::agnes(m_co)
+prec_clusters = cutree(cl_co, ndists_new)
+pref_membership <- as_tibble(as.data.frame(prec_clusters))
+names(pref_membership) <- "membership"
+
+# Obtain co-occurrenc ratio
+cooc_ratio <- vector(length = length(pref$code))
+relcomp <- function(a, b) {
+  comp <- vector()
+  for (i in a) {
+    if (i %in% a && !(i %in% b)) {
+      comp <- append(comp, i)
+    }
+  }
+  return(comp)
+}
+
+for (i in 1:length(pref$code))
+{
+  cooc_ratio[i] <- 1 -
+    sum(pref$pop[relcomp(prefadj[[i]]+1,
+                         which(prec_clusters == prec_clusters[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1,
+                                                                   which(prec_clusters == prec_clusters[i]))])/
+    sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
+}
+
+
+# Save files
+rm(pref_smc_plans,
+   sim_smc_pref,
+   wgt_smc,
+   num_mun_split,
+   mun_split,
+   num_gun_split,
+   gun_split,
+   koiki_split,
+   matrix_optimal
+)
+
+save.image(paste("data-out/pref/",
+                 as.character(pref_code),
+                 "_",
+                 as.character(pref_name),
+                 "_data",
+                 ".Rdata",
+                 sep = ""))
