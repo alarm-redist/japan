@@ -1,5 +1,5 @@
 ---
-title: "title"
+title: "広島県　衆議院議員選挙　小選挙区　区割り改訂案"
 output: html_document
 ---
 
@@ -176,7 +176,7 @@ results_1$contiguous <- contiguous_1
 
 # Ferry routes connect Takehara-shi (34203), Higashihiroshima-shi (34212), and Kure-shi (34202) to Osakikamijima-cho.
 # However, Takehara-shi and Kure-shi are not connected by land.
-# Thus, we must make sure to avoid a situation in which Takehara-shi and Takehara-shi both belong to the district that is different from the district Higashihiroshima-shi belongs to.
+# Thus, we must make sure to avoid a situation in which Takehara-shi and Kure-shi both belong to the district that is different from the district Higashihiroshima-shi belongs to.
 ferry_discontiguity_0 <- 1:25000
 for(i in 1:25000){
   ferry_discontiguity_0[i] <-
@@ -218,7 +218,40 @@ optimal_1 <- functioning_results_1$index[which(functioning_results_1$max_to_min 
                                                  min(functioning_results_1$max_to_min))][1]
 results_1[optimal_1,]
 ```
-一票の格差は`r round(results_0[optimal_0,]$max_to_min, digits = 2) `まで軽減することができた。
+
+## 基礎データ
+```{r status quo, include = FALSE}
+sq_data <- c("7→6", "1.612", "1.724", "1.693", "1.738", 
+             "4(江田島市、尾道市、東広島市、三原市)",
+             "なし")
+sq_data <- as.data.frame(sq_data)
+
+row.names(sq_data) <- c("小選挙区の定数の増減", 
+                        "都道府県内の一票の格差 (2015)",
+                        "都道府県内の一票の格差 (2020)", 
+                        "対鳥取２区の一票の格差 (2015)",
+                        "対鳥取２区の一票の格差 (2020)", 
+                        "現行の区割りで分割されている市区町村",
+                        "現行の区割りで分割されている郡")
+colnames(sq_data) <- c("")
+```
+
+```{r knit table, echo = FALSE}
+knitr::kable(sq_data)
+```
+
+
+## 区割り案作成時の設定
+* 各選挙区の人口が、一票の格差が0となる理論上の選挙区人口の**±0.10**倍以内に収まるように区割り案を作成した。
+* 市区町村を分割しない案、人口が最大の市区町村を分割する案それぞれ25000案を作成した。
+* 飛び地が生じた案を棄却することにより、市区町村を分割しない案に関しては`r length(functioning_results_0$index) `の有効な案、人口が最大の市区町村を分割する案に関しては`r length(functioning_results_1$index) `の有効な案を得た。
+
+### 県特有の設定
+* 飛び地が生じるのを防ぐために、安芸郡と広島市安芸区が異なる選挙区に属するような区割り改訂案は棄却した。
+* 同様に、飛び地が生じるのを防ぐために、竹原市及び呉市が東広島市と異なる選挙区に属するような区割り改訂案は棄却した。
+
+## 市区町村を分割しない案 : 最適解
+市区町村を分割することなく、一票の格差を`r round(results_0[optimal_0,]$max_to_min, digits = 3) `まで削減することができた。
 
 ```{r optimal plan (0 split), echo = FALSE}
 # Optimal Plan: 0 split
@@ -250,15 +283,15 @@ ggplot() +
   scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
-  #geom_sf(data = koiki_boundary_1, fill = "plum1", alpha = 0.5, color = "plum1", lwd = 0.2) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
-
+  labs(caption = "太線:郡の境界") +
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.title = element_blank(), legend.position = "None")
 ```
 
-```{r optimal plan ( 1split), echo = FALSE}
+## 最大市区町村の分割を許容する案 : 最適解
+県内の市区町村のうち人口が最大である福山市の分割を許容した結果、一票の格差を`r round(results_1[optimal_1,]$max_to_min, digits = 3) `まで削減することができた。
+
+```{r optimal plan (1split), echo = FALSE}
 # Match district numbers
 optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
                                    by = "code")
@@ -276,11 +309,13 @@ ggplot() +
   scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
   geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
+  labs(caption = "太線:郡の境界") +
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.title = element_blank(), legend.position = "None")
 ```
+
+# 共起分析
+市区町村分割を許容しない設定で得た区割り改訂案の中で、飛び地がないもののうち、一票の格差が下位10%の案の共起分析を行った。同じ色の市区町村は同じ選挙区に属する傾向が高く、また、同じ色の中でも、濃い色の市区町村の方がその傾向が強い。
 
 ```{r co-occurrence, echo = FALSE}
 # Co-occurrence
@@ -357,14 +392,11 @@ ggplot() +
   geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = "palegreen", high="green") +
 
-  labs(color = "Co-occurrence",
-       title = "Co-occurrence Analysis: Plans with Top 10% Max-min Ratio") +
-
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
 
-  theme(legend.box = "vertical", legend.title = element_text(color = "black", size = 7),
-        axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        panel.background = element_blank())
+  labs(caption = "太線:郡の境界") +
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.title = element_blank(), legend.position = "None")
 ```
 
+一票の格差が低い区割り案では、県北部の市区町村が同じ選挙区に属する傾向が高かった。このほか、広島市安佐北区と安佐南区、世羅町・尾道市・三原市・竹原市の４市町などが同じ選挙区に属する傾向が高かった。
