@@ -34,7 +34,8 @@ ndists_new <- 0
 ndists_old <- 0
 sq_max_min <- 1
 sq_max_min_vs_tottori2 <- 1
-sq_splits <- 0
+sq_mun_splits <- 0
+sq_gun_splits <- 0
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
