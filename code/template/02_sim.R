@@ -167,6 +167,10 @@ run_simulations <- function(pref_n, prefadj_n){
          pref_map_n,
          envir = .GlobalEnv)
 
+  assign(paste("prefadj", i, sep = "_"),
+         prefadj_n,
+         envir = .GlobalEnv)
+
   assign(paste("sim", "smc", "pref", i, sep = "_"),
          sim_smc_pref_n,
          envir = .GlobalEnv)
