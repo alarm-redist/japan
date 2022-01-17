@@ -6,8 +6,20 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+
+pref_code <- 34
+pref_name <- "hiroshima"
 ```
 
+```{r load data, include=FALSE}
+load(paste("data-out/pref/",
+            as.character(pref_code),
+            "_",
+            as.character(pref_name),
+            "_data",
+            ".Rdata",
+            sep = ""))
+```
 
 ## 基礎データ
 ```{r status quo, include = FALSE}
@@ -30,15 +42,14 @@ colnames(sq_data) <- c("")
 knitr::kable(sq_data)
 ```
 
-
-## 区割り案作成時の設定
-* 各選挙区の人口が、一票の格差が0となる理論上の選挙区人口の**±0.10**倍以内に収まるように区割り案を作成した。
-* 市区町村を分割しない案、人口が最大の市区町村を分割する案それぞれ25000案を作成した。
-* 飛び地が生じた案を棄却することにより、市区町村を分割しない案に関しては`r length(functioning_results_0$index) `の有効な案、人口が最大の市区町村を分割する案に関しては`r length(functioning_results_1$index) `の有効な案を得た。
+## アルゴリズム設定
+* 各選挙区の人口を、一票の格差が1となる理論上の選挙区人口の**±0.10**倍以内に設定
+* 市区町村を分割しない案、人口が最大の市区町村を分割する案それぞれ25000案を作成
+* 飛び地が生じた案を棄却した結果得た区割り案の数は、市区町村を分割しない案に関しては`r length(functioning_results_0$index) `、人口が最大の市区町村を分割する案に関しては`r length(functioning_results_1$index) `
 
 ### 県特有の設定
-* 飛び地が生じるのを防ぐために、安芸郡と広島市安芸区が異なる選挙区に属するような区割り改訂案は棄却した。
-* 同様に、飛び地が生じるのを防ぐために、竹原市及び呉市が東広島市と異なる選挙区に属するような区割り改訂案は棄却した。
+* 飛び地が生じるのを防ぐために、安芸郡と広島市安芸区が異なる選挙区に属するような案は棄却
+* 飛び地が生じるのを防ぐために、竹原市及び呉市が東広島市と異なる選挙区に属するような案は棄却
 
 ## 市区町村を分割しない案 : 最適解
 一票の格差:`r round(results_0[optimal_0,]$max_to_min, digits = 3) `
@@ -46,9 +57,10 @@ knitr::kable(sq_data)
 ```{r optimal plan (0 split), echo = FALSE}
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
+  scale_fill_manual(values = c("firebrick4", "lightgoldenrod4", "darkorchid4", 
+                               "green4", "blue4", "lightcyan3")) +
+  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.title = element_blank(), legend.position = "None")
@@ -56,13 +68,15 @@ ggplot() +
 
 ## 最大市区町村の分割を許容する案 : 最適解
 人口が最大の市区町村：福山市
+
 一票の格差：`r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split), echo = FALSE}
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = c("orange", "green", "blue", "yellow", "brown", "purple")) +
-  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
+  scale_fill_manual(values = c("firebrick4", "lightgoldenrod4", "darkorchid4", 
+                               "green4", "blue4", "lightcyan3")) +
+  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -70,7 +84,9 @@ ggplot() +
 ```
 
 # 共起分析
-市区町村分割を許容しない設定で得た区割り改訂案の中で、飛び地がないもののうち、一票の格差が下位10%の案の共起分析を行った。同じ色の市区町村は同じ選挙区に属する傾向が高く、また、同じ色の中でも、濃い色の市区町村の方がその傾向が強い。
+* 市区町村分割を許容しない設定で得た区割り改訂案の中で、飛び地がないもののうち、一票の格差が下位10%の案を抽出
+* 同じ色の市区町村同士は同じ選挙区に属する傾向が大きい
+* 同じ色の市区町村の中でも、濃い色の市区町村の方が、同じ選挙区に属する傾向が大きい
 
 ```{r co-occurrence, echo = FALSE}
 # Match membership data with map object
@@ -85,28 +101,29 @@ pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "skyblue", high = "blue") +
+  scale_fill_gradient(low = "firebrick1", high = "firebrick4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "purple", high = "purple4") +
+  scale_fill_gradient(low = "lightgoldenrod1", high = "lightgoldenrod4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "brown1", high = "brown4") +
+  scale_fill_gradient(low = "darkorchid1", high = "darkorchid4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low="yellow", high="yellow3") +
+  scale_fill_gradient(low = "blue1", high = "blue4") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "lightsalmon", high = "orange") +
+  scale_fill_gradient(low = "lightcyan1", high= "lightcyan3") +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = "palegreen", high="green") +
+  scale_fill_gradient(low="green1", high="green4") +
 
+  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
 
   labs(caption = "太線:郡の境界") +
@@ -114,4 +131,3 @@ ggplot() +
   theme(legend.title = element_blank(), legend.position = "None")
 ```
 
-一票の格差が低い区割り案では、県北部の市区町村が同じ選挙区に属する傾向が高かった。このほか、広島市安佐北区と安佐南区、世羅町・尾道市・三原市・竹原市の４市町などが同じ選挙区に属する傾向が高かった。
