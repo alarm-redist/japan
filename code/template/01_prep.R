@@ -32,8 +32,8 @@ pref_name <- ""
 lakes_removed <- c()
 ndists_new <- 0
 ndists_old <- 0
-sq_max_min <- 1
-sq_max_min_vs_tottori2 <- 1
+sq_max_to_min <- 1
+sq_max_to_tottori2 <- 1
 sq_mun_splits <- 0
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
