@@ -4,8 +4,9 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
+library(gt)
 
 pref_code <- 34
 pref_name <- "hiroshima"
@@ -21,25 +22,74 @@ load(paste("data-out/pref/",
             sep = ""))
 ```
 
-## 基礎データ
-```{r status quo, include = FALSE}
-sq_data <- c("7→6", "1.612", "1.724", "1.693", "1.738", 
-             "4(江田島市、尾道市、東広島市、三原市)",
-             "なし")
-sq_data <- as.data.frame(sq_data)
-
-row.names(sq_data) <- c("小選挙区の定数の増減", 
-                        "都道府県内の一票の格差 (2015)",
-                        "都道府県内の一票の格差 (2020)", 
-                        "対鳥取２区の一票の格差 (2015)",
-                        "対鳥取２区の一票の格差 (2020)", 
-                        "現行の区割りで分割されている市区町村",
-                        "現行の区割りで分割されている郡")
-colnames(sq_data) <- c("")
+```{r supplemental for now}
+# to be removed once we use updated .r scripts
+sq_max_to_min <- 	1.724
+sq_max_to_tottori2 <- 1.738
+sq_mun_splits <- 4
+sq_gun_splits <- 0
+sq_koiki_splits <- 3
 ```
 
-```{r knit table, echo = FALSE}
-knitr::kable(sq_data)
+
+## 基礎データ
+```{r status quo}
+# data from the committee's document
+## 2020 Census
+pop_2020 <- "2,749,551"
+pop_dist_2020 <- "392,793" # as character with "1,000,000"
+dist_largest_2020 <- "2区(476,612人)" #example: "2区(476,612人)"
+dist_smallest_2020 <- "5区(276,528人)" #example: "5区(276,528人)"
+## 2015 Census
+pop_2015 <- "2,809,136" # as character with ""
+pop_dist_2015 <- "401,305" # as character with ""
+max_to_min_2015 <- 1.612
+max_to_tottori2_2015 <- 1.693
+dist_largest_2015 <- "2区(480,052人)"
+dist_smallest_2015 <- "5区(297,88人)"
+## Splits
+sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" #example: "江田島市、尾道市、東広島市、三原市"
+sq_gun_splits_name <- ""
+sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
+
+table_about_pref <- dplyr::tribble(
+  ~category, ~ r2_basic_info, ~r2_additional_info, ~h27_basic_info, ~h27_additional_info,
+  "人口", pop_2020, "", pop_2015, "",
+  "議員定数", as.character(ndists_old), paste("変更予定 : ", ndists_new-ndists_old, " (",ndists_old ," → ", ndists_new, ")", sep=""), "", "",
+  "議員一人当たりの人口", pop_dist_2020, "", pop_dist_2015, "",
+  "県内較差", as.character(sq_max_to_min), paste(dist_largest_2020, " / ",as.character(dist_smallest_2020), sep = ""),as.character(max_to_min_2015), paste(dist_largest_2015, " / ", dist_smallest_2015, sep = ""),
+  "全国較差", as.character(sq_max_to_tottori2), "", as.character(max_to_tottori2_2015), "",
+  "市区町村", as.character(sq_mun_splits), sq_mun_splits_name, "", "",
+  "郡", as.character(sq_gun_splits), sq_gun_splits_name, "", "",
+  "広域連携", as.character(sq_koiki_splits), sq_koiki_splits_name, "", ""
+  ) 
+
+table_about_pref %>% 
+  gt(rowname_col = "category") %>% 
+  tab_row_group(
+    label = "基本情報",
+    rows = 1:3
+    ) %>%
+  tab_row_group(
+    label = "1票の格差",
+    rows = 4:5
+  ) %>% 
+  tab_row_group(
+    label = "自治体の分割",
+    rows = 6:8
+  ) %>% 
+  row_group_order(
+      groups = c("基本情報", "1票の格差", "自治体の分割")
+    ) %>% 
+  tab_spanner(
+    label = 
+  )
+  tab_source_note(source_note = "出典: 衆議院議員選挙区画定審議会") %>% 
+  tab_footnote(
+    footnote = "対鳥取2区（2020: 274,160人、2015: 283,502人）。",
+    locations = gt::cells_body(columns = c(r2_basic_info, h27_basic_info) , rows = 5)
+  ) 
+
 ```
 
 ## アルゴリズム設定
