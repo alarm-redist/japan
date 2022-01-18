@@ -56,40 +56,35 @@ table_about_pref <- dplyr::tribble(
   ~category, ~ r2_basic_info, ~r2_additional_info, ~h27_basic_info, ~h27_additional_info,
   "人口", pop_2020, "", pop_2015, "",
   "議員定数", as.character(ndists_old), paste("変更予定 : ", ndists_new-ndists_old, " (",ndists_old ," → ", ndists_new, ")", sep=""), "", "",
-  "議員一人当たりの人口", pop_dist_2020, "", pop_dist_2015, "",
+  "人口 / 議員定数", pop_dist_2020, "", pop_dist_2015, "",
   "県内較差", as.character(sq_max_to_min), paste(dist_largest_2020, " / ",as.character(dist_smallest_2020), sep = ""),as.character(max_to_min_2015), paste(dist_largest_2015, " / ", dist_smallest_2015, sep = ""),
-  "全国較差", as.character(sq_max_to_tottori2), "", as.character(max_to_tottori2_2015), "",
-  "市区町村", as.character(sq_mun_splits), sq_mun_splits_name, "", "",
-  "郡", as.character(sq_gun_splits), sq_gun_splits_name, "", "",
-  "広域連携", as.character(sq_koiki_splits), sq_koiki_splits_name, "", ""
+  "全国較差", as.character(sq_max_to_tottori2), "対鳥取2区(274,160人)", as.character(max_to_tottori2_2015), "対鳥取2区(283,502人)",
+  "市区町村の分割", as.character(sq_mun_splits), sq_mun_splits_name, "", "",
+  "郡の分割", as.character(sq_gun_splits), sq_gun_splits_name, "", "",
+  "広域連携の分割", as.character(sq_koiki_splits), sq_koiki_splits_name, "", ""
   ) 
 
 table_about_pref %>% 
   gt(rowname_col = "category") %>% 
-  tab_row_group(
-    label = "基本情報",
-    rows = 1:3
-    ) %>%
-  tab_row_group(
-    label = "1票の格差",
-    rows = 4:5
-  ) %>% 
-  tab_row_group(
-    label = "自治体の分割",
-    rows = 6:8
-  ) %>% 
-  row_group_order(
-      groups = c("基本情報", "1票の格差", "自治体の分割")
-    ) %>% 
   tab_spanner(
-    label = 
-  )
-  tab_source_note(source_note = "出典: 衆議院議員選挙区画定審議会") %>% 
-  tab_footnote(
-    footnote = "対鳥取2区（2020: 274,160人、2015: 283,502人）。",
-    locations = gt::cells_body(columns = c(r2_basic_info, h27_basic_info) , rows = 5)
-  ) 
-
+    label = "2020年",
+    columns = c(r2_basic_info, r2_additional_info)
+  ) %>% 
+  tab_spanner(
+    label = "参考：2015年",
+    columns = c(h27_basic_info, h27_additional_info)
+  ) %>% 
+  cols_label(
+    r2_basic_info = "",
+    r2_additional_info = "",
+    h27_basic_info = "",
+    h27_additional_info = ""
+  ) %>% 
+  cols_align(
+    align = "center",
+    columns = c(2,4)
+  ) %>% 
+  tab_source_note(source_note = "出典: 衆議院議員選挙区画定審議会")
 ```
 
 ## アルゴリズム設定
