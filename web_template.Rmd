@@ -32,7 +32,7 @@ sq_koiki_splits <- 3
 ```
 
 
-## 基礎データ
+# 基礎データ
 ```{r status quo}
 # data from the committee's document
 ## 2020 Census
@@ -74,6 +74,10 @@ table_about_pref %>%
     label = "参考：2015年",
     columns = c(h27_basic_info, h27_additional_info)
   ) %>% 
+  tab_row_group(
+    label = "1票の格差",
+    rows = 4:5
+  ) %>% 
   cols_label(
     r2_basic_info = "",
     r2_additional_info = "",
@@ -87,14 +91,16 @@ table_about_pref %>%
   tab_source_note(source_note = "出典: 衆議院議員選挙区画定審議会")
 ```
 
-## アルゴリズム設定
+# アルゴリズム設定
 * 各選挙区の人口を、一票の格差が1となる理論上の選挙区人口の**±0.10**倍以内に設定
 * 市区町村を分割しない案、人口が最大の市区町村を分割する案それぞれ25000案を作成
 * 飛び地が生じた案を棄却した結果得た区割り案の数は、市区町村を分割しない案に関しては`r length(functioning_results_0$index) `、人口が最大の市区町村を分割する案に関しては`r length(functioning_results_1$index) `
 
-### 県特有の設定
+## 県特有の設定
 * 飛び地が生じるのを防ぐために、安芸郡と広島市安芸区が異なる選挙区に属するような案は棄却
 * 飛び地が生じるのを防ぐために、竹原市及び呉市が東広島市と異なる選挙区に属するような案は棄却
+
+# アルゴリズムが導出した改変案
 
 ## 市区町村を分割しない案 : 最適解
 一票の格差:`r round(results_0[optimal_0,]$max_to_min, digits = 3) `
@@ -176,3 +182,45 @@ ggplot() +
   theme(legend.title = element_blank(), legend.position = "None")
 ```
 
+## まとめ
+```{r}
+# summary table
+table_summary <- dplyr::tribble(
+  ~category, ~status_quo, ~split_0, ~split_1,
+  "議員定数", ndists_old, ndists_new, ndists_new,
+  "県内較差", sq_max_to_min, results_0$max_to_min[optimal_0], results_1$max_to_min[optimal_1],
+  "全国較差", sq_max_to_tottori2,NA, NA,
+  "市区町村の分割", sq_mun_splits, 0, results_1$num_mun_split[optimal_1],
+  "郡の分割", sq_gun_splits, results_0$num_gun_split[optimal_0], results_1$num_gun_split[optimal_1],
+  "広域連携の分割", sq_koiki_splits, results_0$koiki_split[optimal_0], results_1$koiki_split[optimal_1]
+) 
+
+table_summary %>% 
+  gt(rowname_col = "category") %>% 
+  fmt_number(
+    columns = everything(),
+    rows = 2:3,
+    decimals = 3
+  ) %>% 
+  tab_row_group(
+    label = "1票の格差",
+    rows = 2:3
+  ) %>% 
+  tab_spanner(
+    label = "現行の区割り",
+    columns = status_quo
+  ) %>% 
+  tab_spanner(
+    label = "アルゴリズムが導出した区割り案",
+    columns = c(split_0, split_1)
+  ) %>% 
+  cols_label(
+    status_quo = "",
+    split_0 = "市区町村の分割無し",
+    split_1 = "最大市区町村の分割を許容"
+  ) %>% 
+  cols_align(
+    align = "center",
+    columns = 2:4
+  ) 
+```
