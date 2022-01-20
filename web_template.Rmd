@@ -100,7 +100,7 @@ table_summary %>%
     split_1 ~ pct(25),
   ) %>% 
   tab_header(
-    title = md(paste("**", pref_name_kanji, "**衆議院小選挙区", sep = "")),
+    title = md(paste("**", pref_name_kanji, "**", sep = "")),
     subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
   ) %>% 
   tab_footnote(
@@ -124,7 +124,7 @@ table_summary %>%
       rows = 6
     ) 
   ) %>% 
-  opt_footnote_marks(marks = "letters")
+  opt_footnote_marks(marks = "extended")
 ```
 
 
@@ -133,7 +133,7 @@ table_summary %>%
 ### 市区町村を分割しない区割り案 : 最適解
 一票の格差:`r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
-```{r optimal plan (0 split), echo = FALSE}
+```{r optimal plan (0 split)}
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
@@ -150,7 +150,7 @@ ggplot() +
 
 一票の格差：`r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
-```{r optimal plan (1split), echo = FALSE}
+```{r optimal plan (1split)}
 ggplot() +
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
   scale_fill_manual(values = PAL) +
@@ -166,7 +166,7 @@ ggplot() +
 * 同じ色の市区町村同士は同じ選挙区に属する傾向が大きい
 * 同じ色の市区町村の中でも、濃い色の市区町村の方が、同じ選挙区に属する傾向が大きい
 
-```{r co-occurrence, echo = FALSE}
+```{r co-occurrence}
 # Match membership data with map object
 pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
 pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
