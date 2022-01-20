@@ -1,5 +1,5 @@
 ---
-title: "広島県　衆議院議員選挙　小選挙区　区割り改訂案"
+title: "広島県　衆議院小選挙区　区割り改訂案"
 output: distill::distill_article
 ---
 
@@ -10,6 +10,7 @@ library(gt)
 
 pref_code <- 34
 pref_name <- "hiroshima"
+pref_name_kanji <- "広島県"
 ```
 
 ```{r load data, include=FALSE}
@@ -30,105 +31,22 @@ sq_mun_splits <- 4
 sq_gun_splits <- 0
 sq_koiki_splits <- 3
 tottori_2 <- 274160
-```
 
-
-```{r status quo}
-# data from the committee's document
-## 2020 Census
-pop_2020 <- "2,749,551"
-pop_dist_2020 <- "392,793" # as character with "1,000,000"
-dist_largest_2020 <- "2区(476,612人)" #example: "2区(476,612人)"
-dist_smallest_2020 <- "5区(276,528人)" #example: "5区(276,528人)"
-
-## 2015 Census
-pop_2015 <- "2,809,136" # as character with ""
-pop_dist_2015 <- "401,305" # as character with ""
-max_to_min_2015 <- 1.612
-max_to_tottori2_2015 <- 1.693
-dist_largest_2015 <- "2区(480,052人)"
-dist_smallest_2015 <- "5区(297,88人)"
-
-## Splits
 sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-
-table_about_pref <- dplyr::tribble(
-  ~category, ~ r2_basic_info, ~r2_additional_info, ~h27_basic_info, 
-  ~h27_additional_info,"人口", pop_2020, "", pop_2015, "",
-  
-  "議員定数", 
-  as.character(ndists_old), 
-  paste("変更予定 : ", ndists_new-ndists_old, 
-        " (",ndists_old ," → ", ndists_new, ")", sep=""), "", "",
-  
-  "人口 / 議員定数", 
-  pop_dist_2020, "", 
-  pop_dist_2015, "",
-  
-  "県内較差", 
-  as.character(sq_max_to_min), 
-  paste(dist_largest_2020, " /",
-        dist_smallest_2020, sep = ""), 
-  as.character(max_to_min_2015), 
-  paste(dist_largest_2015, " / ", 
-        dist_smallest_2015, sep = ""),
-  
-  "全国較差", 
-  as.character(sq_max_to_tottori2),  "対鳥取2区(274,160人)", 
-  as.character(max_to_tottori2_2015), "対鳥取2区(283,502人)",
-  
-  "市区町村の分割", 
-  as.character(sq_mun_splits),  sq_mun_splits_name, "", "",
-  
-  "郡の分割", 
-  as.character(sq_gun_splits), sq_gun_splits_name, "", "",
-  
-  "広域連携地域の分割", 
-  as.character(sq_koiki_splits), sq_koiki_splits_name, "", ""
-  ) 
-
-table_about_pref %>% 
-  gt(rowname_col = "category") %>% 
-  tab_spanner(
-    label = "2020年",
-    columns = c(r2_basic_info, r2_additional_info)
-  ) %>% 
-  tab_spanner(
-    label = "参考：2015年",
-    columns = c(h27_basic_info, h27_additional_info)
-  ) %>% 
-  tab_row_group(
-    label = "1票の格差",
-    rows = 4:5
-  ) %>% 
-  cols_label(
-    r2_basic_info = "",
-    r2_additional_info = "",
-    h27_basic_info = "",
-    h27_additional_info = ""
-  ) %>% 
-  cols_align(
-    align = "center",
-    columns = c(2,4)
-  ) %>% 
-  cols_width(
-    category ~ pct(20),
-    r2_additional_info ~ pct(20),
-    h27_additional_info ~ pct(20)
-  ) %>%
-  tab_source_note(source_note = "出典: 衆議院議員選挙区画定審議会") 
+split_1_name <- "福山市"
 ```
 
 
-```{r}
+```{r table summary}
+
 # summary table
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~split_0, ~split_1,
-  "議員定数", ndists_old, ndists_new, ndists_new,
   "県内較差", sq_max_to_min, results_0$max_to_min[optimal_0], results_1$max_to_min[optimal_1],
-  "全国較差", sq_max_to_tottori2, max_0/tottori_2, max_1/tottori_2,
+  "改善率", NA, 1-results_0$max_to_min[optimal_0]/sq_max_to_min, 1-results_1$max_to_min[optimal_1]/sq_max_to_min,
+  "選挙区数", ndists_old, ndists_new, ndists_new,
   "市区町村の分割", sq_mun_splits, 0, results_1$num_mun_split[optimal_1],
   "郡の分割", sq_gun_splits, results_0$num_gun_split[optimal_0], results_1$num_gun_split[optimal_1],
   "広域連携の分割", sq_koiki_splits, results_0$koiki_split[optimal_0], results_1$koiki_split[optimal_1]
@@ -138,30 +56,75 @@ table_summary %>%
   gt(rowname_col = "category") %>% 
   fmt_number(
     columns = everything(),
-    rows = 2:3,
+    rows = 1,
     decimals = 3
   ) %>% 
+  fmt_percent(
+    columns = everything(),
+    rows = 2,
+    decimals = 1
+  ) %>% 
+  fmt_missing(
+    columns = 2,
+    rows = 2,
+    missing_text = "-"
+  ) %>% 
   tab_row_group(
-    label = "1票の格差",
-    rows = 2:3
+    label = md("**選挙区の状況**"),
+    rows = 3:6
+  ) %>%   
+  tab_row_group(
+    label = md("**1票の格差**"),
+    rows = 1:2
   ) %>% 
   tab_spanner(
-    label = "現行の区割り",
+    label = "現行",
     columns = status_quo
   ) %>% 
   tab_spanner(
-    label = "アルゴリズムが導出した区割り案",
+    label = "アルゴリズムによる提案",
     columns = c(split_0, split_1)
   ) %>% 
   cols_label(
     status_quo = "",
     split_0 = "市区町村の分割無し",
-    split_1 = "最大市区町村の分割を許容"
+    split_1 = "最大市区町村の分割可"
   ) %>% 
   cols_align(
     align = "center",
     columns = 2:4
-  ) 
+  ) %>% 
+  cols_width(
+    status_quo ~ pct(25),
+    split_0 ~ pct(25),
+    split_1 ~ pct(25),
+  ) %>% 
+  tab_header(
+    title = md(paste("**", pref_name_kanji, "**衆議院小選挙区", sep = "")),
+    subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
+  ) %>% 
+  tab_footnote(
+    footnote = sq_mun_splits_name,
+    locations = cells_body(
+      columns = 2,
+      rows = 4
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = split_1_name,
+    locations = cells_body(
+      columns = 4,
+      rows = 4
+    ) 
+  ) %>% 
+ tab_footnote(
+    footnote = sq_koiki_splits_name,
+    locations = cells_body(
+      columns = 2:4,
+      rows = 6
+    ) 
+  ) %>% 
+  opt_footnote_marks(marks = "letters")
 ```
 
 
