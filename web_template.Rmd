@@ -1,5 +1,7 @@
 ---
-title: "広島県　衆議院小選挙区　区割り改訂案"
+title: "広島県 (議員定数：7 → 6)"
+description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
+date: January 22, 2022 
 output: distill::distill_article
 ---
 
@@ -124,14 +126,36 @@ table_summary %>%
       rows = 6
     ) 
   ) %>% 
-  opt_footnote_marks(marks = "extended")
+  opt_footnote_marks(marks = "extended") %>% 
+  tab_style(
+    style = list(
+      #cell_fill(color = "lightcyan"),
+      cell_text(weight = "bold")
+      ),
+    locations = cells_body(
+      columns = 2:4,
+      rows = 1
+    )
+#  ) %>% 
+#  tab_style(
+#    style = list(
+#      cell_fill(color = "#D4DCE2")
+#    ),
+#    locations = cells_title(groups = "title")
+#  ) %>% 
+#  tab_style(
+#    style = list(
+#      cell_fill(color = "#EAEAEA")
+#    ),
+#    locations = cells_title(groups = "subtitle")
+  ) 
 ```
 
 
 # アルゴリズムが導出した最適解
 
 ### 市区町村を分割しない区割り案 : 最適解
-一票の格差:`r round(results_0[optimal_0,]$max_to_min, digits = 3) `
+一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -146,9 +170,9 @@ ggplot() +
 ```
 
 ### 最大市区町村の分割を許容する区割り案 : 最適解
-人口が最大の市区町村：福山市
+人口が最大の市区町村 : 福山市
 
-一票の格差：`r round(results_1[optimal_1,]$max_to_min, digits = 3) `
+一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
 ggplot() +
@@ -162,9 +186,9 @@ ggplot() +
 ```
 
 # 共起分析
-* 市区町村分割を許容しない設定で得た区割り案の中で、飛び地がないもののうち、一票の格差が下位10%の案を抽出
-* 同じ色の市区町村同士は同じ選挙区に属する傾向が大きい
-* 同じ色の市区町村の中でも、濃い色の市区町村の方が、同じ選挙区に属する傾向が大きい
+* 市区町村分割のない設定で有効な案の中のうち一票の格差が下位10%の案を抽出
+* 同色の市区町村は、同じ選挙区に属する傾向が大きい
+* 同色の市区町村のうち色の濃い組み合わせの方が、同じ選挙区に属する傾向が大きい
 
 ```{r co-occurrence}
 # Match membership data with map object
@@ -210,15 +234,17 @@ ggplot() +
   theme(legend.title = element_blank(), legend.position = "None")
 ```
 
-# アルゴリズム設定・最適解の導出方法
-* 各選挙区の人口: (県内の総人口/選挙区数)*±0.10
-* 導出する区割り案の数： 25000
-* 飛び地が生じた案を棄却した結果得られる有効な区割り案の数:
-    + 市区町村を分割しない案: `r length(functioning_results_0$index)`
-    + 人口が最大の市区町村を分割する案:`r length(functioning_results_1$index) `
-* 有効な区割り案の内一票の格差が最小の案を抽出
+# アルゴリズム設定・最適解の導出方法  
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
 
-### 県特有の設定
-飛び地が生じる案を防ぐため、以下の案は棄却
-* 安芸郡と広島市安芸区が異なる選挙区に属する案
-* 竹原市及び呉市が、東広島市と異なる選挙区に属する案
+* アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
+* 有効な区割り案（飛び地を生じさせない）の数 : 
+    + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
+    + 人口最大の市区町村の分割を許容 : `r format(length(functioning_results_1$index), big.mark = ",",  scientific = FALSE)`  
+* 有効な案から一票の格差が最小の区割り案を選定
+
+### 県特有の設定  
+飛び地を防ぐため、以下の案は棄却される   
+
+* 安芸郡と広島市安芸区が異なる選挙区に属する案  
+* 竹原市及び呉市が、東広島市と異なる選挙区に属する案  
