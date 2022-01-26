@@ -7,6 +7,7 @@ output: distill::distill_article
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+options(width = 100)
 library(tidyverse)
 library(gt)
 
@@ -46,7 +47,7 @@ split_1_name <- "福山市"
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~split_0, ~split_1,
   "県内較差", sq_max_to_min, results_0$max_to_min[optimal_0], results_1$max_to_min[optimal_1],
-  "改善率", NA, 1-results_0$max_to_min[optimal_0]/sq_max_to_min, 1-results_1$max_to_min[optimal_1]/sq_max_to_min,
+  "改善率", NA, (sq_max_to_min - results_0$max_to_min[optimal_0])/(sq_max_to_min - 1), (sq_max_to_min - results_1$max_to_min[optimal_1])/(sq_max_to_min - 1),
   "選挙区数", ndists_old, ndists_new, ndists_new,
   "市区町村の分割", sq_mun_splits, 0, results_1$num_mun_split[optimal_1],
   "郡の分割", sq_gun_splits, results_0$num_gun_split[optimal_0], results_1$num_gun_split[optimal_1],
@@ -83,7 +84,7 @@ table_summary %>%
     columns = status_quo
   ) %>% 
   tab_spanner(
-    label = "アルゴリズム提案の最適解",
+    label = "アルゴリズムの提案",
     columns = c(split_0, split_1)
   ) %>% 
   cols_label(
@@ -125,28 +126,15 @@ table_summary %>%
       rows = 6
     ) 
   ) %>% 
-  opt_footnote_marks(marks = "extended") %>% 
+  opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
-      #cell_fill(color = "lightcyan"),
       cell_text(weight = "bold")
       ),
     locations = cells_body(
       columns = 2:4,
       rows = 1
-    )
-#  ) %>% 
-#  tab_style(
-#    style = list(
-#      cell_fill(color = "#D4DCE2")
-#    ),
-#    locations = cells_title(groups = "title")
-#  ) %>% 
-#  tab_style(
-#    style = list(
-#      cell_fill(color = "#EAEAEA")
-#    ),
-#    locations = cells_title(groups = "subtitle")
+    ) 
   ) 
 ```
 
