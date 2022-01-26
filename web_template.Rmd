@@ -42,7 +42,6 @@ split_1_name <- "福山市"
 
 
 ```{r table summary}
-
 # summary table
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~split_0, ~split_1,
@@ -152,9 +151,10 @@ table_summary %>%
 ```
 
 
-# アルゴリズムが導出した最適解
+# アルゴリズムの提案
+アルゴリズムが提案した25000案のうち、有効な案の中で、一票の格差が最小のもの
 
-### 市区町村を分割しない区割り案 : 最適解
+### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
@@ -169,7 +169,7 @@ ggplot() +
   theme(legend.title = element_blank(), legend.position = "None")
 ```
 
-### 最大市区町村の分割を許容する区割り案 : 最適解
+### 最大市区町村の分割を許容する区割り案 
 人口が最大の市区町村 : 福山市
 
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
@@ -186,7 +186,7 @@ ggplot() +
 ```
 
 # 共起分析
-* 市区町村分割のない設定で有効な案の中のうち一票の格差が下位10%の案を抽出
+* 市区町村分割のない設定で、飛び地のない有効な案の中のうち、一票の格差が下位10%の案を抽出
 * 同色の市区町村は、同じ選挙区に属する傾向が大きい
 * 同色の市区町村同士の中でも、濃い色の市区町村の方が、隣接する市区町村と同じ選挙区に属する傾向が大きい
 
@@ -234,9 +234,9 @@ ggplot() +
   theme(legend.title = element_blank(), legend.position = "None")
 ```
 
-# アルゴリズム設定・最適解の導出方法  
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
+# アルゴリズム設定
 
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : 
     + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
@@ -244,7 +244,7 @@ ggplot() +
 * 有効な案から一票の格差が最小の区割り案を選定
 
 ### 県特有の設定  
-飛び地を防ぐため、以下の案は棄却される   
+飛び地を防ぐため、以下の案は棄却: 
 
 * 安芸郡と広島市安芸区が異なる選挙区に属する案  
 * 竹原市及び呉市が、東広島市と異なる選挙区に属する案  
