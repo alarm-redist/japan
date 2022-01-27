@@ -16,6 +16,23 @@ pref_name <- "hiroshima"
 pref_name_kanji <- "広島県"
 ```
 
+```{r large cities, include = FALSE}
+## Find the coordinates of the 県庁, 
+## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
+## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
+cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
+                     latitude = c(34.396516, 34.485497, 34.248116))
+cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
+                       crs = 4326)
+
+# Adjust coordinates for the labels so that the labels do not overlap with other graphic
+cities_labels <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
+                            latitude = c(34.45, 34.5, 34.3),
+                            names = c("広島市", "福山市", "呉市"))
+cities_labels <- sf::st_as_sf(cities_labels, coords = c("longitude", "latitude"), 
+                              crs = 4326)
+```
+
 ```{r load data, include=FALSE}
 load(paste("data-out/pref/",
             as.character(pref_code),
@@ -152,9 +169,12 @@ ggplot() +
   scale_fill_manual(values = PAL) +
   geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
+               size = 3, family = "HiraKakuPro-W3") +
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.title = element_blank(), legend.position = "None")
+  theme(legend.title = element_blank(), legend.position = "None") 
 ```
 
 ### 最大市区町村の分割を許容する区割り案 
@@ -168,6 +188,9 @@ ggplot() +
   scale_fill_manual(values = PAL) +
   geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
+               size = 3, family = "HiraKakuPro-W3") +
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.title = element_blank(), legend.position = "None")
@@ -216,6 +239,10 @@ ggplot() +
 
   geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
   geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  
+  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
+               size = 3, family = "HiraKakuPro-W3") +
 
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
