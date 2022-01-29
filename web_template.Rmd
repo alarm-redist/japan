@@ -24,7 +24,7 @@ cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010),
                      latitude = c(34.396516, 34.485497, 34.248116),
                      names = c("広島市", "福山市", "呉市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
-                       crs = 4326)
+                       crs = 4612)
 ```
 
 ```{r load data, include=FALSE}
@@ -272,15 +272,15 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey0")) +
   
   # Large cities
+  ggnewscale::new_scale_fill() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
                nudge_x = c(0, 0, 2000), # adjust the position of the labels
                nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
                family = "HiraginoSans-W3") +
 
-  labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.title = element_blank(), legend.position = "None")
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 # アルゴリズム設定
