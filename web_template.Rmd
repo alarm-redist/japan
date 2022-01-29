@@ -273,8 +273,10 @@ ggplot() +
   
   # Large cities
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
-               size = 3, family = "HiraKakuPro-W3") +
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
+               nudge_x = c(0, 0, 2000), # adjust the position of the labels
+               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
+               family = "HiraginoSans-W3") +
 
   labs(caption = "太線:郡の境界") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
