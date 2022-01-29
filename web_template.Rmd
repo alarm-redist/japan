@@ -21,16 +21,10 @@ pref_name_kanji <- "広島県"
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
 cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116))
+                     latitude = c(34.396516, 34.485497, 34.248116),
+                     names = c("広島市", "福山市", "呉市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4326)
-
-# Adjust coordinates for the labels so that the labels do not overlap with other graphic
-cities_labels <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                            latitude = c(34.45, 34.5, 34.3),
-                            names = c("広島市", "福山市", "呉市"))
-cities_labels <- sf::st_as_sf(cities_labels, coords = c("longitude", "latitude"), 
-                              crs = 4326)
 ```
 
 ```{r load data, include=FALSE}
@@ -156,6 +150,30 @@ table_summary %>%
 ```
 
 
+```{r prepare boundary data, include = FALSE}
+# Combine municipality boundary data
+mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+mun$type <- "市区町村の境界"
+# Combine gun boundary data
+gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+gun$type <- "郡の境界"
+
+# Boundary for plot with 0 split
+boundary_0 <- rbind(mun, gun)
+
+# Boundary for split municipality
+old_boundary <- optimal_boundary_1 %>% 
+                  filter(code == split_code) %>%
+                  summarise(geometry = sf::st_combine(geometry))
+old_boundary$type <- "合併前の市町村の境界"
+
+# Match CRS
+old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
+
+# Boundary for plot with 1 split
+boundary_1 <- rbind(old_boundary, mun, gun)
+```
+
 # アルゴリズムの提案
 アルゴリズムが提案した25000案のうち、有効な案の中で、一票の格差が最小のもの
 
@@ -165,16 +183,21 @@ table_summary %>%
 ```{r optimal plan (0 split)}
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ggplot() +
-  geom_sf(data = optimal_boundary_0, aes(fill = factor(district))) +
-  scale_fill_manual(values = PAL) +
-  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = optimal_boundary_0, aes(fill = factor(district)), color = NA) +
+  scale_fill_manual(values = PAL, guide = "none") +
+  
+  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey0")) +
+  
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
-               size = 3, family = "HiraKakuPro-W3") +
-  labs(caption = "太線:郡の境界") +
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
+               nudge_x = c(0, 0, 2000), # adjust the position of the labels
+               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
+               family = "HiraginoSans-W3") +
+  
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.title = element_blank(), legend.position = "None") 
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 ### 最大市区町村の分割を許容する区割り案 
@@ -184,16 +207,22 @@ ggplot() +
 
 ```{r optimal plan (1split)}
 ggplot() +
-  geom_sf(data = optimal_boundary_1, aes(fill = factor(district))) +
-  scale_fill_manual(values = PAL) +
-  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  geom_sf(data = optimal_boundary_1, aes(fill = factor(district)), color = NA) +
+  scale_fill_manual(values = PAL, guide = "none") +
+  
+  geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("black", "grey60", "grey0")) +
+  scale_linetype_manual(values = c("dotted", "solid", "solid")) +
+  
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
-               size = 3, family = "HiraKakuPro-W3") +
-  labs(caption = "太線:郡の境界") +
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
+               nudge_x = c(0, 0, 2000), # adjust the position of the labels
+               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
+               family = "HiraginoSans-W3") +
+  
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.title = element_blank(), legend.position = "None")
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 # 共起分析
@@ -235,11 +264,14 @@ ggplot() +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
- scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
-
-  geom_sf(data = mun_boundary, fill = NA, color = "grey27", lwd = 0.4) +
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
+  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
   
+  # City boundaries
+  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey0")) +
+  
+  # Large cities
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_labels, aes(label = names), color = "white", 
                size = 3, family = "HiraKakuPro-W3") +
