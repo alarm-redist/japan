@@ -211,17 +211,27 @@ for (i in 1:length(pref_0$code))
     sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
 }
 
-# summary table
-table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~split_0, ~split_1,
-  "n_dist", ndists_old, ndists_new, ndists_new,
-  "max_to_min", sq_max_to_min, results_0$max_to_min[optimal_0], results_1$max_to_min[optimal_1],
-  "max_to_tottori2", sq_max_to_tottori2, NA, NA,
-  "mun_splits", sq_mun_splits, 0, results_1$num_mun_split[optimal_1],
-  "gun_splits", sq_gun_splits, results_0$num_gun_split[optimal_0], results_1$num_gun_split[optimal_1],
-  "koiki_splits", sq_koiki_splits, results_0$koiki_split[optimal_0], results_1$koiki_split[optimal_1]
-) %>%
-  gt::gt()
+# Combine municipality boundary data
+mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+mun$type <- "市区町村の境界"
+# Combine gun boundary data
+gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+gun$type <- "郡の境界"
+
+# Boundary for plot with 0 split
+boundary_0 <- rbind(mun, gun)
+
+# Boundary for split municipality
+old_boundary <- optimal_boundary_1 %>% 
+                  filter(code == split_code) %>%
+                  summarise(geometry = sf::st_combine(geometry))
+old_boundary$type <- "合併前の市町村の境界"
+
+# Match CRS
+old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
+
+# Boundary for plot with 1 split
+boundary_1 <- rbind(old_boundary, mun, gun)
 
 # Save files
 rm(pref_smc_plans_0,
