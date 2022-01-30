@@ -142,6 +142,7 @@ table_summary %>%
   ) 
 ```
 
+# 現行の区割り
 ```{r status quo plan}
 ggplot() +
   geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
