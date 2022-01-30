@@ -16,7 +16,7 @@ pref_name <- "hiroshima"
 pref_name_kanji <- "広島県"
 ```
 
-```{r large cities, include = FALSE}
+```{r Manual Entries, include = FALSE}
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
@@ -25,6 +25,15 @@ cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010),
                      names = c("広島市", "福山市", "呉市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
+
+## Information about splits
+sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
+sq_gun_splits_name <- ""
+sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
+split_1_name <- "福山市"
+
+## Color Palette
+PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
 ```
 
 ```{r load data, include=FALSE}
@@ -36,22 +45,6 @@ load(paste("data-out/pref/",
             ".Rdata",
             sep = ""))
 ```
-
-```{r supplemental for now}
-# to be removed once we use updated .r scripts
-sq_max_to_min <- 	1.724
-sq_max_to_tottori2 <- 1.738
-sq_mun_splits <- 4
-sq_gun_splits <- 0
-sq_koiki_splits <- 3
-tottori_2 <- 274160
-
-sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
-sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-split_1_name <- "福山市"
-```
-
 
 ```{r table summary}
 # summary table
@@ -149,41 +142,34 @@ table_summary %>%
   ) 
 ```
 
-
-```{r prepare boundary data, include = FALSE}
-# Combine municipality boundary data
-mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-mun$type <- "市区町村の境界"
-# Combine gun boundary data
-gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-gun$type <- "郡の境界"
-
-# Boundary for plot with 0 split
-boundary_0 <- rbind(mun, gun)
-
-# Boundary for split municipality
-old_boundary <- optimal_boundary_1 %>% 
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
-old_boundary$type <- "合併前の市町村の境界"
-
-# Match CRS
-old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
-
-# Boundary for plot with 1 split
-boundary_1 <- rbind(old_boundary, mun, gun)
+```{r status quo plan}
+ggplot() +
+  geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
+  scale_fill_manual(values = PAL, guide = "none") +
+  
+  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey0")) +
+  
+  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
+               nudge_x = c(0, 0, 2000), # adjust the position of the labels
+               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
+               family = "HiraginoSans-W3") +
+  
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 # アルゴリズムの提案
-アルゴリズムが提案した25000案のうち、有効な案の中で、一票の格差が最小のもの
+アルゴリズムが提案した`r format(nsims, big.mark = ",")`案のうち、有効な案の中で、一票の格差が最小のもの
 
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ggplot() +
-  geom_sf(data = optimal_boundary_0, aes(fill = factor(district)), color = NA) +
+  geom_sf(aes(fill = factor(district)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
@@ -226,10 +212,14 @@ ggplot() +
 ```
 
 # 共起分析
-* 市区町村分割のない設定で得た案のうち、飛び地のない案を抽出
-* その中で一票の格差が下位10%の案を抽出
-* 同色の市区町村は、同じ選挙区に属する傾向が大きい
-* 同色の市区町村同士の中でも、濃い色の市区町村の方が、隣接する市区町村と同じ選挙区に属する傾向が大きい
+* アルゴリズム設定
+  + 市区町村の分割無し
+  + 飛び地を含む案を棄却
+  + 一票の格差が下位10％の案を抽出
+* 読み取り方  
+地図上の市区町村の色が
+  + 同じ → 同じ選挙区に属する傾向が強い
+  + 同じ\&濃い → 隣接する市区町村と同じ選挙区に属する傾向が強い
 
 ```{r co-occurrence, warning = FALSE}
 # Match membership data with map object
