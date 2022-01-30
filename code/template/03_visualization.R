@@ -171,6 +171,28 @@ matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == o
 colnames(matrix_optimal_1) <- "district"
 optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
 
+# Combine municipality boundary data
+mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+mun$type <- "市区町村の境界"
+# Combine gun boundary data
+gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+gun$type <- "郡の境界"
+
+# Boundary for plot with 0 split
+boundary_0 <- rbind(mun, gun)
+
+# Boundary for split municipality
+old_boundary <- optimal_boundary_1 %>% 
+                  filter(code == split_code) %>%
+                  summarise(geometry = sf::st_combine(geometry))
+old_boundary$type <- "合併前の市町村の境界"
+
+# Match CRS
+old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
+
+# Boundary for plot with 1 split
+boundary_1 <- rbind(old_boundary, mun, gun)
+
 # Co-occurrence
 # Filter out plans with top 10% koiki-renkei areas
 good_num_0 <-  functioning_results_0 %>%
@@ -210,28 +232,6 @@ for (i in 1:length(pref_0$code))
                                                                                               which(prec_clusters_0 == prec_clusters_0[i]))])/
     sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
 }
-
-# Combine municipality boundary data
-mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-mun$type <- "市区町村の境界"
-# Combine gun boundary data
-gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-gun$type <- "郡の境界"
-
-# Boundary for plot with 0 split
-boundary_0 <- rbind(mun, gun)
-
-# Boundary for split municipality
-old_boundary <- optimal_boundary_1 %>% 
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
-old_boundary$type <- "合併前の市町村の境界"
-
-# Match CRS
-old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
-
-# Boundary for plot with 1 split
-boundary_1 <- rbind(old_boundary, mun, gun)
 
 # Save files
 rm(pref_smc_plans_0,
