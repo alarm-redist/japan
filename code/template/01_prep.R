@@ -55,3 +55,5 @@ census2020 <- clean_2020_census(pref_code)
 # Download data from old boundaries (pre-平成の大合併): Only for rural prefectures
 old_boundary <- download_old_shp(pref_code)
 
+# Make a status quo matched data
+sq_pref <- status_quo_match(pref_raw = pref_raw)
