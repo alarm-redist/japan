@@ -57,4 +57,6 @@ old_boundary <- download_old_shp(pref_code)
 
 # Make a status quo matched data
 sq_pref <- status_quo_match(pref_raw = pref_raw)
-sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612))
+sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
+    dplyr::group_by(ku) %>%
+    dplyr::summarise(geometry = sf::st_union(geometry))
