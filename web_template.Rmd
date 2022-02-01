@@ -142,7 +142,8 @@ table_summary %>%
   ) 
 ```
 
-# 現行の区割り
+# 現行の区割り  
+
 ```{r status quo plan}
 ggplot() +
   geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
@@ -220,7 +221,7 @@ ggplot() +
 * 読み取り方  
 地図上の市区町村の色が
   + 同じ → 同じ選挙区に属する傾向が強い
-  + 同じ\&濃い → 隣接する市区町村と同じ選挙区に属する傾向が強い
+  + 同じ かつ 濃い → 隣接する市区町村と同じ選挙区に属する傾向が強い
 
 ```{r co-occurrence, warning = FALSE}
 # Match membership data with map object
