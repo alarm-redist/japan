@@ -37,13 +37,13 @@ PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25
 ```
 
 ```{r load data, include=FALSE}
-load(paste("data-out/pref/",
+load(here::here(paste("data-out/pref/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
             "_data",
             ".Rdata",
-            sep = ""))
+            sep = "")))
 ```
 
 ```{r table summary}
