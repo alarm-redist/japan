@@ -65,7 +65,7 @@ ifelse(is.null(lakes_removed),
        pref <- remove_lake(pref, lakes_removed))
 
 # create sf_data frame
-sq_pref <- status_quo_match(pref_cleaned)
+sq_pref <- status_quo_match(pref_cleaned, pref_code)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
     dplyr::group_by(ku) %>%
     dplyr::summarise(geometry = sf::st_union(geometry))
