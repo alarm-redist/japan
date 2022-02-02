@@ -60,3 +60,7 @@ sq_pref <- status_quo_match(pref_raw = pref_raw)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
     dplyr::group_by(ku) %>%
     dplyr::summarise(geometry = sf::st_union(geometry))
+# remove lake if needed
+ifelse(is.null(lakes_removed),
+       sq_pref <- sq_pref,
+       sq_pref <- remove_lake(sq_pref, lakes_removed))
