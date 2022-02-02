@@ -11,7 +11,7 @@ census2020_current_municipalities <- census2020 %>%
 
 # custom data for the analysis
 pref <- pref_cleaned %>%
-  dplyr::group_by(code, CITY_NAME) %>%
+  dplyr::group_by(code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
   dplyr::select(code, pop, geometry)
