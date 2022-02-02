@@ -1,6 +1,6 @@
 ###############################################################################
-# Data visualization for `[TODO]`
-# © ALARM Project, November 2021
+# Data visualization for `25_shiga`
+# © ALARM Project, February 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
