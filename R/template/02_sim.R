@@ -9,17 +9,12 @@ census2020_current_municipalities <- census2020 %>%
   #filter out irrelevant data
   filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
 
-pref <- pref_raw %>%
-  clean_jcdf() %>%
+# custom data for the analysis
+pref <- pref_cleaned %>%
   dplyr::group_by(code, CITY_NAME) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
   dplyr::select(code, pop, geometry)
-
-# remove lake if needed
-ifelse(is.null(lakes_removed),
-       pref <- pref,
-       pref <- remove_lake(pref, lakes_removed))
 
 # Add information about 郡
 pref <- merge_gun(pref)
