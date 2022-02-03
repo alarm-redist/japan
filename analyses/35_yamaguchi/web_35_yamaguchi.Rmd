@@ -180,7 +180,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-               nudge_x = c(0, 5000), # adjust the position of the labels
+               nudge_x = c(0, 10000), # adjust the position of the labels
                nudge_y = c(-7500, 0), # adjust the position of the labels
                family = "HiraginoSans-W3") +
   
@@ -205,7 +205,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-               nudge_x = c(0, 5000), # adjust the position of the labels
+               nudge_x = c(0, 10000), # adjust the position of the labels
                nudge_y = c(-7500, 0), # adjust the position of the labels
                family = "HiraginoSans-W3") +
   
