@@ -30,7 +30,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- ""
-split_1_name <- ""
+split_1_name <- "和歌山市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")

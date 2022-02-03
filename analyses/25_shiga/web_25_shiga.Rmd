@@ -30,7 +30,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "東近江市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- ""
-split_1_name <- ""
+split_1_name <- "大津市"
 
 ## Color Palette
 PAL <- c('#364B7F', '#DCAD35', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
@@ -137,12 +137,12 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  scale_color_manual(values = c("grey60", "grey40")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = c(0, 0.02, 0.01), # adjust the position of the labels
-              nudge_y = c(0.05, 0.03, 0.025), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-0.06), # adjust the position of the labels
+              nudge_y = c(-0.06), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -162,20 +162,20 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  scale_color_manual(values = c("grey60", "grey40")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
-               family = "HiraginoSans-W3") +
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
 
 ### 最大市区町村の分割を許容する区割り案 
-人口が最大の市区町村 : 福山市
+人口が最大の市区町村 : `r split_1_name`
 
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
@@ -186,14 +186,14 @@ ggplot() +
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("black", "grey60", "grey30")) +
+  scale_color_manual(values = c("black", "grey60", "grey40")) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
-               family = "HiraginoSans-W3") +
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -227,11 +227,11 @@ ggplot() +
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
+  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
+  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
   geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
@@ -247,12 +247,12 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  scale_color_manual(values = c("grey60", "grey40")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = c(0, 0.02, 0.01), # adjust the position of the labels
-              nudge_y = c(0.05, 0.03, 0.025), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-0.06), # adjust the position of the labels
+              nudge_y = c(-0.06), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
