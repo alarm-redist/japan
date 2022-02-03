@@ -73,8 +73,7 @@ koiki_1_1 <- pref_1$gun_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 # When a municipality that belongs to a koiki renkei area is split:
 koiki_2_1 <- pref_1$gun_code
-koiki_2_1[koiki_2_1 %in% c(koiki_2_codes,
-                           setdiff(pref_1$gun_code[which(pref_1$code == split_code)], split_code))] <- 2
+koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 koiki_3_1 <- pref_1$gun_code
 koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
