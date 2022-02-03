@@ -127,7 +127,7 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey0")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
@@ -152,7 +152,7 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey0")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
@@ -212,7 +212,7 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey0")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
