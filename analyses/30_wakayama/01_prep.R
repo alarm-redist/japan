@@ -61,8 +61,8 @@ pref_cleaned <- pref_raw %>%
 
 # remove lake if needed
 ifelse(is.null(lakes_removed),
-       pref <- pref,
-       pref <- remove_lake(pref, lakes_removed))
+       pref_cleaned <- pref_cleaned,
+       pref_cleaned <- remove_lake(pref_cleaned, lakes_removed))
 
 # create sf_data frame
 sq_pref <- status_quo_match(pref_cleaned, pref_code)
