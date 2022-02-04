@@ -189,7 +189,7 @@ ggplot() +
 ```
 
 ### 最大市区町村の分割を許容する区割り案 
-人口が最大の市区町村 : `r `split_1_name`
+人口が最大の市区町村 : `r split_1_name`
 
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
