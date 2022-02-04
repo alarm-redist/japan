@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `[TODO]` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `11_saitama` analysis
+# © ALARM Project, February 2022
 ###############################################################################
 
 suppressMessages({
@@ -26,20 +26,20 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
-pref_code <- 0
-pref_name <- ""
+nsims <- 250000
+pref_code <- 11
+pref_name <- "saitama"
 lakes_removed <- c()
-ndists_new <- 0
-ndists_old <- 0
-sq_max_to_min <- 1
-sq_max_to_tottori2 <- 1
-sq_mun_splits <- 0
-sq_gun_splits <- 0
+ndists_new <- 16
+ndists_old <- 15
+sq_max_to_min <- 1.444
+sq_max_to_tottori2 <- 2.010
+sq_mun_splits <- 8
+sq_gun_splits <- 1
 sq_koiki_splits <- 0
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c()
+gun_exception <- c(11324)
 
 # Change time limit
 options(timeout = 300)
@@ -61,8 +61,8 @@ pref_cleaned <- pref_raw %>%
 
 # remove lake if needed
 ifelse(is.null(lakes_removed),
-       pref <- pref,
-       pref <- remove_lake(pref, lakes_removed))
+       pref_cleaned <- pref_cleaned,
+       pref_cleaned <- remove_lake(pref_cleaned, lakes_removed))
 
 # create sf_data frame
 sq_pref <- status_quo_match(pref_cleaned, pref_code)
