@@ -1,13 +1,13 @@
 ###############################################################################
-# Data visualization for `11_saitama`
+# Data visualization for `12_chiba`
 # © ALARM Project, February 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
 # Make sure to convert municipality codes into to "gun" codes if "gun" was merged
-koiki_1_codes <- c(11207, 11360)
-koiki_2_codes <- c(11211, 11380)
+koiki_1_codes <- c(12205, 12234)
+koiki_2_codes <- c()
 koiki_3_codes <- c()
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####

@@ -1,5 +1,5 @@
 ###############################################################################
-# Download and prepare data for `11_saitama` analysis
+# Download and prepare data for `12_chiba` analysis
 # © ALARM Project, February 2022
 ###############################################################################
 
@@ -26,20 +26,20 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 250000
-pref_code <- 11
-pref_name <- "saitama"
+nsims <- 25000
+pref_code <- 12
+pref_name <- "chiba"
 lakes_removed <- c()
-ndists_new <- 16
-ndists_old <- 15
-sq_max_to_min <- 1.444
-sq_max_to_tottori2 <- 2.010
-sq_mun_splits <- 8
+ndists_new <- 14
+ndists_old <- 13
+sq_max_to_min <- 1.390
+sq_max_to_tottori2 <- 1.989
+sq_mun_splits <- 5
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c(11324)
+gun_exception <- c(12403)
 
 # Change time limit
 options(timeout = 300)
