@@ -143,12 +143,6 @@ gun_boundary <- pref_0 %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
-koiki_boundary_1 <- pref_0 %>%
-  filter(gun_code %in% koiki_1_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_2 <- pref_0 %>%
-  filter(gun_code %in% koiki_2_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
 
 # Optimal Plan: 1 split
 matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))

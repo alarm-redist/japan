@@ -8,7 +8,6 @@
 # Define using the municipality codes, not the gun codes
 koiki_1_codes <- c()
 koiki_2_codes <- c()
-koiki_3_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
@@ -66,16 +65,14 @@ koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
 koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref_0$code
-koiki_3_0[koiki_2_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
-koiki_1_1 <- pref_1$code
-koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
-koiki_2_1 <- pref_1$code
+# When a municipality that belongs to a koiki-renkei area is split:
+koiki_1_1 <- pref_1$pre_gappei_code
+koiki_1_1[koiki_1_1 %in% c(koiki_1_codes,
+                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 1
+koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
-koiki_3_1 <- pref_1$code
-koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
@@ -90,12 +87,10 @@ gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 # Count number of koiki renkei splits
 koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
-  redist::redist.splits(pref_smc_plans_0, koiki_2_0) +
-  redist::redist.splits(pref_smc_plans_0, koiki_3_0)
+  redist::redist.splits(pref_smc_plans_0, koiki_2_0)
 koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
-  redist::redist.splits(pref_smc_plans_1, koiki_2_1) +
-  redist::redist.splits(pref_smc_plans_1, koiki_3_1)
+  redist::redist.splits(pref_smc_plans_1, koiki_2_1)
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -153,15 +148,6 @@ mun_boundary <- pref_0 %>%
 gun_boundary <- pref_0 %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_1 <- pref_0 %>%
-  filter(gun_code %in% koiki_1_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_2 <- pref_0 %>%
-  filter(gun_code %in% koiki_2_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_3 <- pref_0 %>%
-  filter(gun_code %in% koiki_3_codes) %>%
   summarise(geometry = sf::st_union(geometry))
 
 # Optimal Plan: 1 split
