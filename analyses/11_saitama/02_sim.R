@@ -82,7 +82,7 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.10,
+                               pop_tol= (sq_max_to_min - 1)/(1 + sq_max_to_min),
                                total_pop = pop,
                                adj = prefadj)
 
