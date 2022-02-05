@@ -5,7 +5,7 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Make sure to convert municipality codes into to "gun" codes if "gun" was merged
+# Define using the municipality codes, not the gun codes
 koiki_1_codes <- c()
 koiki_2_codes <- c()
 koiki_3_codes <- c()
@@ -62,21 +62,19 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 
 # Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref_0$gun_code
+koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$gun_code
+koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref_0$gun_code
-koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
+koiki_3_0 <- pref_0$code
+koiki_3_0[koiki_2_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
-koiki_1_1 <- pref_1$gun_code
+koiki_1_1 <- pref_1$code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
-# When a municipality that belongs to a koiki renkei area is split:
-koiki_2_1 <- pref_1$gun_code
-koiki_2_1[koiki_2_1 %in% c(koiki_2_codes,
-                           setdiff(pref_1$gun_code[which(pref_1$code == split_code)], split_code))] <- 2
-koiki_3_1 <- pref_1$gun_code
+koiki_2_1 <- pref_1$code
+koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
+koiki_3_1 <- pref_1$code
 koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
@@ -182,7 +180,7 @@ gun$type <- "郡の境界"
 boundary_0 <- rbind(mun, gun)
 
 # Boundary for split municipality
-old_boundary <- optimal_boundary_1 %>% 
+old_boundary <- optimal_boundary_1 %>%
                   filter(code == split_code) %>%
                   summarise(geometry = sf::st_combine(geometry))
 old_boundary$type <- "合併前の市町村の境界"
@@ -299,11 +297,11 @@ pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
 
 # Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref$gun_code
+koiki_1_0 <- pref$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref$gun_code
+koiki_2_0 <- pref$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref$gun_code
+koiki_3_0 <- pref$code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
