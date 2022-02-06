@@ -20,9 +20,9 @@ pref_name_kanji <- "福島県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116),
-                     names = c("広島市", "福山市", "呉市"))
+cities <- data.frame(longitude = c(140.47468, 140.35964, 140.88762), 
+                     latitude = c(37.76075, 37.40038, 37.05049),
+                     names = c("福島市", "郡山市", "いわき市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
