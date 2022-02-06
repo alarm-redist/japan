@@ -80,18 +80,16 @@ pref_map <- redist::redist_map(pref,
                                adj = prefadj)
 
 # Define constraints
-# constr = redist::redist_constr(pref_map)
-# constr = redist::add_constr_splits(constr, strength = 5)
-# constr = redist::add_constr_multisplits(constr, strength = 10)
+constr = redist::redist_constr(pref_map)
+constr = redist::add_constr_splits(constr, strength = 6, admin = pref$code)
+constr = redist::add_constr_multisplits(constr, strength = 8, admin = pref$code)
 
 # Run simulation
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
   counties = pref$code,
-  constraints = list(
-    multisplits = list(strength = 10)
-  ),
+  constraints = constr,
   pop_temper = 0.05)
 
 # Save map and simulation data

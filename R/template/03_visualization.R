@@ -383,7 +383,7 @@ for (i in 1:length(pref$code))
 {
   cooc_ratio[i] <- 1 -
     sum(pref$pop[relcomp(prefadj[[i]]+1,
-                         which(prec_clusters == prec_clusters[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1,
+                         which(prec_clusters == prec_clusters[i]))] * m_co[i, relcomp(prefadj[[i]]+1,
                                                                    which(prec_clusters == prec_clusters[i]))])/
     sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
 }

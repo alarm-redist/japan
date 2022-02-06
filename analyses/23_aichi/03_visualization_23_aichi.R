@@ -57,13 +57,13 @@ mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
-  seq(100000, length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300]), by = 1)
+  seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
 gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
 
 # Count number of koiki renkei splits
 koiki_split <-
-  redist::redist.splits(pref_smc_plans, koiki_1_0)
+  redist::redist.splits(pref_smc_plans, koiki_1)
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
@@ -75,14 +75,47 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
+# Filter out plans with discontiguities/multi-splits
+# Amagun (code: 23420) is consisted of three disconnected municipalities.
+# There are four ways to avoid separating Amagun into different districts:
+#1. Ensuring that Amagun (code: 23420), Yatomishi (code: 23235),and Amashi (code: 23237) are in the same district
+#2. Ensuring that Amagun (code: 23420), Minatoku (code: 23111), and Amashi (code: 23237) are in the same district
+#3. Ensuring that Amagun (code: 23420), Yatomishi (code: 23235),and Nakagawaku (code: 23110) are in the same district
+#4. Ensuring that Amagun (code: 23420), Minatoku (code: 23111), and Nakagawaku (code: 23110) are in the same district
 
+contiguous_1 <- 1:nsims
+for(i in 1:nsims){
+  contiguous_1[i] <-
+    #Returns 1 if  Amagun (code: 23420), Yatomishi (code: 23235), and Amashi (code: 23237) are in the same district
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23235)])) *
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23237)])) +
+    #Returns 1 if  Amagun (code: 23420), Minatoku (code: 23111), and Amashi (code: 23237) are in the same district
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23111)])) *
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23237)])) +
+    #Returns 1 if  Amagun (code: 23420), Yatomishi (code: 23235), and Nakagawaku (code: 23110) are in the same district
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23235)])) *
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23110)])) +
+    #Returns 1 if Amagun (code: 23420), Minatoku (code: 23111), and Nakagawaku (code: 23110) are in the same district
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23111)])) *
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23420)] == pref_smc_plans[,i][which(pref$code == 23110)]))
+}
+results$contiguous_1 <- contiguous_1
 
-# Add bridges and check if valid
-bridges <- c()
-results$valid <- check_valid(pref, pref_smc_plans, bridges)
+# Chitagun (code: 23440) is consisted of two disconnected parts.
+#In order to avoid separating Chitagun into different districts,
+# we must ensure that Chitagun is in the same district as either Handa-shi or Tokoname-shi.
+contiguous_2 <- 1:nsims
+for(i in 1:nsims){
+  contiguous_2[i] <-
+    #Returns 1 if  Chitagun (code: 23440) and Handa-shi (code: 23205) are in the same district.
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23440)] == pref_smc_plans[,i][which(pref$code == 23205)])) +
+    #Returns 1 if  Chitagun (code: 23440) and Tokoname-shi (code: 23216) are in the same district
+    max(as.integer(pref_smc_plans[,i][which(pref$code == 23440)] == pref_smc_plans[,i][which(pref$code == 23216)]))
+}
+results$contiguous_2 <- contiguous_2
 
-# To-do: filter out plans with discontiguities/multi-splits
-functioning_results <- results %>% dplyr::filter(multi == 0 && valid)
+# Filter out plans with multi-splits and discontiguities
+functioning_results <- results[which(results$multi == 0 & results$contiguous_1 > 0 & results$contiguous_2 > 0), ]
 
 # Find Optimal Plan
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
@@ -132,7 +165,7 @@ prec_clusters = cutree(cl_co, ndists_new)
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
 
-# Obtain co-occurrenc ratio
+# Obtain co-occurrence ratio
 cooc_ratio <- vector(length = length(pref$code))
 relcomp <- function(a, b) {
   comp <- vector()
@@ -148,7 +181,7 @@ for (i in 1:length(pref$code))
 {
   cooc_ratio[i] <- 1 -
     sum(pref$pop[relcomp(prefadj[[i]]+1,
-                         which(prec_clusters == prec_clusters[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1,
+                         which(prec_clusters == prec_clusters[i]))] * m_co[i, relcomp(prefadj[[i]]+1,
                                                                    which(prec_clusters == prec_clusters[i]))])/
     sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
 }
@@ -160,7 +193,6 @@ rm(pref_smc_plans,
    wgt_smc,
    num_mun_split,
    mun_split,
-   num_gun_split,
    gun_split,
    koiki_split,
    matrix_optimal
