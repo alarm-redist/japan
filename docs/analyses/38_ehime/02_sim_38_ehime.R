@@ -1,0 +1,187 @@
+###############################################################################
+# Simulations for `Ehime`
+# © ALARM Project, November 2021
+###############################################################################
+
+# Clean census data
+census2020_current_municipalities <- census2020 %>%
+  #filter out irrelevant data
+  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
+
+# custom data for the analysis
+pref <- pref_cleaned %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
+  dplyr::select(code, pop, geometry)
+
+# Add information about 郡
+pref <- merge_gun(pref)
+
+# Define pref_0
+pref_0 <-  sf::st_as_sf(
+  dplyr::bind_rows(
+
+    # Set aside gun that are not respected under the status quo
+    pref %>% filter(gun_code %in% as.numeric(gun_exception)),
+
+    # Merge gun
+    pref %>%
+
+      # Filter out Matsuyama-shi, whose population is larger than the target population
+      dplyr::filter(code %in% pref$code[which(pref$pop > sum(pref$pop)/ndists_new)] == FALSE) %>%
+
+      dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
+      dplyr::group_by(gun_code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       code = code[1])
+  )
+)
+
+# Also make object with Matsuyama-shi
+pref_0_with_matsuyama <- sf::st_as_sf(
+  dplyr::bind_rows(
+
+    # Set aside gun that are not respected under the status quo
+    pref %>% filter(gun_code %in% as.numeric(gun_exception)),
+
+    # Merge gun
+    pref %>%
+      dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
+      dplyr::group_by(gun_code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       code = code[1])
+  )
+)
+
+# Define pref_1: Split largest municipality
+# Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
+split_code <- (pref %>%
+                dplyr::filter(code >=
+                               (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
+                                                                        dplyr::filter(code >=
+                                                                                      (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
+new_1 <- as.character(split_code)
+pref_1_with_matsuyama <- reflect_old_boundaries(pref_0_with_matsuyama, old_boundary, census2020, new_1)
+
+# Set aside Kyu-Matsuyama-shi, because its population is larger than the target population
+pref_1 <- pref_1_with_matsuyama %>%
+  dplyr::filter(pre_gappei_code %in% 38201 == FALSE)
+
+# Add adjacency
+add_adjacency <- function(pref_n){
+
+  prefadj_n <- redist::redist.adjacency(pref_n)
+
+  # Modify according to ferry adjacencies
+  if(check_ferries(pref_code) == TRUE){
+    # add ferries
+    ferries_n <- add_ferries(pref_n)
+    prefadj_n <- geomander::add_edge(prefadj_n,
+                                     ferries_n[, 1],
+                                     ferries_n[, 2],
+                                     zero = TRUE)
+  }
+
+  #return result
+  return(prefadj_n)
+}
+
+# Make adjacency list
+prefadj_0 <- add_adjacency(pref_0)
+prefadj_1 <- add_adjacency(pref_1)
+
+# Run simulations
+run_simulations <- function(pref_n, prefadj_n){
+
+  # 0 split or 1 split
+  if("pre_gappei_code" %in% colnames(pref_n)){
+    i <- 1
+  }else{
+    i <- 0
+  }
+
+  # Set aside Matsuyama-shi
+  pref_map_n <- redist::redist_map(pref_n,
+                                   ndists = ndists_new -1,
+                                   pop_tol= 0.15,
+                                   total_pop = pop,
+                                   adj = prefadj_n)
+
+
+  # Run simulation
+  sim_smc_pref_n <- redist::redist_smc(
+    map = pref_map_n,
+    nsims = nsims,
+    pop_temper = 0.05
+  )
+
+  # Save pref object, pref_map object, adjacency list, and simulation data
+  saveRDS(pref_n, paste("data-out/pref/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_",
+                        as.character(nsims),
+                        "_",
+                        as.character(i),
+                        ".Rds",
+                        sep = ""))
+
+  saveRDS(prefadj_n, paste("data-out/pref/",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_",
+                          as.character(nsims),
+                          "_adj_",
+                          as.character(i),
+                          ".Rds",
+                          sep = ""))
+
+  saveRDS(pref_map_n, paste("data-out/maps/",
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_map_",
+                            as.character(nsims),
+                            "_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
+
+  saveRDS(sim_smc_pref_n, paste("data-out/plans/",
+                                as.character(pref_code),
+                                "_",
+                                as.character(pref_name),
+                                "_",
+                                as.character(sim_type),
+                                "_",
+                                as.character(nsims),
+                                "_",
+                                as.character(i),
+                                ".Rds",
+                                sep = ""))
+
+  assign(paste("pref", i, sep = "_"),
+         pref_n,
+         envir = .GlobalEnv)
+
+  assign(paste("pref", "map", i, sep = "_"),
+         pref_map_n,
+         envir = .GlobalEnv)
+
+  assign(paste("prefadj", i, sep = "_"),
+         prefadj_n,
+         envir = .GlobalEnv)
+
+  assign(paste("sim", "smc", "pref", i, sep = "_"),
+         sim_smc_pref_n,
+         envir = .GlobalEnv)
+
+}
+
+run_simulations(pref_0, prefadj_0)
+run_simulations(pref_1, prefadj_1)
