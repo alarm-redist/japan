@@ -272,7 +272,7 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±30%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : 
     + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  

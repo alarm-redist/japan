@@ -27,16 +27,16 @@ setwd("..")
 # TODO: Define parameters for simulation
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 0
-pref_name <- ""
+pref_code <- 15
+pref_name <- "niigata"
 lakes_removed <- c()
-ndists_new <- 0
-ndists_old <- 0
-sq_max_to_min <- 1
-sq_max_to_tottori2 <- 1
-sq_mun_splits <- 0
+ndists_new <- 5
+ndists_old <- 6
+sq_max_to_min <- 1.643
+sq_max_to_tottori2 <- 1.890
+sq_mun_splits <- 7
 sq_gun_splits <- 0
-sq_koiki_splits <- 0
+sq_koiki_splits <- 2
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
