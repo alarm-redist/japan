@@ -1,5 +1,5 @@
 ---
-title: "広島県 (議員定数：7 → 6)"
+title: "新潟県 (議員定数：6 → 5)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
 date: January 22, 2022 
 output: distill::distill_article
@@ -11,26 +11,27 @@ options(width = 100)
 library(tidyverse)
 library(gt)
 
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+pref_code <- 15
+pref_name <- "niigata"
+pref_name_kanji <- "新潟県"
 ```
 
 ```{r Manual Entries, include = FALSE}
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116),
-                     names = c("広島市", "福山市", "呉市"))
+cities <- data.frame(longitude = c(139.03635), 
+                     latitude = c(37.91615),
+                     names = c("新潟市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
 ## Information about splits
-sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
+sq_mun_splits_name <- "新潟市北区、同市東区、 同市中央区、同市江南区、 同市南区、同市西区、 長岡市
+" 
 sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-split_1_name <- "福山市"
+sq_koiki_splits_name <- "新潟広域都市圏、長岡地域定住自立圏"
+split_1_name <- "長岡市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
