@@ -1,5 +1,5 @@
 ###############################################################################
-# Download and prepare data for `[TODO]` analysis
+# Download and prepare data for `Aichi` analysis
 # © ALARM Project, November 2021
 ###############################################################################
 
@@ -27,16 +27,16 @@ setwd("..")
 # TODO: Define parameters for simulation
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 0
-pref_name <- ""
+pref_code <- 23
+pref_name <- "aichi"
 lakes_removed <- c()
-ndists_new <- 0
-ndists_old <- 0
-sq_max_to_min <- 1
-sq_max_to_tottori2 <- 1
-sq_mun_splits <- 0
+ndists_new <- 16
+ndists_old <- 15
+sq_max_to_min <- 1.575
+sq_max_to_tottori2 <- 2.010
+sq_mun_splits <- 3
 sq_gun_splits <- 0
-sq_koiki_splits <- 0
+sq_koiki_splits <- 1
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
@@ -51,9 +51,6 @@ dem_pops <- download_pop_demographics(pref_code)
 
 # Download and clean 2020 census data
 census2020 <- clean_2020_census(pref_code)
-
-# Download data from old boundaries (pre-平成の大合併): Only for rural prefectures
-old_boundary <- download_old_shp(pref_code)
 
 # clean census data
 pref_cleaned <- pref_raw %>%
