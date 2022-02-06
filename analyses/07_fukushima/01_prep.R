@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `[TODO]` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `07_fukushima` analysis
+# © ALARM Project, February 2022
 ###############################################################################
 
 suppressMessages({
@@ -27,19 +27,19 @@ setwd("..")
 # TODO: Define parameters for simulation
 sim_type <- "smc"
 nsims <- 25000
-pref_code <- 0
-pref_name <- ""
+pref_code <- 07
+pref_name <- "fukushima"
 lakes_removed <- c()
-ndists_new <- 0
-ndists_old <- 0
-sq_max_to_min <- 1
-sq_max_to_tottori2 <- 1
+ndists_new <- 4
+ndists_old <- 5
+sq_max_to_min <- 1.718
+sq_max_to_tottori2 <- 1.726
 sq_mun_splits <- 0
-sq_gun_splits <- 0
-sq_koiki_splits <- 0
+sq_gun_splits <- 1
+sq_koiki_splits <- 2
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c()
+gun_exception <- c(7461)
 
 # Change time limit
 options(timeout = 300)
