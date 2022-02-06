@@ -206,7 +206,7 @@ ggplot() +
   geom_sf(data = matsuyama, fill = '#DCAD35', color = "grey40", lwd = 0.4) + 
   
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district)), color = NA) +
-  scale_fill_manual(values = PAL, guide = "none") +
+  scale_fill_manual(values = c('#364B7F', '#6D9537'), guide = "none") +
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
