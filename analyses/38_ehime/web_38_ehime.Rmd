@@ -1,5 +1,5 @@
 ---
-title: "岡山県 (議員定数：5 → 4)"
+title: "愛媛県 (議員定数：4 → 3)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
 date: January 22, 2022 
 output: distill::distill_article
@@ -11,26 +11,26 @@ options(width = 100)
 library(tidyverse)
 library(gt)
 
-pref_code <- 33
-pref_name <- "okayama"
-pref_name_kanji <- "岡山県"
+pref_code <- 38
+pref_name <- "ehime"
+pref_name_kanji <- "愛媛県"
 ```
 
 ```{r Manual Entries, include = FALSE}
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(133.919397, 133.771762), 
-                     latitude = c(34.655324, 34.585103),
-                     names = c("岡山市", "倉敷市"))
+cities <- data.frame(longitude = c(132.765287), 
+                     latitude = c(33.839143),
+                     names = c("松山市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
 ## Information about splits
-sq_mun_splits_name <- "岡山市北区・南区・東区、吉備中央町、真庭市、倉敷市" 
+sq_mun_splits_name <- "松山市" 
 sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "岡山連携中枢都市圏、高梁川流域連携中枢都市圏"
-split_1_name <- "倉敷市"
+sq_koiki_splits_name <- "松山圏域"
+split_1_name <- "松山市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
@@ -126,14 +126,7 @@ table_summary %>%
  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
-      columns = c(2,4),
-      rows = 6
-    ) 
-  ) %>% 
-  tab_footnote(
-    footnote = c(sq_koiki_splits_name,"津山圏域定住自立圏"),
-    locations = cells_body(
-      columns = 3,
+      columns = 2:4,
       rows = 6
     ) 
   ) %>% 
@@ -150,7 +143,6 @@ table_summary %>%
 ```
 
 # 現行の区割り  
-
 ```{r status quo plan}
 ggplot() +
   geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
@@ -162,8 +154,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = c(0, 0.02, 0.01), # adjust the position of the labels
-              nudge_y = c(0.05, 0.03, 0.025), # adjust the position of the labels
+              nudge_x = c(0.05), # adjust the position of the labels
+              nudge_y = c(0.05), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -176,10 +168,18 @@ ggplot() +
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
+```{r Matsuyama, include= FALSE}
+matsuyama <- pref %>%
+  filter(code == 38201)
+```
+
 ```{r optimal plan (0 split)}
 ggplot() +
   geom_sf(data = optimal_boundary_0, aes(fill = factor(district)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
+  
+  # add Matsuyama-shi
+  geom_sf(data = matsuyama, fill = '#DCAD35', color = "grey40", lwd = 0.4) +  
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -187,8 +187,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
+               nudge_x = c(500), # adjust the position of the labels
+               nudge_y = c(7500), # adjust the position of the labels
                family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -202,6 +202,9 @@ ggplot() +
 
 ```{r optimal plan (1split)}
 ggplot() +
+  # add Matsuyama-shi
+  geom_sf(data = matsuyama, fill = '#DCAD35', color = "grey40", lwd = 0.4) + 
+  
   geom_sf(data = optimal_boundary_1, aes(fill = factor(district)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
@@ -212,9 +215,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
-               family = "HiraginoSans-W3") +
+              nudge_x = c(0.05), # adjust the position of the labels
+              nudge_y = c(0.05), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -235,8 +238,6 @@ ggplot() +
 pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
 pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
 pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
-pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
 
 # Co-occurrence plot
 ggplot() +
@@ -248,14 +249,9 @@ ggplot() +
   geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
+  # add Matsuyama-shi
+  geom_sf(data = matsuyama, fill = '#DCAD35', color = "grey40", lwd = 0.4) +  
   
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#437d6f', high= '#2A4E45') + #dark green
-
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey40")) +
@@ -272,11 +268,15 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±30%
+* 各選挙区の人口 : (総人口 / 選挙区数) ±15%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : 
     + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
     + 人口最大の市区町村の分割を許容 : `r format(length(functioning_results_1$index), big.mark = ",",  scientific = FALSE)`  
 * 有効な案から一票の格差が最小の区割り案を選定
 
+### 県特有の設定  
+
+* 松山市及び旧松山市の人口は、(県内の総人口 / 選挙区数)を超えるため、松山市及び旧松山市は、必然的に一つの選挙区を構成する。
+* 松山市及び旧松山市を除外した上でアルゴリズムを用いた。
 
