@@ -212,71 +212,71 @@ pref_membership_16 <- pref_membership %>% dplyr::filter(membership == 16)
 
 # Co-occurrence plot
 ggplot() +
-  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_2, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_2, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_3, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_3, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_4, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_4, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_5, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_5, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_6, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_6, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_7, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_7, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_8, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
-  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
-  
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
-  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_9, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
-  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_10, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_11, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_8, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
   
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_12, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_13, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_9, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_14, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_10, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_15, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_11, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
   
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_16, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  geom_sf(data = pref_membership_12, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
+  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_13, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
+  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_14, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
+  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_15, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
+  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_16, aes(fill = cooc_ratio), show.legend = FALSE, color = NA, lwd= 0.01) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
   
   geom_sf(data = boundary, aes(color = type), show.legend = "line", 
