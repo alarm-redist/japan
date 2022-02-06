@@ -293,7 +293,7 @@ mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
-  seq(100000, length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300]), by = 1)
+  seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
 gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
 
