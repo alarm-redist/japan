@@ -64,10 +64,10 @@ split_code <- (pref %>%
                                                                         dplyr::filter(code >=
                                                                                       (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
 new_1 <- as.character(split_code)
-pref_1 <- reflect_old_boundaries(pref_0_with_matsuyama, old_boundary, census2020, new_1)
+pref_1_with_matsuyama <- reflect_old_boundaries(pref_0_with_matsuyama, old_boundary, census2020, new_1)
 
 # Set aside Kyu-Matsuyama-shi, because its population is larger than the target population
-pref_1 <- pref_1 %>%
+pref_1 <- pref_1_with_matsuyama %>%
   dplyr::filter(pre_gappei_code %in% 38201 == FALSE)
 
 # Add adjacency

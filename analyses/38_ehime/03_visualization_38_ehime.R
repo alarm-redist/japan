@@ -68,19 +68,15 @@ for(i in 1:nsims){
 
 
 # Add Kyu-Matsuyma-shi back to result of simulation with 1 split
-pop_Kyu_Matsuyama <- reflect_old_boundaries(pref_0_with_matsuyama, old_boundary, census2020, new_1) %>%
-                        filter(pre_gappei_code == 38201) %>%
-                        pull(pop)
 sim_smc_pref_1_with_Matsuyama <- NULL
 for(i in 1:nsims){
   with_Matsuyama <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_1 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
                                 district = as.integer(3),
-                                total_pop = pop_Kyu_Matsuyama))
+                                total_pop = pref_1_with_matsuyama$pop[which(pref_1_with_matsuyama$pre_gappei_code == 38201)]))
   sim_smc_pref_1_with_Matsuyama <- rbind(sim_smc_pref_1_with_Matsuyama, with_Matsuyama)
 }
-
 
 # Calculate max:min ratio
 wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0_with_Matsuyama)
@@ -134,7 +130,6 @@ results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
-
 
 # TODO: filter out plans with discontiguities
 functioning_results_0 <- results_0
@@ -204,7 +199,7 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new)
+prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 
