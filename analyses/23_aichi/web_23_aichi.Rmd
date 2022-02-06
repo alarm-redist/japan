@@ -30,7 +30,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "豊田市、一宮市、瀬戸市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- "衣浦定住自立圏"
-split_1_name <- "福山市"
+split_name <- "名古屋市熱田区、港区"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9',
@@ -52,12 +52,12 @@ load(here::here(paste("data-out/pref/",
 ```{r table summary}
 # summary table
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~smc, 
+  ~category, ~ status_quo, ~smc, 
   "県内較差", sq_max_to_min, results$max_to_min[optimal], 
   "改善率", NA, (sq_max_to_min - results$max_to_min[optimal])/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, 0, 
-  "郡の分割", sq_gun_splits, results$num_gun_split[optimal], 
+  "市区町村の分割", sq_mun_splits, results$mun_split[optimal], 
+  "郡の分割", sq_gun_splits, results$gun_split[optimal], 
   "広域連携地域の分割", sq_koiki_splits, results$koiki_split[optimal], 
 ) 
 table_summary %>% 
@@ -85,17 +85,9 @@ table_summary %>%
     label = md("**1票の格差**"),
     rows = 1:2
   ) %>% 
-  tab_spanner(
-    label = "現行",
-    columns = status_quo
-  ) %>% 
-  tab_spanner(
-    label = "アルゴリズムの提案",
-    columns = smc
-  ) %>% 
   cols_label(
-    status_quo = "",
-    smc = "市区町村の分割無し"
+    status_quo = "現行",
+    smc = "アルゴリズムの提案"
   ) %>% 
   cols_align(
     align = "center",
@@ -117,16 +109,16 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
-    footnote = split_1_name,
+    footnote = split_name,
     locations = cells_body(
-      columns = 4,
+      columns = 3,
       rows = 4
     ) 
   ) %>% 
  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
-      columns = 2:4,
+      columns = 2,
       rows = 6
     ) 
   ) %>% 
@@ -136,7 +128,7 @@ table_summary %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:4,
+      columns = 2:3,
       rows = 1
     ) 
   ) 
@@ -220,75 +212,78 @@ pref_membership_16 <- pref_membership %>% dplyr::filter(membership == 16)
 
 # Co-occurrence plot
 ggplot() +
-  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_2, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_3, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_4, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_5, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_6, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_7, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_7, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_8, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
-    geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_9, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_10, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_11, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_8, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
   
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_12, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_1, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_13, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_9, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_14, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_10, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
 
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_15, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_11, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
   
   ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_membership_16, aes(fill = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_membership_12, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_13, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_14, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
+
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_15, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
+  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
+  
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = pref_membership_16, aes(fill = cooc_ratio), show.legend = FALSE, color = NA) +
   scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
   
   geom_sf(data = boundary, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey40")) +
   
+  ggnewscale::new_scale_fill() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = c(0, 0.02, 0.01, 0.02, 0.01), # adjust the position of the labels
@@ -301,7 +296,7 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±15%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : `r format(length(functioning_results$index), big.mark = ",", scientific = FALSE)`  
 * 有効な案から一票の格差が最小の区割り案を選定
@@ -311,4 +306,5 @@ ggplot() +
 
 * 海部郡を構成する町が異なる選挙区に属する案  
 * 竹原市及び呉市が、東広島市と異なる選挙区に属する案  
+(ただし、飛び地が生じる区割り案は導出されなかったため、実際に棄却した案はなし)
 
