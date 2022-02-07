@@ -7,7 +7,7 @@
 # Define which municipality/gun belongs to which koiki renkei area
 # Define using the municipality codes, not the gun codes
 koiki_1_codes <- c(35203, 35202, 35204, 35206, 35213, 35216)
-koiki_2_codes <- c(35208, 35212, 35305, 35321, 35341)
+koiki_2_codes <- c(35208, 35212, 35305, 35321, 35341, 35343, 35344)
 koiki_3_codes <- c(35204, 35502)
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -75,7 +75,7 @@ koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
-koiki_3_1 <- pref_1$code
+koiki_3_1 <- pref_1$pre_gappei_code
 koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
