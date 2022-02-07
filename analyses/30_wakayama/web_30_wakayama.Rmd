@@ -54,7 +54,7 @@ table_summary <- dplyr::tribble(
   "改善率", NA, (sq_max_to_min - results_0$max_to_min[optimal_0])/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new,
   "市区町村の分割", sq_mun_splits, 0, 
-  "郡の分割", sq_gun_splits, results_0$num_gun_split[optimal_0], 
+  "郡の分割", sq_gun_splits, results_0$gun_split[optimal_0], 
   "広域連携地域の分割", sq_koiki_splits, results_0$koiki_split[optimal_0], 
 ) 
 
