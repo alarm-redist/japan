@@ -79,9 +79,7 @@ num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
 
 # Count number of gun splits
-num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
 gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 
 # Count number of koiki renkei splits
@@ -95,7 +93,6 @@ koiki_split_1 <-
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -106,7 +103,6 @@ results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
 results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
@@ -228,9 +224,7 @@ rm(pref_smc_plans_0,
    wgt_smc_1,
    num_mun_split_1,
    mun_split_1,
-   num_gun_split_0,
    gun_split_0,
-   num_gun_split_1,
    gun_split_1,
    koiki_split_0,
    koiki_split_1,
@@ -282,32 +276,35 @@ pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 # Calculate max:min ratio
 wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
 
-# Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref$code
-koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref$code
-koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref$code
-koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
+# Assign koiki_renkei area codes
+koiki_1 <- pref$code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+koiki_1[!koiki_1 %in% 1] <-
+  seq(1000, 1000 +length(koiki_1[!koiki_1 %in% c(koiki_1_codes, 1)]) - 1, by = 1)
+koiki_2 <- pref$code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
+koiki_2[!koiki_2 %in% 2] <-
+  seq(1000, 1000 +length(koiki_2[!koiki_2 %in% c(koiki_2_codes, 2)]) - 1, by = 1)
 
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
 mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
 
 # Count number of gun splits
-num_gun_split <- count_splits(pref_smc_plans, pref_map$gun_code)
-gun_split <- redist::redist.splits(pref_smc_plans, pref_map$gun_code)
+gun_index <- pref$gun_code
+gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
+  seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
+
+gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
 
 # Count number of koiki renkei splits
 koiki_split <-
-  redist::redist.splits(pref_smc_plans, koiki_1_0) +
-  redist::redist.splits(pref_smc_plans, koiki_2_0) +
-  redist::redist.splits(pref_smc_plans, koiki_3_0)
+  redist::redist.splits(pref_smc_plans, koiki_1) +
+  redist::redist.splits(pref_smc_plans, koiki_2)
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
-results$num_gun_split <- num_gun_split
 results$gun_split <- gun_split
 results$num_mun_split <- num_mun_split
 results$mun_split <- mun_split
@@ -336,21 +333,20 @@ gun_boundary <- pref %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
+# Combine municipality boundary data
+mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+mun$type <- "市区町村の境界"
+# Combine gun boundary data
+gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+gun$type <- "郡の境界"
+
+# Boundary for plot with 0 split
+boundary <- rbind(mun, gun)
+
 # District Boundary of Optimal Plan
 matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
-
-# Map with district data + municipality/gun/koiki-renkei boundary
-ggplot() +
-  geom_sf(data = optimal_boundary, aes(fill = factor(district))) +
-  scale_fill_manual(values = as.vector(pals::polychrome(ndists_new)))+
-  geom_sf(data = gun_boundary, fill = NA, color = "black", lwd = 1.0) +
-  geom_sf(data = mun_boundary, fill = NA, color = "black", lwd = 0.4) +
-  theme(axis.line = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank(), axis.title = element_blank(),
-        legend.title = element_blank(), legend.position = "None",
-        panel.background = element_blank())
 
 # Co-occurrence
 # Filter out plans with top 10% koiki-renkei areas
@@ -387,19 +383,34 @@ for (i in 1:length(pref$code))
 {
   cooc_ratio[i] <- 1 -
     sum(pref$pop[relcomp(prefadj[[i]]+1,
-                         which(prec_clusters == prec_clusters[i]))] * m_co_0[i, relcomp(prefadj[[i]]+1,
+                         which(prec_clusters == prec_clusters[i]))] * m_co[i, relcomp(prefadj[[i]]+1,
                                                                    which(prec_clusters == prec_clusters[i]))])/
     sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
 }
 
 
 # Save files
-rm(pref_smc_plans,
+rm(census2020,
+   census2020_current_municipalities,
+   cl_co,
+   constr,
+   dem_pops,
+   m_co,
+   mun,
+   gun,
+   mun_boundary,
+   gun_boundary,
+   pref_cleaned,
+   pref_gun,
+   pref_map,
+   pref_non_gun,
+   pref_raw,
+   pref_smc_plans,
    sim_smc_pref,
+   sim_smc_pref_good,
    wgt_smc,
    num_mun_split,
    mun_split,
-   num_gun_split,
    gun_split,
    koiki_split,
    matrix_optimal

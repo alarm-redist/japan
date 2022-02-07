@@ -177,8 +177,7 @@ run_simulations(pref_1, prefadj_1)
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Clean 2015 Census shapefile
-pref <- pref_raw %>%
-  clean_jcdf() %>%
+pref <- pref_cleaned %>%
   dplyr::select(code, KIHON1, JINKO, geometry)
 
 # Calculate population of Japanese nationals as of 2015 at the 小地域 level
