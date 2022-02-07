@@ -10,7 +10,7 @@ koiki_1_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
-for (i in 0:1)
+for (i in 0) #only0_split
 {
   pref_map_n <- readRDS(paste("data-out/maps/",
                               as.character(pref_code),
@@ -67,8 +67,7 @@ gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
-  redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
-  redist::redist.splits(pref_smc_plans_0, koiki_2_0)
+  redist::redist.splits(pref_smc_plans_0, koiki_1_0)
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -155,21 +154,13 @@ for (i in 1:length(pref_0$code))
 
 # Save files
 rm(pref_smc_plans_0,
-   #pref_smc_plans_1,
    pref_smc_plans_n,
    sim_smc_pref_0,
-   #sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
-   #wgt_smc_1,
-   #num_mun_split_1,
-   #mun_split_1,
    gun_split_0,
-   #gun_split_1,
    koiki_split_0,
-   #koiki_split_1,
-   matrix_optimal_0,
-   #matrix_optimal_1
+   matrix_optimal_0
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
