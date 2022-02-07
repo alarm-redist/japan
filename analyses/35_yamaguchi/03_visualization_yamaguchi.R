@@ -5,7 +5,7 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Make sure to convert municipality codes into to "gun" codes if "gun" was merged
+# Define using the municipality codes, not the gun codes
 koiki_1_codes <- c(35203, 35202, 35204, 35206, 35213, 35216)
 koiki_2_codes <- c(35208, 35212, 35305, 35321, 35341)
 koiki_3_codes <- c(35204, 35502)
@@ -15,27 +15,27 @@ koiki_3_codes <- c(35204, 35502)
 for (i in 0:1)
 {
   pref_map_n <- readRDS(paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_map_",
+                              as.character(nsims),
+                              "_",
+                              as.character(i),
+                              ".Rds",
+                              sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
   prefadj_n <-readRDS(paste("data-out/pref/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(nsims),
-                           "_adj_",
-                           as.character(i),
-                           ".Rds",
-                           sep = ""))
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(nsims),
+                            "_adj_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
   assign(paste("prefadj_", i, sep = ""), prefadj_n)
 
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
@@ -62,20 +62,20 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 
 # Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref_0$gun_code
+koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$gun_code
+koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref_0$gun_code
+koiki_3_0 <- pref_0$code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
-koiki_1_1 <- pref_1$gun_code
+# When a municipality that belongs to a koiki-renkei area is split:
+koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
-# When a municipality that belongs to a koiki renkei area is split:
-koiki_2_1 <- pref_1$gun_code
+koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
-koiki_3_1 <- pref_1$gun_code
+koiki_3_1 <- pref_1$code
 koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
@@ -83,9 +83,7 @@ num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
 
 # Count number of gun splits
-num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
 gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 
 # Count number of koiki renkei splits
@@ -97,11 +95,9 @@ koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_3_1)
-
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -112,7 +108,6 @@ results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
 results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
@@ -155,15 +150,6 @@ gun_boundary <- pref_0 %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
-koiki_boundary_1 <- pref_0 %>%
-  filter(gun_code %in% koiki_1_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_2 <- pref_0 %>%
-  filter(gun_code %in% koiki_2_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_3 <- pref_0 %>%
-  filter(gun_code %in% koiki_3_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
 
 # Optimal Plan: 1 split
 matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
@@ -182,8 +168,8 @@ boundary_0 <- rbind(mun, gun)
 
 # Boundary for split municipality
 old_boundary <- optimal_boundary_1 %>%
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
+  filter(code == split_code) %>%
+  summarise(geometry = sf::st_combine(geometry))
 old_boundary$type <- "合併前の市町村の境界"
 
 # Match CRS
@@ -243,15 +229,13 @@ rm(pref_smc_plans_0,
    wgt_smc_1,
    num_mun_split_1,
    mun_split_1,
-   num_gun_split_0,
    gun_split_0,
-   num_gun_split_1,
    gun_split_1,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
    matrix_optimal_1
-   )
+)
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
@@ -259,4 +243,3 @@ save.image(paste("data-out/pref/",
                  "_data",
                  ".Rdata",
                  sep = ""))
-
