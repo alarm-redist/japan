@@ -4,12 +4,6 @@
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
-# custom data for the analysis
-pref <- pref %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry), pop = sum(pop)) %>%
-  dplyr::select(code, pop, geometry)
-
 # Add information about 郡
 pref <- merge_gun(pref)
 
