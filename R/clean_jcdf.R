@@ -20,14 +20,14 @@ clean_jcdf <- function(pref_raw) {
   # filter out water surfaces and extraneous port data
   pref <- pref_raw %>%
     dplyr::filter(pref_raw$KIHON1 != "0000" & pref_raw$HCODE != 8154, )  %>%
-    dplyr::group_by(PREF, CITY, KIHON1, CITY_NAME) %>%
+    dplyr::group_by(PREF, CITY, KIHON1, CITY_NAME, S_NAME) %>%
 
     # make smallest geopolitical subdivision to level 2
     dplyr::summarize(geometry = sf::st_union(geometry), JINKO = sum(JINKO)) %>%
 
     # make 5 digit municipality code
     dplyr::mutate(code = 1000*as.numeric(PREF) + as.numeric(CITY)) %>%
-    dplyr::select(code, CITY_NAME, KIHON1, JINKO, geometry)
+    dplyr::select(code, CITY_NAME, S_NAME, KIHON1, JINKO, geometry)
 
   # return final
   return(pref)
