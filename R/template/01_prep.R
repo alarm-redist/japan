@@ -81,15 +81,19 @@ old_boundary <- download_old_shp(pref_code)
 pop <- pref_pop_2020 %>%
     dplyr::group_by(mun_code) %>%
     dplyr::summarise(pop = sum(pop)) %>%
-    dplyr::renam(code = mun_code)
+    dplyr::rename(code = mun_code)
 
 geom <- pref_shp_cleaned %>%
     dplyr::group_by(code) %>%
-    dplyr::summarise(geometry = sf::st_union(geometry))
+    dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+    dplyr::select(code, geometry)
 
-# combine
+# Combine data frames
 pref <- merge(pop, geom, by = "code")
+pref <- sf::st_as_sf(pref)
 
+# Confirm that the population figure matches that of the redistricting committee
+sum(pref$pop)
 
 ####2. Urban Prefectures########
 # Match data and clean
