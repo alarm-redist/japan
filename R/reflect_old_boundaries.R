@@ -2,7 +2,7 @@
 #'
 #' @param pref  sf object of cleaned census data for a prefecture
 #' @param old_boundary  sf object of administrative boundaries as of the year 2000
-#' @param census2020 the output of clean_2020_census()
+#' @param census_mun_old_2020 the output of clean_2020_census()
 #' @param new_code  the municipality code of the city that needs to be split
 #'
 #' @return a data frame object reflecting population of old municipalities
@@ -12,7 +12,7 @@
 #' @export
 #'
 
-reflect_old_boundaries <- function(pref, old_boundary, census2020, new_code){
+reflect_old_boundaries <- function(pref, old_boundary, census_mun_old_2020, new_code){
 
   #code of municipality to be split: convert input into character; make sure that code is 5 digits
   if(nchar(new_code) == 4){
@@ -31,7 +31,7 @@ reflect_old_boundaries <- function(pref, old_boundary, census2020, new_code){
 
   #find the codes of old municipalities
   old_code <- as.character(
-    (census2020 %>%
+    (census_mun_old_2020 %>%
        dplyr::filter(code == as.numeric(new_code)) %>%
        #filter out old municipalities (code = "9")
        dplyr::filter(type_of_municipality == "9"))$pre_gappei_code
@@ -57,10 +57,16 @@ reflect_old_boundaries <- function(pref, old_boundary, census2020, new_code){
   pre_gappei_geom$pre_gappei_code <- as.numeric(pre_gappei_geom$pre_gappei_code)
 
   #filter out population data based on old_boundaries
-  pre_gappei_pop <- census2020 %>%
+  pre_gappei_pop <- census_mun_old_2020 %>%
     dplyr::filter(code == as.numeric(new_code)) %>%
     #filter out old municipalities (code = "9")
     dplyr::filter(type_of_municipality == "9")
+
+  # Estimate size of Japanese population (defined as total - foreign)
+  pop_total_minus_foreign <- pref[pref$code == new_code,]$pop
+  pop_old_Japanese <- sum(pre_gappei_pop$pop)
+  pre_gappei_pop <- pre_gappei_pop %>%
+    mutate(pop = round(pop*pop_total_minus_foreign/pop_old_Japanese))
 
   #match geometry column with population data
   old_joint <- dplyr::left_join(pre_gappei_geom, pre_gappei_pop) %>%
