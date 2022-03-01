@@ -1,5 +1,5 @@
 ---
-title: 50-State Redistricting Simulations
+title: 47-Prefecture Redistricting Simulations
 description: |
   Comprehensive project to simulate alternative redistricting plans for all Japan.
 date: february 4, 2022
@@ -28,10 +28,18 @@ div.girafe { margin-bottom: 0; }
 }
 ```
 
-[An intro blurb about the project]
+本プロジェクトでは、アルゴリズムを活用し、衆議院議員選挙の小選挙区の区割り改定案の作成と分析を行います。
+アルゴリズムを活用することで、透明性が確保され、合理的かつ均衡の取れた選挙区の区割り改定を行うことが可能です。
+区割り改定案の作成・分析に用いたオープンソースソフトウェア[*redist*](https://alarm-redist.github.io/redist/) は、[Algorithm-Assisted Redistricting Methodology (ALARM) Project](https://alarm-redist.github.io/)によって開発されました。  
 
-[More information about the project]. 
-Click on a state to learn more.
+現在、衆議院議員選挙区画定審議会（以下、「区画審」）は、令和2年国勢調査に基づき、小選挙区の区割り改定の議論を行っています。
+区画審は、一票の格差（日本国民の数が最大の選挙区の日本人人口を、最小の選挙区の日本人人口で割った数）が２倍未満となるように区割り改定案を作成することとなっています。
+今回の区割り改定では、いわゆる「１０増１０減」の結果、１７の都府県が区割り改定の対象となっています。
+
+本プロジェクトでは、区画審の「区割り改定案の作成方針」等に準拠しながら、アルゴリズムを活用し、市区町村の分割を抑えながら、都道府県内の一票の格差を小さくする区割り改定案の作成・分析を行いました。
+区割り改定対象の17都府県から順次分析結果を公表し、最終的には全47都道府県へ対象を拡大させる予定です。
+
+地図上の対象の都府県をクリックし、それぞれアルゴリズムが導き出した区割り案と分析結果をご覧ください。
 
 ```{r include=F}
 prefs = Sys.glob(here("analyses/*_*")) |>
