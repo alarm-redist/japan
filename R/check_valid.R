@@ -29,8 +29,18 @@ check_valid <- function(pref_n, plans_matrix, bridges) {
 
   for (j in 1:length(bridges))
   {
-    start <- which(pref_n$pre_gappei_code == bridges[[j]][1])
-    end <- which(pref_n$pre_gappei_code == bridges[[j]][2])
+    
+    if("pre_gappei_code" %in% colnames(pref_n))
+    {
+      start <- which(pref_n$pre_gappei_code == bridges[[j]][1])
+      end <- which(pref_n$pre_gappei_code == bridges[[j]][2])
+    }
+    else
+    {
+      start <- which(pref_n$code == bridges[[j]][1])
+      end <- which(pref_n$code == bridges[[j]][2])
+    }
+    
 
     for (x in which(mainland$unit == start))
     {
@@ -49,7 +59,8 @@ check_valid <- function(pref_n, plans_matrix, bridges) {
   for (k in 1:ncol(plans_matrix))
   {
     mainland_plan <- plans_matrix[mainland$unit, k]
-    checks[k] <- max(geomander::check_contiguity(mainland_adj, mainland_plan + (ndists_new-1)*mainland$component)$component) == 1
+    mainland$temp_plan <- mainland_plan
+    checks[k] <- max(check_polygon_contiguity(shp=mainland, group=temp_plan)$component) == 1 
   }
 
   return(checks)
