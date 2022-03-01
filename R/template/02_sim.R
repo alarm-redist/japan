@@ -35,7 +35,7 @@ new_1 <- as.character(split_code)
 # Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
 # reflect_old_boundaries() automatically estimates the size of the Japanese population
 # based on the official definition (total population - foreign population)
-pref_1 <- reflect_old_boundaries(pref_0, old_boundary, census_mun_old_2020, new_1)
+pref_1 <- reflect_old_boundaries(pref_0, old_mun, census_mun_old_2020, new_1)
 
 # Add adjacency
 add_adjacency <- function(pref_n){

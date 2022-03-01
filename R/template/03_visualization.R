@@ -229,7 +229,14 @@ rm(pref_smc_plans_0,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
    )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),

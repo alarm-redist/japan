@@ -77,7 +77,7 @@ census_mun_old_2020 <- clean_2020_census(pref_code)
 # based on the official definition (total population - foreign population)
 
 # Download data from old boundaries (pre-平成の大合併)
-old_boundary <- download_old_shp(pref_code)
+old_mun <- download_old_shp(pref_code)
 
 # custom data for the analysis
 pop <- pref_pop_2020 %>%
