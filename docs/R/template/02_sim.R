@@ -4,18 +4,6 @@
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
-# Clean census data
-census2020_current_municipalities <- census2020 %>%
-  #filter out irrelevant data
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# custom data for the analysis
-pref <- pref_cleaned %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
-  dplyr::select(code, pop, geometry)
-
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -44,7 +32,10 @@ split_code <- (pref %>%
                                                                         dplyr::filter(code >=
                                                                                       (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
 new_1 <- as.character(split_code)
-pref_1 <- reflect_old_boundaries(pref_0, old_boundary, census2020, new_1)
+# Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
+# reflect_old_boundaries() automatically estimates the size of the Japanese population
+# based on the official definition (total population - foreign population)
+pref_1 <- reflect_old_boundaries(pref_0, old_mun, census_mun_old_2020, new_1)
 
 # Add adjacency
 add_adjacency <- function(pref_n){
@@ -184,7 +175,7 @@ pref <- pref_cleaned %>%
 pref <- calc_kokumin(pref, dem_pops)
 
 # Filter out relevant data from 2020 Census
-census2020_current_municipalities <- census2020 %>%
+census2020_current_municipalities <- census_mun_old_2020 %>%
   filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
 
 # Estimate 2020 pop. at the 小地域 level
