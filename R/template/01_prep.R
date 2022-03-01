@@ -49,6 +49,8 @@ pref_shp_2015 <- download_shp(pref_code)
 # Clean 2015 Census shapefile
 pref_shp_cleaned <- pref_shp_2015 %>%
     clean_jcdf()
+# Note that S_NAME shows the name of the first entry of the areas grouped
+# in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
 # Download 2020 Census data at 小地域-level
 pref_pop_2020 <- download_pop_2020(pref_code)

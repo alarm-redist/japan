@@ -20,7 +20,7 @@ clean_pref_pop_2020 <- function(pref_pop_2020){
     mutate(total_2020 = as.numeric(total_2020),
            foreign_2020 = as.numeric(foreign_2020)) %>%
 
-    # Discard aggregated data
+    # Discard aggregated/disaggregated data
     filter(level_code %in% c("1", "4") == FALSE) %>%
 
     # Replace NA's with 0
@@ -28,6 +28,8 @@ clean_pref_pop_2020 <- function(pref_pop_2020){
            foreign_2020 = ifelse(is.na(foreign_2020), 0, foreign_2020),
            pop = total_2020 - foreign_2020) %>%
     select(mun_code, sub_code, sub_name, pop)
+
+  pref_pop_2020 <- as_tibble(pref_pop_2020)
 
   return(pref_pop_2020)
 
