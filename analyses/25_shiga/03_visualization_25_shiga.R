@@ -8,6 +8,7 @@
 # Define using the municipality codes, not the gun codes
 koiki_1_codes <- c(25202, 25425, 25441, 25442, 25443)
 
+
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
 for (i in 0:1)
@@ -64,6 +65,7 @@ koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
 
 # Assign koiki_renkei area codes for simulation with 1 split
+# No municipality that belongs to a koiki-renkei area is split
 koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 
@@ -99,9 +101,10 @@ results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
 # Add bridges and check if valid
-bridges_0 <- c()
+# Yanai (35212) and Shubo-Oshima (35305)
+bridges_0 <- c(35212, 35305)
 results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
-bridges_1 <- c()
+bridges_1 <- c(35212, 35305)
 results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # TODO: filter out plans with discontiguities
@@ -220,7 +223,14 @@ rm(pref_smc_plans_0,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
