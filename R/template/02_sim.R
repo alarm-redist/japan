@@ -215,6 +215,34 @@ for(i in 1:length(gun_codes)){
 # Bind together 郡 and non-郡 municipalities
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
+# Converet MULTIPOLYGON to several POLYGONs
+new_rows <- data.frame(code = pref[1, ]$code,
+                       subcode = pref[1, ]$subcode,
+                       geometry = sf::st_cast(pref[1, ]$geometry, "POLYGON"),
+                       pop = 0,
+                       gun_code = pref[1, ]$gun_code
+)
+
+new_rows[1, ]$pop <- pref[1, ]$pop
+
+pref_sep <- new_rows
+
+for (i in 2:nrow(pref))
+{
+  new_rows <- data.frame(code = pref[i, ]$code,
+                         subcode = pref[i, ]$subcode,
+                         geometry = sf::st_cast(pref[i, ]$geometry, "POLYGON"),
+                         pop = 0,
+                         gun_code = pref[i, ]$gun_code
+  )
+  new_rows[1, ]$pop <- pref[i, ]$pop
+  
+  pref_sep <- rbind(pref_sep, new_rows)
+}
+
+pref <- pref_sep %>%
+  sf::st_as_sf()
+
 # Make adjacency list
 prefadj <- redist::redist.adjacency(pref)
 
