@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `30_wakayama`
-# © ALARM Project, February 2022
+# © ALARM Project, March 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -10,7 +10,7 @@ koiki_1_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
-for (i in 0) #only0_split
+for (i in 0)
 {
   pref_map_n <- readRDS(paste("data-out/maps/",
                               as.character(pref_code),
@@ -160,7 +160,14 @@ rm(pref_smc_plans_0,
    wgt_smc_0,
    gun_split_0,
    koiki_split_0,
-   matrix_optimal_0
+   matrix_optimal_0,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),

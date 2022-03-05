@@ -1,21 +1,9 @@
 ###############################################################################
 # Simulations for `30_wakayama`
-# © ALARM Project, February 2022
+# © ALARM Project, March 2022
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
-# Clean census data
-census2020_current_municipalities <- census2020 %>%
-  #filter out irrelevant data
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# custom data for the analysis
-pref <- pref_cleaned %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
-  dplyr::select(code, pop, geometry)
-
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -37,29 +25,10 @@ pref_0 <-  sf::st_as_sf(
 )
 
 # Add adjacency
-add_adjacency <- function(pref_n){
-
-  prefadj_n <- redist::redist.adjacency(pref_n)
-
-  # Modify according to ferry adjacencies
-  if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries_n <- add_ferries(pref_n)
-    prefadj_n <- geomander::add_edge(prefadj_n,
-                                     ferries_n[, 1],
-                                     ferries_n[, 2],
-                                     zero = TRUE)
-  }
-
-  #return result
-  return(prefadj_n)
-}
-
 # Make adjacency list
 # There are no edges to add as there are no areas disconnected from the mainland
 # Note: Tomogashima is inhabited.
 # So we simply make a list without ferries
-# prefadj_0 <- add_adjacency(pref_0)
 prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
@@ -73,8 +42,8 @@ prefadj_n <- geomander::add_edge(prefadj_n,
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj_x <- geomander::add_edge(prefadj_x,
-                                 # which(pref_x$pre_gappei_code == xxxxx),
-                                 # which(pref_x$pre_gappei_code == xxxxx))
+# which(pref_x$pre_gappei_code == xxxxx),
+# which(pref_x$pre_gappei_code == xxxxx))
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
@@ -89,7 +58,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.10,
+                                   pop_tol= (sq_max_to_min - 1)/(1 + sq_max_to_min),
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -113,15 +82,15 @@ run_simulations <- function(pref_n, prefadj_n){
                         sep = ""))
 
   saveRDS(prefadj_n, paste("data-out/pref/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_",
-                          as.character(nsims),
-                          "_adj_",
-                          as.character(i),
-                          ".Rds",
-                          sep = ""))
+                           as.character(pref_code),
+                           "_",
+                           as.character(pref_name),
+                           "_",
+                           as.character(nsims),
+                           "_adj_",
+                           as.character(i),
+                           ".Rds",
+                           sep = ""))
 
   saveRDS(pref_map_n, paste("data-out/maps/",
                             as.character(pref_code),
