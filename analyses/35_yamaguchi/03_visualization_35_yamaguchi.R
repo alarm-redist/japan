@@ -114,10 +114,9 @@ results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
 # Add bridges and check if valid
-# Yanai (35212) and Shubo-Oshima (35305)
-bridges_0 <- c(35212, 35305)
+bridges_0 <- c()
 results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
-bridges_1 <- c(35212, 35305)
+bridges_1 <- c()
 results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # TODO: filter out plans with discontiguities
