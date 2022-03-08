@@ -55,13 +55,14 @@ check_valid <- function(pref_n, plans_matrix, bridges) {
   }
 
   checks <- vector(length = ncol(plans_matrix))
+  mainland_plans <- plans_matrix[mainland$unit, ]
 
   for (k in 1:ncol(plans_matrix))
   {
     # mainland_plan <- plans_matrix[mainland$unit, k]
     # mainland$temp_plan <- mainland_plan
     # checks[k] <- max(check_polygon_contiguity(shp=mainland, group=temp_plan)$component) == 1 
-    checks[k] <- max(check_contiguity(mainland_adj, plans_matrix[mainland$unit, k])$component) == 1
+    checks[k] <- max(check_contiguity(mainland_adj, mainland_plans[, k])$component) == 1
   }
 
   return(checks)
