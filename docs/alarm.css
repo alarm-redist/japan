@@ -27,10 +27,10 @@ html {
   --aside-color:     rgba(0, 0, 0, 0.6);
   --fig-cap-color:   rgba(0, 0, 0, 0.6);
   /*-- Specify custom fonts ~~~ must be imported above   --*/
-  --heading-font:    sans-serif;
-  --mono-font:       monospace;
-  --body-font:       sans-serif;
-  --navbar-font:     sans-serif;  /* websites + blogs only */
+  --heading-font:    HiraginoSans-W3;
+  --mono-font:       HiraginoSans-W3;
+  --body-font:       HiraginoSans-W3;
+  --navbar-font:     HiraginoSans-W3;  /* websites + blogs only */
 }
 
 /*-- ARTICLE METADATA --*/
