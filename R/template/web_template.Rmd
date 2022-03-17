@@ -2,6 +2,7 @@
 title: "広島県 (議員定数：7 → 6)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
 date: January 22, 2022 
+author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     self_contained: false
