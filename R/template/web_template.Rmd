@@ -5,6 +5,12 @@ date: January 22, 2022
 output: distill::distill_article
 ---
 
+```{r additional packages, include = FALSE, warning = FALSE, message = FALSE}
+library(extrafontdb)
+library(Rttf2pt1)
+```
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
@@ -33,7 +39,7 @@ sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地�
 split_1_name <- "福山市"
 
 ## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
+PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -144,6 +150,27 @@ table_summary %>%
 
 # 現行の区割り  
 
+```{r renumber districts (status quo), include = FALSE}
+if(length(sq_pref$ku > 6)){
+  for(i in sq_pref$ku){
+    if(sq_pref$ku[i] %% 6 == 1){
+      sq_pref$ku[i] = 1
+    } else if(sq_pref$ku[i] %% 6 == 2){
+      sq_pref$ku[i] = 2
+    } else if(sq_pref$ku[i] %% 6 == 3){
+      sq_pref$ku[i] = 3
+    } else if(sq_pref$ku[i] %% 6 == 4){
+      sq_pref$ku[i] = 4
+    } else if(sq_pref$ku[i] %% 6 == 5){
+      sq_pref$ku[i] = 5
+    } else if(sq_pref$ku[i] %% 6 == 0){
+      sq_pref$ku[i] = 6
+    }
+  }
+}
+```
+
+
 ```{r status quo plan}
 ggplot() +
   geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
@@ -151,7 +178,7 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
@@ -170,19 +197,16 @@ ggplot() +
 一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
-ggplot() +
-  geom_sf(data = optimal_boundary_0, aes(fill = factor(district)), color = NA) +
-  scale_fill_manual(values = PAL, guide = "none") +
-  
+redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
-               family = "HiraginoSans-W3") +
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -194,20 +218,17 @@ ggplot() +
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-ggplot() +
-  geom_sf(data = optimal_boundary_1, aes(fill = factor(district)), color = NA) +
-  scale_fill_manual(values = PAL, guide = "none") +
-  
+redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("black", "grey60", "grey40")) +
+  scale_color_manual(values = c("black", "grey60", "grey20")) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-               nudge_x = c(0, 0, 2000), # adjust the position of the labels
-               nudge_y = c(7500, 5000, 5000), # adjust the position of the labels
-               family = "HiraginoSans-W3") +
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -261,7 +282,7 @@ ggplot() +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
