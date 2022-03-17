@@ -28,9 +28,9 @@ download_pop_2020 <- function(pref_code){
                 paste('data-raw/', pref_code, '_2020_pop.csv', sep = ''))
 
   # read csv
-  pref_pop_2020 <- read.csv(paste('data-raw/', pref_code, '_2020_pop.csv', sep = ''),
-                            fileEncoding = "Shift-JIS",
-                            header = FALSE,
+  pref_pop_2020 <- read_csv(paste('data-raw/', pref_code, '_2020_pop.csv', sep = ''),
+                            locale = locale(encoding = "cp932"),
+                            show_col_types = FALSE, col_names = FALSE,
                             skip = 5)
 
   return(pref_pop_2020)

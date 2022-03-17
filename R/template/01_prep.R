@@ -55,9 +55,6 @@ pref_shp_cleaned <- pref_shp_2015 %>%
 # Download 2020 Census data at 小地域-level
 pref_pop_2020 <- download_pop_2020(pref_code)
 
-# Clean 2020 Census data at the 小地域-level
-pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
-
 # remove lake if needed
 "ifelse(is.null(lakes_removed),
        pref_shp_cleaned <- pref_shp_cleaned,
@@ -70,6 +67,9 @@ sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
     dplyr::summarise(geometry = sf::st_union(geometry))
 
 ####1. Rural Prefectures########
+# Clean 2020 Census data at the 小地域-level
+pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
+
 # Download and clean 2020 census data at municipality/old-munipality-level
 census_mun_old_2020 <- clean_2020_census(pref_code)
 # Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
@@ -98,6 +98,9 @@ pref <- sf::st_as_sf(pref)
 sum(pref$pop)
 
 ####2. Urban Prefectures########
+# Clean 2020 Census data at the 小地域-level
+pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE)
+
 # Match data and clean
 # Combine municipality code with sub-code
 pref_shp_cleaned <- pref_shp_cleaned %>%
