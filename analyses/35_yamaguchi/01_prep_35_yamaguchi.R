@@ -59,9 +59,9 @@ pref_pop_2020 <- download_pop_2020(pref_code)
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
 
 # remove lake if needed
-"ifelse(is.null(lakes_removed),
-       pref_shp_cleaned <- pref_shp_cleaned,
-       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))"
+# ifelse(is.null(lakes_removed),
+#       pref_shp_cleaned <- pref_shp_cleaned,
+#       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))
 
 # status quo
 sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
