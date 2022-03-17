@@ -1,12 +1,13 @@
 ---
-title: 47-Prefecture Redistricting Simulations
+title: | 
+  ４７都道府県選挙区割シミュレーション
 description: |
   アルゴリズムを活用した衆議院小選挙区の区割り改定案の作成と分析
 date: february 4, 2022
 output:
   distill::distill_article:
     self_contained: false
-    css: alarm.css
+    css: alarm_japan.css
 repository_url: https://github.com/alarm-redist/japan/
 doi: "10.7910/DVN/SLCD3E"
 citation: true
