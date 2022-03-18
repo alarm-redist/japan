@@ -155,7 +155,6 @@ for (i in 1:length(pref_0$code))
 # Save files
 rm(pref_smc_plans_0,
    pref_smc_plans_n,
-   sim_smc_pref_0,
    sim_smc_pref_n,
    wgt_smc_0,
    gun_split_0,
