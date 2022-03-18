@@ -8,6 +8,8 @@ output: distill::distill_article
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
+library(redist)
+library(geomander)
 library(tidyverse)
 library(gt)
 library(extrafontdb)
@@ -144,7 +146,6 @@ table_summary %>%
 ```
 
 # 現行の区割り  
-
 ```{r renumber districts (status quo), include = FALSE}
 if(length(sq_pref$ku > 6)){
   for(i in sq_pref$ku){
@@ -164,7 +165,6 @@ if(length(sq_pref$ku > 6)){
   }
 }
 ```
-
 
 ```{r status quo plan}
 ggplot() +
@@ -193,6 +193,7 @@ ggplot() +
 
 ```{r optimal plan (0 split)}
 redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
+  labs(title = element_blank())+
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey20")) +
@@ -213,7 +214,8 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
+redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
+  labs(title = element_blank())+
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("black", "grey60", "grey20")) +
