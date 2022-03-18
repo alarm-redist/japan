@@ -5,8 +5,7 @@ date: "`r format(Sys.time(), '%Y/%m/%d')`"
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
-    self_contained: false
-    css: alarm_japan.css
+    css: !expr here::here("alarm_japan.css")
 ---
 
 ```{r setup, include=FALSE}
@@ -177,6 +176,7 @@ ggplot() +
 ```{r optimal plan (0 split)}
 redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0)+
   labs(title = element_blank())+
+  
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey40")) +
@@ -199,6 +199,7 @@ redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0)+
 ```{r optimal plan (1split)}
 redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   labs(title = element_blank())+
+  
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("black", "grey60", "grey40")) +
