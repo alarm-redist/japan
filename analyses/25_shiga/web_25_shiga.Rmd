@@ -1,7 +1,7 @@
 ---
 title: "滋賀県 (議員定数：4 → 3)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
-date: February 2, 2022 
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -245,8 +245,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-0.06), # adjust the position of the labels
-              nudge_y = c(-0.06), # adjust the position of the labels
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
