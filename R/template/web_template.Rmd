@@ -5,24 +5,19 @@ date: January 22, 2022
 output: distill::distill_article
 ---
 
-```{r additional packages, include = FALSE, warning = FALSE, message = FALSE}
-library(extrafontdb)
-library(Rttf2pt1)
-```
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
 library(tidyverse)
 library(gt)
-
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+library(extrafontdb)
+library(Rttf2pt1)
 ```
 
 ```{r Manual Entries, include = FALSE}
+pref_code <- 34
+pref_name <- "hiroshima"
+pref_name_kanji <- "広島県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
