@@ -1,11 +1,13 @@
 ---
-title: 47-Prefecture Redistricting Simulations
+title: | 
+  47都道府県選挙区割シミュレーション
 description: |
-  Comprehensive project to simulate alternative redistricting plans for all Japan.
+  アルゴリズムを活用した衆議院小選挙区の区割り改定案の作成と分析
 date: february 4, 2022
 output:
   distill::distill_article:
     self_contained: false
+    css: alarm_japan.css
 repository_url: https://github.com/alarm-redist/japan/
 doi: "10.7910/DVN/SLCD3E"
 citation: true
@@ -28,18 +30,18 @@ div.girafe { margin-bottom: 0; }
 }
 ```
 
-本プロジェクトでは、アルゴリズムを活用し、衆議院議員選挙の小選挙区の区割り改定案の作成と分析を行います。
-アルゴリズムを活用することで、透明性が確保され、合理的かつ均衡の取れた選挙区の区割り改定を行うことが可能です。
+本プロジェクトの目的は、シミュレーションアルゴリズムを活用し、衆議院議員選挙の小選挙区の区割り改定案の作成と分析を行うことです。
+アルゴリズムを活用することで、透明性が確保され、合理的かつ均衡の取れた選挙区の区割り改定を行うことができます。
 区割り改定案の作成・分析に用いたオープンソースソフトウェア[*redist*](https://alarm-redist.github.io/redist/) は、[Algorithm-Assisted Redistricting Methodology (ALARM) Project](https://alarm-redist.github.io/)によって開発されました。  
 
-現在、衆議院議員選挙区画定審議会（以下、「区画審」）は、令和2年国勢調査に基づき、小選挙区の区割り改定の議論を行っています。
+現在、衆議院議員選挙区画定審議会（以下、「区画審」）は、令和2年国勢調査に基づき、小選挙区の区割り改定の議論をしています。
 区画審は、一票の格差（日本国民の数が最大の選挙区の日本人人口を、最小の選挙区の日本人人口で割った数）が２倍未満となるように区割り改定案を作成することとなっています。
-今回の区割り改定では、いわゆる「１０増１０減」の結果、１７の都府県が区割り改定の対象となっています。
+今回の区割り改定では、いわゆる「10増10減」の結果、19の都府県が区割り改定の対象になりました。
 
-本プロジェクトでは、区画審の「区割り改定案の作成方針」等に準拠しながら、アルゴリズムを活用し、市区町村の分割を抑えながら、都道府県内の一票の格差を小さくする区割り改定案の作成・分析を行いました。
-区割り改定対象の17都府県から順次分析結果を公表し、最終的には全47都道府県へ対象を拡大させる予定です。
+本プロジェクトでは、アルゴリズムを活用し、区画審の「区割り改定案の作成方針」等に準拠しつつ、市区町村の分割を抑えながら、都道府県内の一票の格差を小さくする区割り改定案の作成・分析を行いました。
+区割り改定対象の19都府県から順次分析結果を公表し、最終的には全47都道府県へ対象を拡大させる予定です。
 
-地図上の対象の都府県をクリックし、それぞれアルゴリズムが導き出した区割り案と分析結果をご覧ください。
+地図上の対象の都府県をクリックすることで、それぞれアルゴリズムが導き出した区割り案と分析結果が閲覧することができます。
 
 ```{r include=F}
 prefs = Sys.glob(here("analyses/*_*")) |>
@@ -88,7 +90,7 @@ girafe(ggobj=p, width_svg=9, height_svg=6, options=list(
     ))
 ```
 
-### Analyzed States 
+### 対象の都道府県 
 
 ```{r links, results='asis'}
 cat('<div class="state-links">')
@@ -100,22 +102,14 @@ filter(japan, available) %>%
 cat('</div><br />\n\n')
 ```
 
-<center>
 
-**Download the data: *[ALARM Project Dataverse](https://doi.org/10.7910/DVN/SLCD3E)* &raquo;**
+## 出典 {.appendix}
 
-</center>
+特に明記されていない限り、本プロジェクトで用いた人口等のデータは、総務省統計局がe-Statにて公開している[令和2年国勢調査](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472)および[平成27国勢調査](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001080615)を利用しています。
 
-## Data Sources and Availability {.appendix}
+また、国土交通省が公開する[国土数値情報](https://nlftp.mlit.go.jp/ksj/index.html)を活用して定期旅客航路データ（フェリーなど）や湖沼データなどをシェイプファイルに追加したほか、[東京大学空間情報科学研究センター](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/)のポリゴンデータから現行の区割り図を作成しました。
 
-Unless otherwise noted, data for each state comes from the ALARM Project's
-[2020 Redistricting Data Files](https://alarm-redist.github.io/posts/2021-08-10-census-2020/),
-which use U.S. Census demographic data (in the public domain) and election data 
-from the [Voting and Election Science Team](https://dataverse.harvard.edu/dataverse/electionscience), 
-which is licensed  under a [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
-In these cases, shapefiles are also taken from the U.S. Census Bureau.
-The U.S. map here, scaled to reflect Congressional representations, is courtesy of <https://dkel.ec/map>.
+## 分析結果の再現性 {.appendix}
 
-All data is available [on our  Dataverse](https://doi.org/10.7910/DVN/SLCD3E).
-Code is available [on GitHub](https://github.com/alarm-redist/fifty-states/).
+全ての分析結果のデータは[Dataverse](https://doi.org/10.7910/DVN/Z9UKSH)にて、R言語によるプログラムは[GitHub](https://github.com/alarm-redist/japan)にて公開されています。
 
