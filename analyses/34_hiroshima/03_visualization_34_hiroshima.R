@@ -170,10 +170,10 @@ sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
                                         col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_0 %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
