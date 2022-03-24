@@ -3,25 +3,6 @@
 # © ALARM Project, November 2021
 ###############################################################################
 
-####-------------- 1. Method for Rural Prefectures-------------------------####
-# Clean census data
-census2020_current_municipalities <- census2020 %>%
-  #filter out irrelevant data
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# custom data for the analysis
-pref <- pref_cleaned %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
-  dplyr::select(code, pop, geometry)
-
-# fix 富谷町 --> 富谷市 (2016 changes)
-pref[which(pref$code == 4423), ]$pop <-  (census2020 %>%
-                                            dplyr::filter(code == 4216, ) %>%
-                                            dplyr::filter(type_of_municipality == 2))$pop
-pref[which(pref$code == 4423), ]$code <- 4216
-
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -45,12 +26,15 @@ pref_0 <-  sf::st_as_sf(
 # Define pref_1: Split largest municipality
 # Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
 split_code <- (pref %>%
-                dplyr::filter(code >=
-                               (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
-                                                                        dplyr::filter(code >=
-                                                                                      (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
+                 dplyr::filter(code >=
+                                 (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
+                                                                            dplyr::filter(code >=
+                                                                                            (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
 new_1 <- as.character(split_code)
-pref_1 <- reflect_old_boundaries(pref_0, old_boundary, census2020, new_1)
+# Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
+# reflect_old_boundaries() automatically estimates the size of the Japanese population
+# based on the official definition (total population - foreign population)
+pref_1 <- reflect_old_boundaries(pref_0, old_mun, census_mun_old_2020, new_1)
 
 # Make adjacency list: no ferries to add
 prefadj_0 <- redist::redist.adjacency(pref_0)
@@ -93,15 +77,15 @@ run_simulations <- function(pref_n, prefadj_n){
                         sep = ""))
 
   saveRDS(prefadj_n, paste("data-out/pref/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_",
-                          as.character(nsims),
-                          "_adj_",
-                          as.character(i),
-                          ".Rds",
-                          sep = ""))
+                           as.character(pref_code),
+                           "_",
+                           as.character(pref_name),
+                           "_",
+                           as.character(nsims),
+                           "_adj_",
+                           as.character(i),
+                           ".Rds",
+                           sep = ""))
 
   saveRDS(pref_map_n, paste("data-out/maps/",
                             as.character(pref_code),
@@ -147,5 +131,3 @@ run_simulations <- function(pref_n, prefadj_n){
 
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
-
-

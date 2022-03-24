@@ -1,5 +1,5 @@
 ###############################################################################
-# Data visualization for `[TODO]`
+# Data visualization for `Miyagi`
 # © ALARM Project, November 2021
 ###############################################################################
 
@@ -13,27 +13,27 @@ koiki_2_codes <- c(4215, 4444, 4445, 4501, 4505)
 for (i in 0:1)
 {
   pref_map_n <- readRDS(paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_map_",
+                              as.character(nsims),
+                              "_",
+                              as.character(i),
+                              ".Rds",
+                              sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
   prefadj_n <-readRDS(paste("data-out/pref/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(nsims),
-                           "_adj_",
-                           as.character(i),
-                           ".Rds",
-                           sep = ""))
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(nsims),
+                            "_adj_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
   assign(paste("prefadj_", i, sep = ""), prefadj_n)
 
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
@@ -69,8 +69,7 @@ koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
 # When a municipality that belongs to a koiki-renkei area is split:
 koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% c(koiki_1_codes,
-                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code)
-                           )] <- 1
+                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 1
 koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
@@ -79,9 +78,7 @@ num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
 
 # Count number of gun splits
-num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
 gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 
 # Count number of koiki renkei splits
@@ -95,7 +92,6 @@ koiki_split_1 <-
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -106,14 +102,45 @@ results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
 results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
-# Filter out functioning results
-functioning_results_0 <- results_0
-functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0)
+# Filter out discontiguous plans
+# 宮城野区(4102) is made up of discontiguous parts (宮城野区港５丁目 appears to be discontiguous from the rest of 宮城野区)
+# However, in practice, 宮城野区 is treated as one contiguous unit.
+# Thus, for the purpose of checking whether plans are contiguous or not,
+# we remove 宮城野区 as well as its neighboring municipality, 七ヶ浜町(4404), from the analysis.
+
+# Filter out discontiguous area in 宮城野区(4102)
+discont_geom <- data.frame(unit = 1,
+                           geometry = sf::st_cast(pref_0[which(pref_0$code == 4102),]$geometry,
+                                                  "POLYGON"))
+discont_geom <- sf::st_as_sf(discont_geom[2,])
+
+# Edit pref_0 object by removing discontiguous area in 宮城野区 (i.e. 宮城野区港５丁目)
+pref_0_without_discont <- pref_0
+pref_0_without_discont[which(pref_0_without_discont$code == 4102),]$geometry <- discont_geom$geometry
+# Remove 七ヶ浜町(4404) from the analysis
+pref_0_without_discont <- pref_0_without_discont %>% filter(code %in% 4404 == FALSE)
+pref_smc_plans_0_without_discont <- pref_smc_plans_0[-which(pref_0$code == 4404),]
+
+# Edit pref_0 object by removing discontiguous area in 宮城野区 (i.e. 宮城野区港５丁目)
+pref_1_without_discont <- pref_1
+pref_1_without_discont[which(pref_1_without_discont$code == 4102),]$geometry <- discont_geom$geometry
+# Remove 七ヶ浜町(4404) from the analysis
+pref_1_without_discont <- pref_1_without_discont %>% filter(code %in% 4404 == FALSE)
+pref_smc_plans_1_without_discont <- pref_smc_plans_1[-which(pref_1$code == 4404),]
+
+# Add bridges and check if valid
+bridges_0 <- c()
+results_0$valid <- check_valid(pref_0_without_discont, pref_smc_plans_0_without_discont, bridges_0)
+bridges_1 <- c()
+results_1$valid <- check_valid(pref_1_without_discont, pref_smc_plans_1_without_discont, bridges_1)
+
+# TODO: filter out plans with discontiguities
+functioning_results_0 <- results_0 %>% dplyr::filter(valid)
+functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # Find Optimal Plan
 optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
@@ -161,8 +188,8 @@ boundary_0 <- rbind(mun, gun)
 
 # Boundary for split municipality
 old_boundary <- optimal_boundary_1 %>%
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
+  filter(code == split_code) %>%
+  summarise(geometry = sf::st_combine(geometry))
 old_boundary$type <- "合併前の市町村の境界"
 
 # Match CRS
@@ -215,22 +242,25 @@ for (i in 1:length(pref_0$code))
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
    num_mun_split_1,
    mun_split_1,
-   num_gun_split_0,
    gun_split_0,
-   num_gun_split_1,
    gun_split_1,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
-   )
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
+)
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
