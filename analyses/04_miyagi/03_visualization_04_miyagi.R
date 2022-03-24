@@ -261,6 +261,13 @@ rm(pref_smc_plans_0,
    pref_shp_cleaned,
    old_mun
 )
+
+# Delete additional objects created in this script
+rm(pref_smc_plans_0_without_discont,
+   pref_smc_plans_1_without_discont,
+   pref_0_without_discont,
+   pref_1_without_discont)
+
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
