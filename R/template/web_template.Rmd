@@ -6,6 +6,7 @@ author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
+doi: "10.7910/DVN/Z9UKSH"　
 ---
 
 ```{r setup, include=FALSE}
