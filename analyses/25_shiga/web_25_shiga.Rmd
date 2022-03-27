@@ -1,6 +1,6 @@
 ---
 title: "滋賀県 (議員定数：4 → 3)"
-description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
+description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
 date: "`r format(Sys.time(), '%Y/%m/%d')`"
 author: "ALARM Japan プロジェクトチーム"
 output:
