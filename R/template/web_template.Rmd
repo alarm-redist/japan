@@ -148,30 +148,6 @@ table_summary %>%
   ) 
 ```
 
-<<<<<<< HEAD
-# 現行の区割り  
-```{r renumber districts (status quo), include = FALSE}
-if(length(sq_pref$ku > 6)){
-  for(i in sq_pref$ku){
-    if(sq_pref$ku[i] %% 6 == 1){
-      sq_pref$ku[i] = 1
-    } else if(sq_pref$ku[i] %% 6 == 2){
-      sq_pref$ku[i] = 2
-    } else if(sq_pref$ku[i] %% 6 == 3){
-      sq_pref$ku[i] = 3
-    } else if(sq_pref$ku[i] %% 6 == 4){
-      sq_pref$ku[i] = 4
-    } else if(sq_pref$ku[i] %% 6 == 5){
-      sq_pref$ku[i] = 5
-    } else if(sq_pref$ku[i] %% 6 == 0){
-      sq_pref$ku[i] = 6
-    }
-  }
-}
-```
-
-```{r status quo plan}
-=======
 # 現行の区割り 
 ```{r status quo plan, warning=FALSE, message = FALSE}
 # Set Colors for Plot
@@ -185,7 +161,6 @@ if(ndists_old > 6){
     mutate(color = ku)
 }
 # Plot Map
->>>>>>> main
 ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
@@ -213,10 +188,7 @@ ggplot() +
 ```{r optimal plan (0 split)}
 redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   labs(title = element_blank())+
-<<<<<<< HEAD
-=======
   
->>>>>>> main
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey30")) +
@@ -237,14 +209,9 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-<<<<<<< HEAD
-redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
-  labs(title = element_blank())+
-=======
 redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   labs(title = element_blank())+
   
->>>>>>> main
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("black", "grey60", "grey30")) +
