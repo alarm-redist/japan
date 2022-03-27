@@ -1,28 +1,29 @@
 ---
 title: "広島県 (議員定数：7 → 6)"
-description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
-date: January 22, 2022 
-output: distill::distill_article
+description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
+author: "ALARM Japan プロジェクトチーム"
+output:
+  distill::distill_article:
+    css: !expr here::here("alarm_japan.css")
+doi: "10.7910/DVN/Z9UKSH"　
 ---
-
-```{r additional packages, include = FALSE, warning = FALSE, message = FALSE}
-library(extrafontdb)
-library(Rttf2pt1)
-```
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
+library(redist)
+library(geomander)
 library(tidyverse)
 library(gt)
-
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+library(extrafontdb)
+library(Rttf2pt1)
 ```
 
 ```{r Manual Entries, include = FALSE}
+pref_code <- 34
+pref_name <- "hiroshima"
+pref_name_kanji <- "広島県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
@@ -148,42 +149,31 @@ table_summary %>%
   ) 
 ```
 
-# 現行の区割り  
-
-```{r renumber districts (status quo), include = FALSE}
-if(length(sq_pref$ku > 6)){
-  for(i in sq_pref$ku){
-    if(sq_pref$ku[i] %% 6 == 1){
-      sq_pref$ku[i] = 1
-    } else if(sq_pref$ku[i] %% 6 == 2){
-      sq_pref$ku[i] = 2
-    } else if(sq_pref$ku[i] %% 6 == 3){
-      sq_pref$ku[i] = 3
-    } else if(sq_pref$ku[i] %% 6 == 4){
-      sq_pref$ku[i] = 4
-    } else if(sq_pref$ku[i] %% 6 == 5){
-      sq_pref$ku[i] = 5
-    } else if(sq_pref$ku[i] %% 6 == 0){
-      sq_pref$ku[i] = 6
-    }
-  }
+# 現行の区割り 
+```{r status quo plan, warning=FALSE, message = FALSE}
+# Set Colors for Plot
+if(ndists_old > 6){
+  sq_pref_map <- sq_pref %>% 
+    mutate(pop = 1) %>% # only for plotting purpose
+    redist_map(ndists = nrow(sq_pref)) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$ku)))
+}else{
+  sq_pref_map <- sq_pref %>% 
+    mutate(color = ku)
 }
-```
-
-
-```{r status quo plan}
+# Plot Map
 ggplot() +
-  geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
+  geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey20")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = c(0, 0.02, 0.01), # adjust the position of the labels
-              nudge_y = c(0.05, 0.03, 0.025), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(0, 0, 0), # adjust the position of the labels
+              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -198,9 +188,11 @@ ggplot() +
 
 ```{r optimal plan (0 split)}
 redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
+  labs(title = element_blank())+
+  
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey20")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -219,9 +211,11 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
 
 ```{r optimal plan (1split)}
 redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
+  labs(title = element_blank())+
+  
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("black", "grey60", "grey20")) +
+  scale_color_manual(values = c("black", "grey60", "grey30")) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
@@ -246,48 +240,28 @@ redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
 
 ```{r co-occurrence, warning = FALSE}
 # Match membership data with map object
-pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
-pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
-pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
-pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
-pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
-pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
+if(ndists_new > 6){
+  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$membership)))
+} else{
+  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+    mutate(color = .$membership)
+}
 
 # Co-occurrence plot
 ggplot() +
-  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
- 
-  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#437d6f', high= '#2A4E45') + #dark green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#d99a6a', high = '#7F4E28') + #brown
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
+  geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
+  scale_fill_manual(values = PAL, guide = "none") + 
+  scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey20")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = c(0, 0.02, 0.01), # adjust the position of the labels
-              nudge_y = c(0.05, 0.03, 0.025), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+              nudge_x = c(0, 0, 0), # adjust the position of the labels
+              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -304,8 +278,4 @@ ggplot() +
 * 有効な案から一票の格差が最小の区割り案を選定
 
 ### 県特有の設定  
-飛び地を防ぐため、以下の案は棄却: 
-
-* 安芸郡と広島市安芸区が異なる選挙区に属する案  
-* 竹原市及び呉市が、東広島市と異なる選挙区に属する案  
-
+特になし 

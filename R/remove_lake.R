@@ -25,7 +25,7 @@ remove_lake <- function(pref_raw, name_lake){
     sf::st_sf()
 
   # find geographical difference
-  pref_nolake <- sf::st_difference(pref_raw, lake_data) 
+  pref_nolake <- sf::st_difference(pref_raw, lake_data)
 
   # return result
   return(pref_nolake)
