@@ -126,7 +126,7 @@ cat('</div><br />\n\n')
 Unless otherwise noted, data for each prefecture comes from [the 2020 Japapnese Census (令和2年国勢調査)](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472) and [the 2015 Japanese Census (平成27国勢調査)](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001080615) from the Statistics Bureau.
 In these cases, shapefiles are also taken from the Census.
 
-Also, for the additional geographical information (ferries, lakes, , etc.) used in the analysis comes from [Ministry of Land, Infrastructure, Transport and Tourism](https://nlftp.mlit.go.jp/ksj/index.html), and polygon files for the current legislative districts used for mapping comes from [Center for Spatial Information Science, at the University of Tokyo](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/). 
+Also, for the additional geographical information used in this analysis (ferries, lakes, etc.)  comes from [Ministry of Land, Infrastructure, Transport and Tourism](https://nlftp.mlit.go.jp/ksj/index.html), and polygon files for the current legislative districts used for mapping comes from [Center for Spatial Information Science, at the University of Tokyo](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/). 
 
 All data is available on [our Dataverse](https://doi.org/10.7910/DVN/Z9UKSH) and has been released to the public domain.
 Code is available on [GitHub](https://github.com/alarm-redist/japan) under an MIT license.
