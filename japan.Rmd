@@ -2,8 +2,8 @@
 title: | 
   47都道府県選挙区割シミュレーション
 description: |
-  <img src='/assets/alarm_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
-  アルゴリズムを活用した衆議院小選挙区の区割り改定案の作成と分析
+  <img src='assets/japan_47pref_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
+  アルゴリズムを活用した一票の格差を是正する <br/> 衆議院小選挙区の区割り改定案の作成と分析
 date: April 1, 2022
 authors:
     - name: 宮﨑 将
