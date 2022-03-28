@@ -43,7 +43,7 @@ div.girafe { margin-bottom: 0; }
 The goal of the 47-Prefecture Simulation Project is to simulate and analyze redistricting plans for the single-member districts of the House of Representatives of Japan using a redistricting simulation algorithm. 
 Redistricting simulation algorithms can be used to redraw legislative districts in a transparent manner while following redistricting rules such as criteria on geographic compactness and population parity.
 
-For this project, we use an open-source software package [redist] (https://alarm-redist.github.io/about.html), which was developed by the [Algorithm-Assisted Redistricting Methodology (ALARM) Project] (https://alarm-redist.github.io/).
+For this project, we use an open-source software package [redist](https://alarm-redist.github.io/about.html), which was developed by the [Algorithm-Assisted Redistricting Methodology (ALARM) Project](https://alarm-redist.github.io/).
 
 
 
