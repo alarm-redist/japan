@@ -9,31 +9,32 @@
 koiki_1_codes <- c(38201, 38210, 38215, 38386, 38401, 38402)
 koiki_2_codes <- c(38203, 38484, 38488, 38506)
 
+####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
 for (i in 0:1)
 {
   pref_map_n <- readRDS(paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_map_",
+                              as.character(nsims),
+                              "_",
+                              as.character(i),
+                              ".Rds",
+                              sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
   prefadj_n <-readRDS(paste("data-out/pref/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(nsims),
-                           "_adj_",
-                           as.character(i),
-                           ".Rds",
-                           sep = ""))
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_",
+                            as.character(nsims),
+                            "_adj_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
   assign(paste("prefadj_", i, sep = ""), prefadj_n)
 
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
@@ -55,7 +56,7 @@ for (i in 0:1)
   assign(paste("pref_smc_plans_", i, sep = ""), pref_smc_plans_n)
 }
 
-# Add Matsuyama-shi back to result of simulation with 0 split
+# Add 松山市 back to result of simulation with 0 split
 sim_smc_pref_0_with_Matsuyama <- NULL
 for(i in 1:nsims){
   with_Matsuyama <-
@@ -66,8 +67,7 @@ for(i in 1:nsims){
   sim_smc_pref_0_with_Matsuyama <- rbind(sim_smc_pref_0_with_Matsuyama, with_Matsuyama)
 }
 
-
-# Add Kyu-Matsuyma-shi back to result of simulation with 1 split
+# Add 旧松山市 back to result of simulation with 1 split
 sim_smc_pref_1_with_Matsuyama <- NULL
 for(i in 1:nsims){
   with_Matsuyama <-
@@ -89,7 +89,6 @@ koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
 
 # Assign koiki_renkei area codes for simulation with 1 split
-# When a municipality that belongs to a koiki-renkei area is split:
 koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
@@ -99,9 +98,7 @@ num_mun_split_1 <- 1
 mun_split_1 <- 1
 
 # Count number of gun splits
-num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
 gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 
 # Count number of koiki renkei splits
@@ -115,7 +112,6 @@ koiki_split_1 <-
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -126,14 +122,19 @@ results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
 results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
+# Add bridges and check if valid
+bridges_0 <- c()
+results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
+bridges_1 <- list(c(38211, 38363))
+results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
+
 # TODO: filter out plans with discontiguities
-functioning_results_0 <- results_0
-functioning_results_1 <- results_1
+functioning_results_0 <- results_0 %>% dplyr::filter(valid)
+functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # Find Optimal Plan
 optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
@@ -148,11 +149,18 @@ matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == o
 colnames(matrix_optimal_0) <- "district"
 optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
 
+# Match district numbers
+optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
+                                   by = "code")
+sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
+                                        optimal_split$district,
+                                        col = "pop_overlap")
+
 # Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_0 %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
@@ -174,8 +182,8 @@ boundary_0 <- rbind(mun, gun)
 
 # Boundary for split municipality
 old_boundary <- optimal_boundary_1 %>%
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
+  filter(code == split_code) %>%
+  summarise(geometry = sf::st_combine(geometry))
 old_boundary$type <- "合併前の市町村の境界"
 
 # Match CRS
@@ -199,7 +207,7 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
+prec_clusters_0 = cutree(cl_co_0, ndists_new-1) # Make 2 clusters
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 
@@ -228,22 +236,25 @@ for (i in 1:length(pref_0$code))
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
    num_mun_split_1,
    mun_split_1,
-   num_gun_split_0,
    gun_split_0,
-   num_gun_split_1,
    gun_split_1,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
-   )
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
+)
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
