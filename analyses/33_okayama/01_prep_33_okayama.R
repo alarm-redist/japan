@@ -32,14 +32,14 @@ pref_name <- "okayama"
 lakes_removed <- c()
 ndists_new <- 4
 ndists_old <- 5
-sq_max_to_min <- 1.515
-sq_max_to_tottori2 <- 1.661
-sq_mun_splits <- 4
-sq_gun_splits <- 0
+sq_max_to_min <- 1.519
+sq_max_to_tottori2 <- 1.666
+sq_mun_splits <- 6
+sq_gun_splits <- 1
 sq_koiki_splits <- 2
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c()
+gun_exception <- c(33680)
 
 # Change time limit
 options(timeout = 300)
@@ -64,7 +64,6 @@ sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
     dplyr::group_by(ku) %>%
     dplyr::summarise(geometry = sf::st_union(geometry))
 
-####1. Rural Prefectures########
 # Download and clean 2020 census data at municipality/old-munipality-level
 census_mun_old_2020 <- clean_2020_census(pref_code)
 # Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
