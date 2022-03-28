@@ -40,26 +40,23 @@ div.girafe { margin-bottom: 0; }
 }
 ```
 
-The goal of the 47-Prefecture Simulation Project is to simulate and analyze redistricting plans for the single-member districts of the House of Representatives of Japan using a redistricting simulation algorithm. 
-Redistricting simulation algorithms can be used to redraw legislative districts in a transparent manner while following redistricting rules such as criteria on geographic compactness and population parity.
 
+The goal of the 47-Prefecture Simulation Project is to generate and analyze redistricting plans for the single-member districts of the House of Representatives of Japan using a redistricting simulation algorithm. 
+Redistricting simulation algorithms can be used to redraw legislative districts in a transparent manner while following redistricting rules such as criteria on geographic compactness and population parity.
 For this project, we use an open-source software package [redist](https://alarm-redist.github.io/about.html), which was developed by the [Algorithm-Assisted Redistricting Methodology (ALARM) Project](https://alarm-redist.github.io/).
 
+Currently, the Council on the House of Representatives Electoral District (hereafter “the Council), a commission that proposes redistricting plans for the single-member districts of the House of Representatives, is revising district boundaries based on the 2020 Census. 
+The Council is mandated to redraw district boundaries so that the nation-wide maximum-minimum ratio of voters per district falls under 2.  
+Specifically, the number of Japanese citizens in the largest district in Japan must be no larger than twice the number of Japanese citizens in the smallest district in Japan. 
+In this redistricting cycle, districts will be redrawn in 19 prefectures where 5 prefectures will gain seats, 10 prefectures will lose seats, and 4 prefectures will neither gain nor lose seats but will be subject to redistricting.
+
+In this project, we use a redistricting simulation algorithm to generate redistricting plans that both limit the number of split municipalities and minimize the voting weight disparity within each prefecture. 
+Our simulations are designed to comply with the redistricting rules that the Council abides by. 
+We will start with the 19 prefectures subject to redistricting and plan to expand the scope of our research to all 47 prefectures.
 
 
-Currently, the Council on the House of Representatives Electoral District (hereinafter “the Council), a commission that proposes redistricting plans for the single-member districts of the House of Representatives, is conducting redistricting based on the 2020 Census. 
-The Committee is mandated to redraw district boundaries so that the nation-wide maximum-minimum ratio of voters per district is under 2.
-In other words, the number of Japanese citizens in the largest district in Japan must be no larger than twice the number of Japanese citizens in the smallest district in Japan. 
-In this redistricting cycle after the 2020 Census, districts will be redrawn in 19 prefectures. 
-5 prefectures will gain seats, 10 prefectures will lose seats, and 4 prefectures will neither gain nor lose seats but are subject to redistricting. 
-
-In this project, we aim to use a redistricting simulation algorithm to simulate and analyze redistricting plans that both limit the number of municipalities that are split and minimize the vote weight disparity within each prefecture. 
-Our simulations are in accordance with the redistricting rules that the Council abides by. 
-We will start with the 19 prefectures subject to redistricting and plan to expand our scope of our research to all 47 prefectures.
-
-You can dive into our analyses straightaway by clicking on a prefecture below. 
-From there, you'll be able to see our analysis based on a set of 25,000 simulated plans.
-
+You can view the results of our analyses by clicking on a prefecture of interest below.
+Each prefecture page presents the summary of our analysis, an example plan, and link to the code and data used for our analysis.
 
 ```{r include=F}
 prefs = Sys.glob(here("analyses/*_*")) |>
