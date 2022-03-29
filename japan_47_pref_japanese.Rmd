@@ -3,7 +3,7 @@ title: |
   47都道府県選挙区割シミュレーション
 description: |
   <img src='assets/japan_47pref_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
-  アルゴリズムを活用した<br/> 衆議院小選挙区の区割り改定案の作成と分析
+  アルゴリズムを活用した<br/> 衆議院小選挙区の区割り改定案の作成と分析 
 date: April 1, 2022
 authors:
     - name: 宮﨑 将
@@ -37,11 +37,7 @@ div.girafe { margin-bottom: 0; }
 }
 ```
 
-<center>
-
-[**日本語**](japan_47_pref_japanese.html) / [**English**](japan_47_pref_english.html)
-
-</center>
+<p style="text-align:right;">**日本語** / [**English**](japan_47_pref_english.html)</p>
 
 本プロジェクトの目的は、シミュレーションアルゴリズムを活用し、衆議院議員選挙の小選挙区の区割り改定案の作成と分析を行うことです。
 アルゴリズムを活用することで、透明性が確保され、合理的かつ均衡の取れた選挙区の区割り改定を行うことができます。
