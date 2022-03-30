@@ -32,8 +32,8 @@ pref_name <- "shiga"
 lakes_removed <- c("琵琶湖")
 ndists_new <- 3
 ndists_old <- 4
-sq_max_to_min <- 1.261
-sq_max_to_tottori2 <- 1.681
+sq_max_to_min <- 1.241
+sq_max_to_tottori2 <- 1.412
 sq_mun_splits <- 1
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
