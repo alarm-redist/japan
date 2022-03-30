@@ -41,7 +41,7 @@ sq_koiki_splits_name <- ""
 split_1_name <- "大津市"
 
 ## Color Palette
-PAL <- c('#364B7F', '#DCAD35', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
+PAL <- c('#364B7F', '#DCAD35', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
