@@ -1,9 +1,8 @@
 ###############################################################################
 # Simulations for `[Okayama]`
-# © ALARM Project, November 2021
+# © ALARM Project, March 2021
 ###############################################################################
 
-####-------------- 1. Method for Rural Prefectures-------------------------####
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -87,7 +86,6 @@ run_simulations <- function(pref_n, prefadj_n){
                                      total_pop = pop,
                                      adj = prefadj_n)
   }
-
 
   # Run simulation
   sim_smc_pref_n <- redist::redist_smc(

@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `[Okayama]`
-# © ALARM Project, November 2021
+# © ALARM Project, March 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -158,18 +158,26 @@ matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == o
 colnames(matrix_optimal_0) <- "district"
 optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
 
+### Add 倉敷市 to `optimal_boundary_0`
+optimal_boundary_0_with_kurashiki <- optimal_boundary_0 %>%
+  as.data.frame() %>%
+  select(code, pop, district)
+optimal_boundary_0_with_kurashiki <-
+  rbind(optimal_boundary_0_with_kurashiki, c(33202, pref$pop[which(pref$code == 33202)], 4))
+
 # Match district numbers
-optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
+optimal_split <- dplyr::inner_join(as.data.frame(pref_1), optimal_boundary_0_with_kurashiki,
                                    by = "code")
+
 sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
                                         optimal_split$district,
                                         col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_0 %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
@@ -216,7 +224,9 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new)
+prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
+# Since we set aside 倉敷市 when running the simulations, the simulations yield redistricting plans
+# with ndists_new-1 districts. Thus, we create ndists_new-1 clusters.
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 
@@ -245,8 +255,6 @@ for (i in 1:length(pref_0$code))
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
