@@ -1,6 +1,6 @@
 ###############################################################################
-# Data visualization for `Miyagi`
-# © ALARM Project, November 2021
+# Data visualization for `04_Miyagi`
+# © ALARM Project, March 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)

@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `Miyagi` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `04_Miyagi` analysis
+# © ALARM Project, March 2021
 ###############################################################################
 
 suppressMessages({

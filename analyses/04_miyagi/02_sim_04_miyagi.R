@@ -1,6 +1,6 @@
 ###############################################################################
-# Simulations for `Miyagi`
-# © ALARM Project, November 2021
+# Simulations for `04_Miyagi`
+# © ALARM Project, March 2021
 ###############################################################################
 
 # Add information about 郡
