@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `Hiroshima` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `34_Hiroshima` analysis
+# © ALARM Project, March 2021
 ###############################################################################
 
 suppressMessages({

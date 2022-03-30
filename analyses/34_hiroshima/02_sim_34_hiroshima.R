@@ -1,6 +1,6 @@
 ###############################################################################
-# Simulations for `Hiroshima`
-# © ALARM Project, November 2021
+# Simulations for `34_Hiroshima`
+# © ALARM Project, March 2021
 ###############################################################################
 
 # Add information about 郡
