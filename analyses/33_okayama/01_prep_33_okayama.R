@@ -1,5 +1,5 @@
 ###############################################################################
-# Download and prepare data for `Okayama` analysis
+# Download and prepare data for `33_Okayama` analysis
 # © ALARM Project, March 2021
 ###############################################################################
 
