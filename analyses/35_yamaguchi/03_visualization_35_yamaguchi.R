@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `35_yamaguchi`
-# © ALARM Project, February 2022
+# © ALARM Project, March 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -70,7 +70,7 @@ koiki_3_0 <- pref_0$code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
-# When a municipality that belongs to a koiki-renkei area is split:
+# No municipality that belongs to a koiki-renkei area is split
 koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 koiki_2_1 <- pref_1$pre_gappei_code
@@ -95,6 +95,7 @@ koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_3_1)
+
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
@@ -143,10 +144,10 @@ sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
                                         col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_0 %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
@@ -222,8 +223,6 @@ for (i in 1:length(pref_0$code))
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
@@ -234,7 +233,14 @@ rm(pref_smc_plans_0,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
