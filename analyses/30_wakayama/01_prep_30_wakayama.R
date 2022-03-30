@@ -32,7 +32,7 @@ pref_name <- "wakayama"
 lakes_removed <- c()
 ndists_new <- 2
 ndists_old <- 3
-sq_max_to_min <- 1.273
+sq_max_to_min <- 1.241
 sq_max_to_tottori2 <- 1.291
 sq_mun_splits <- 0
 sq_gun_splits <- 0

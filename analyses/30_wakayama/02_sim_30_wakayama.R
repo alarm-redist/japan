@@ -27,8 +27,12 @@ pref_0 <-  sf::st_as_sf(
 # Add adjacency
 # Make adjacency list
 # There are no edges to add as there are no areas disconnected from the mainland
-# Note: Tomogashima is inhabited.
-# So we simply make a list without ferries
+# Note: 友ヶ島 is uninhabited.
+# Note: 北山村 and 新宮市飛地, where surrounded by other prefecture, are treated as an island,
+# but 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市 in our analysis,
+# as it is treated under status quo.
+# Thus, we treat them as adjacent to 新宮市, which we don't have to add edges in this data pre-processing.
+# Therefore, we simply make a list without ferries.
 prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
