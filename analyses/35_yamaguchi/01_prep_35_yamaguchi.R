@@ -32,8 +32,8 @@ pref_name <- "yamaguchi"
 lakes_removed <- c()
 ndists_new <- 3
 ndists_old <- 4
-sq_max_to_min <- 1.489
-sq_max_to_tottori2 <- 1.538
+sq_max_to_min <- 1.491
+sq_max_to_tottori2 <- 1.541
 sq_mun_splits <- 2
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
