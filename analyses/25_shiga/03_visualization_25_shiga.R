@@ -8,6 +8,7 @@
 # Define using the municipality codes, not the gun codes
 koiki_1_codes <- c(25202, 25425, 25441, 25442, 25443)
 
+
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
 for (i in 0:1)
@@ -64,6 +65,7 @@ koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
 
 # Assign koiki_renkei area codes for simulation with 1 split
+# No municipality that belongs to a koiki-renkei area is split
 koiki_1_1 <- pref_1$pre_gappei_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 
@@ -208,8 +210,6 @@ for (i in 1:length(pref_0$code))
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
@@ -220,7 +220,14 @@ rm(pref_smc_plans_0,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
