@@ -8,9 +8,11 @@
 # Define using the municipality codes, not the gun codes
 koiki_1_codes <-  c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
                     34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
-                    34300, 34360, 34420, 34460)
-koiki_2_codes <- c(34207, 34204, 34205, 34208, 34460, 34540)
-koiki_3_codes <- c(34202, 34203, 34212, 34215, 34300, 34420)
+                    34302, 34304, 34307, 34309, 34368, 34369, 34431, 34462)
+koiki_2_codes <- c(34207, 34204, 34205, 34208,
+                   34462, 34545)
+koiki_3_codes <- c(34202, 34203, 34212, 34215,
+                   34302, 34304, 34307, 34309, 34431)
 
 # Load data
 for (i in 0:1)
@@ -63,14 +65,22 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 
 # Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref_0$gun_code
+koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$gun_code
+koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref_0$gun_code
+koiki_3_0 <- pref_0$code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
+koiki_1_1 <- pref_1$pre_gappei_code
+koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
+koiki_2_1 <- pref_1$pre_gappei_code
+koiki_2_1[koiki_2_1 %in% c(koiki_2_codes,
+                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 2
+koiki_3_1 <- pref_1$pre_gappei_code
+koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
+
 koiki_1_1 <- pref_1$gun_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 # When a municipality that belongs to a koiki renkei area is split:
