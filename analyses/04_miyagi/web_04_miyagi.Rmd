@@ -193,7 +193,7 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -8900, # adjust the position of the labels
+              nudge_x = -9550, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -217,7 +217,7 @@ redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -8900, # adjust the position of the labels
+              nudge_x = -9550, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -256,7 +256,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -8900, # adjust the position of the labels
+              nudge_x = -9550, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -274,4 +274,4 @@ ggplot() +
 
 ### 県特有の設定  
 
-* 宮城野区港５丁目は厳密には飛び地と捉えることもできるが、現状の区割りの下でも飛び地として扱われていないため、本プロジェクトにおいても飛び地として扱わない。
+* 宮城野区港５丁目は厳密には飛び地とみなすこともできるが、現行の区割りでは飛び地として扱われていないため、本プロジェクトでも飛び地として扱わない。
