@@ -207,7 +207,9 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new-1) # Make 2 clusters
+prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
+# Since we set aside 松山市 when running the simulations, the simulations yield redistricting plans
+# with ndists_new-1 districts. Thus, we create ndists_new-1 clusters.
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 
