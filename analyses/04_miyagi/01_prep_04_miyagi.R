@@ -79,6 +79,7 @@ pop <- pref_pop_2020 %>%
   dplyr::summarise(pop = sum(pop)) %>%
   dplyr::rename(code = mun_code)
 
+# Reflect change in municipality code
 # 富谷町 --> 富谷市 (municipality code/name changed in 2016)
 pref_shp_cleaned[which(pref_shp_cleaned$code == 4423), ]$code <- 4216
 
