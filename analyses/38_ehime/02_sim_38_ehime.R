@@ -1,6 +1,6 @@
 ###############################################################################
-# Simulations for `Ehime`
-# © ALARM Project, November 2021
+# Simulations for `38_Ehime`
+# © ALARM Project, March 2021
 ###############################################################################
 
 # Add information about 郡

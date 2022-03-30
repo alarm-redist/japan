@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `Ehime` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `38_Ehime` analysis
+# © ALARM Project, March 2021
 ###############################################################################
 
 suppressMessages({
