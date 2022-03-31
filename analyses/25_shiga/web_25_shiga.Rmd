@@ -237,7 +237,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#364B7F', '#6D9537', '#DCAD35','#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
          
 # Co-occurrence plot
 ggplot() +
