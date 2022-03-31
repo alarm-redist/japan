@@ -193,7 +193,7 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -9750, # adjust the position of the labels
+              nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -217,7 +217,7 @@ redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -9750, # adjust the position of the labels
+              nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -244,6 +244,10 @@ if(ndists_new > 6){
   pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
     mutate(color = .$membership)
 }
+
+# Reorder the color palette
+PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
@@ -256,7 +260,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = -9750, # adjust the position of the labels
+              nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
