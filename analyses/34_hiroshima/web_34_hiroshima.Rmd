@@ -172,8 +172,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-6000, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(-6000, 0, 10000), # adjust the position of the labels
+              nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -196,9 +196,9 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              nudge_x = c(-5000, 0, 0), # adjust the position of the labels
-              nudge_y = c(5600, 5000, 5000), # adjust the position of the labels
-              color = c("white", "black", "black"),
+              nudge_x = c(-6000, 0, 10000), # adjust the position of the labels
+              nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
+              color = c("white", "black", "white"),
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -221,9 +221,9 @@ redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              nudge_x = c(-5000, 0, 0), # adjust the position of the labels
-              nudge_y = c(5500, -4000, 5000), # adjust the position of the labels
-              color = c("white", "black", "black"),
+              nudge_x = c(0, 0, 10000), # adjust the position of the labels
+              nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
+              color = c("black", "white", "white"),
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -265,9 +265,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              nudge_x = c(-5000, 0, 0), # adjust the position of the labels
-              nudge_y = c(5600, 5000, 5000), # adjust the position of the labels
-              color = c("white", "black", "black"),
+              nudge_x = c(-6000, 0, 10000), # adjust the position of the labels
+              nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
+              color = c("white", "black", "white"),
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
