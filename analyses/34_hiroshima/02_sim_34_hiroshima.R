@@ -1,19 +1,7 @@
 ###############################################################################
-# Simulations for `Hiroshima`
-# © ALARM Project, November 2021
+# Simulations for `34_Hiroshima`
+# © ALARM Project, March 2021
 ###############################################################################
-
-# Clean census data
-census2020_current_municipalities <- census2020 %>%
-  #filter out irrelevant data
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# custom data for the analysis
-pref <- pref_cleaned %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
-  dplyr::select(code, pop, geometry)
 
 # Add information about 郡
 pref <- merge_gun(pref)
@@ -43,7 +31,10 @@ split_code <- (pref %>%
                                                                             dplyr::filter(code >=
                                                                                             (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
 new_1 <- as.character(split_code)
-pref_1 <- reflect_old_boundaries(pref_0, old_boundary, census2020, new_1)
+# Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
+# reflect_old_boundaries() automatically estimates the size of the Japanese population
+# based on the official definition (total population - foreign population)
+pref_1 <- reflect_old_boundaries(pref_0, old_mun, census_mun_old_2020, new_1)
 
 # Add adjacency
 add_adjacency <- function(pref_n){
@@ -71,8 +62,8 @@ prefadj_1 <- add_adjacency(pref_1)
 # Suggest connection between disconnected groups
 suggest <-  geomander::suggest_component_connection(shp = pref_1,
                                                     adj = prefadj_1)
-# As a result of splitting Fukuyama-shi, Utsumi-cho, Fukuyama-shi appears to be disconnected.
-# To fix this, we must add an adjacency edge between Utsumi-cho(34481) and Numakuma-cho(34482)
+# As a result of splitting 福山市, 福山市内海町 appears to be disconnected.
+# To fix this, an adjacency edge is added between 内海町(34481) and 沼隈町(34482)
 prefadj_1 <- geomander::add_edge(prefadj_1,
                                  suggest$x,
                                  suggest$y,
@@ -102,7 +93,7 @@ run_simulations <- function(pref_n, prefadj_n){
     pop_temper = 0.05
   )
 
-  # Save pref object, pref_map object, and simulation data
+  # Save pref object, pref_map object, adjacency list, and simulation data
   saveRDS(pref_n, paste("data-out/pref/",
                         as.character(pref_code),
                         "_",
@@ -169,4 +160,3 @@ run_simulations <- function(pref_n, prefadj_n){
 
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
-
