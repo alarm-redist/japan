@@ -1,12 +1,12 @@
 ---
 title: "福島県 (議員定数：5 → 4)"
-description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
+description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
 date: "`r format(Sys.time(), '%Y/%m/%d')`"
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -37,7 +37,7 @@ sq_koiki_splits_name <- "こおりやま広域連携中枢都市圏、しらか�
 split_1_name <- "いわき市"
 
 ## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c( '#6D9537', '#DCAD35','#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
 ```
 
 ```{r load data, include=FALSE}
@@ -113,6 +113,20 @@ table_summary %>%
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
     subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
   ) %>% 
+  tab_footnote(
+    footnote = sq_gun_splits_name,
+    locations = cells_body(
+      columns = 2,
+      rows = 5
+    ) 
+  )%>% 
+ tab_footnote(
+    footnote = sq_koiki_splits_name,
+    locations = cells_body(
+      columns = 2:3,
+      rows = 6
+    ) 
+  ) %>% 
   tab_style(
     style = list(
       cell_text(weight = "bold")
@@ -146,9 +160,10 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(0,0,0), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("black", "black", "white"), size = 3,
+              nudge_x = c(-0.03, -0.03, -0.03), # adjust the position of the labels
+              nudge_y = c(-0.03, -0.03, -0.03), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -164,15 +179,16 @@ ggplot() +
 ```{r optimal plan (0 split)}
 redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   labs(title = element_blank())+
-  
+  scale_fill_manual(values = PAL, guide = "none") + 
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("black", "black", "white"), size = 3,
+              nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
+              nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -199,6 +215,9 @@ if(ndists_new > 6){
     mutate(color = .$membership)
 }
 
+## Reorder Color Palette
+PAL <- c('#6D9537', '#364B7F', '#DCAD35','#7F4E28', '#2A4E45', '#9A9BB9')
+
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
@@ -211,8 +230,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
+              nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -225,7 +244,6 @@ ggplot() +
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : 
     + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
-    + 人口最大の市区町村の分割を許容 : `r format(length(functioning_results_1$index), big.mark = ",",  scientific = FALSE)`  
 * 有効な案から一票の格差が最小の区割り案を選定
 
 ### 県特有の設定  
