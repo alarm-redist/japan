@@ -127,6 +127,7 @@ table_summary %>%
       rows = 6
     ) 
   ) %>% 
+  opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
       cell_text(weight = "bold")
