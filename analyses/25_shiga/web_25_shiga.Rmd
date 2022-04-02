@@ -1,22 +1,30 @@
 ---
 title: "滋賀県 (議員定数：4 → 3)"
-description: "アルゴリズムによる衆議院小選挙区の区割り改訂案"
-date: February 2, 2022 
-output: distill::distill_article
+description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
+date: "`r format(Sys.time(), '%Y/%m/%d')`"
+author: "ALARM Japan プロジェクトチーム"
+output:
+  distill::distill_article:
+    css: !expr here::here("alarm_japan.css")
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
+library(redist)
+library(geomander)
 library(tidyverse)
 library(gt)
+library(extrafontdb)
+library(Rttf2pt1)
+```
 
+
+```{r Manual Entries, include = FALSE}
 pref_code <- 25
 pref_name <- "shiga"
 pref_name_kanji <- "滋賀県"
-```
-
-```{r Manual Entries, include = FALSE}
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
@@ -33,7 +41,7 @@ sq_koiki_splits_name <- ""
 split_1_name <- "大津市"
 
 ## Color Palette
-PAL <- c('#364B7F', '#DCAD35', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28', "#C25974")
+PAL <- c('#364B7F', '#DCAD35', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -131,13 +139,24 @@ table_summary %>%
 # 現行の区割り  
 
 ```{r status quo plan}
+# Set Colors for Plot
+if(ndists_old > 6){
+  sq_pref_map <- sq_pref %>% 
+    mutate(pop = 1) %>% # only for plotting purpose
+    redist_map(ndists = nrow(sq_pref)) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$ku)))
+}else{
+  sq_pref_map <- sq_pref %>% 
+    mutate(color = ku)
+}
+
 ggplot() +
-  geom_sf(data = sq_pref, aes(fill = factor(ku)), color = NA) +
+  geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -156,13 +175,12 @@ ggplot() +
 一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
-ggplot() +
-  geom_sf(data = optimal_boundary_0, aes(fill = factor(district)), color = NA) +
-  scale_fill_manual(values = PAL, guide = "none") +
+redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0)+
+  labs(title = element_blank())+
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -180,13 +198,12 @@ ggplot() +
 一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-ggplot() +
-  geom_sf(data = optimal_boundary_1, aes(fill = factor(district)), color = NA) +
-  scale_fill_manual(values = PAL, guide = "none") +
+redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
+  labs(title = element_blank())+
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("black", "grey60", "grey40")) +
+  scale_color_manual(values = c("black", "grey60", "grey30")) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
@@ -211,48 +228,30 @@ ggplot() +
 
 ```{r co-occurrence, warning = FALSE}
 # Match membership data with map object
-pref_0_membership <- cbind(pref_0, cooc_ratio, pref_membership_0)
-pref_0_membership_1 <- pref_0_membership %>% dplyr::filter(membership == 1)
-pref_0_membership_2 <- pref_0_membership %>% dplyr::filter(membership == 2)
-pref_0_membership_3 <- pref_0_membership %>% dplyr::filter(membership == 3)
-pref_0_membership_4 <- pref_0_membership %>% dplyr::filter(membership == 4)
-pref_0_membership_5 <- pref_0_membership %>% dplyr::filter(membership == 5)
-pref_0_membership_6 <- pref_0_membership %>% dplyr::filter(membership == 6)
+if(ndists_new > 6){
+  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$membership)))
+} else{
+  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+    mutate(color = .$membership)
+}
 
+# Reorder the color palette
+PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+         
 # Co-occurrence plot
 ggplot() +
-  geom_sf(data = pref_0_membership_1, aes(fill = cooc_ratio), show.legend = FALSE) +
- 
-  scale_fill_gradient(low = '#e3fac3', high = '#6D9537') + #light green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_2, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#f7de9c', high = '#DCAD35') + #yellow
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_3, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#4965ab', high = '#364B7F') + #dark blue
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_4, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#437d6f', high= '#2A4E45') + #dark green
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_5, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#d99a6a', high = '#7F4E28') + #brown
-
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = pref_0_membership_6, aes(fill = cooc_ratio), show.legend = FALSE) +
-  scale_fill_gradient(low = '#dfdff2', high = '#9A9BB9') + #light blue
-  
+  geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
+  scale_fill_manual(values = PAL, guide = "none") + 
+  scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey40")) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-0.06), # adjust the position of the labels
-              nudge_y = c(-0.06), # adjust the position of the labels
+              nudge_x = c(-8000), # adjust the position of the labels
+              nudge_y = c(-8000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -268,3 +267,5 @@ ggplot() +
     + 人口最大の市区町村の分割を許容 : `r format(length(functioning_results_1$index), big.mark = ",",  scientific = FALSE)`  
 * 有効な案から一票の格差が最小の区割り案を選定
 
+### 県特有の設定　　
+特になし 

@@ -40,6 +40,7 @@ div.girafe { margin-bottom: 0; }
 }
 ```
 
+<p style="text-align:right;">[**日本語**](japan_47_pref_japanese.html) / **English**</p>
 
 The goal of the 47-Prefecture Simulation Project is to generate and analyze redistricting plans for the single-member districts of the House of Representatives of Japan using a redistricting simulation algorithm. 
 Redistricting simulation algorithms can be used to redraw legislative districts in a transparent manner while following redistricting rules such as criteria on geographic compactness and population parity.

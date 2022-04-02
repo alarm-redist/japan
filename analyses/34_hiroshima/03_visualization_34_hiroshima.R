@@ -1,19 +1,19 @@
 ###############################################################################
-# Data visualization for `Hiroshima`
-# © ALARM Project, November 2021
+# Data visualization for `34_Hiroshima`
+# © ALARM Project, March 2021
 ###############################################################################
 
-# Define the koiki-renkei areas (広域連携)
+# TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Make sure to convert municipality codes into to "gun" codes if "gun" was merged
+# Define using the municipality codes, not the gun codes
 koiki_1_codes <-  c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
                     34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
-                    34300, 34360, 34420, 34460)
-koiki_2_codes <- c(34207, 34204, 34205, 34208, 34460, 34540)
-koiki_3_codes <- c(34202, 34203, 34212, 34215, 34300, 34420)
+                    34302, 34304, 34307, 34309, 34368, 34369, 34431, 34462)
+koiki_2_codes <- c(34207, 34204, 34205, 34208,
+                   34462, 34545)
+koiki_3_codes <- c(34202, 34203, 34212, 34215,
+                   34302, 34304, 34307, 34309, 34431)
 
-
-####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
 for (i in 0:1)
 {
@@ -65,14 +65,22 @@ wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
 wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 
 # Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref_0$gun_code
+koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$gun_code
+koiki_2_0 <- pref_0$code
 koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
-koiki_3_0 <- pref_0$gun_code
+koiki_3_0 <- pref_0$code
 koiki_3_0[koiki_3_0 %in% koiki_3_codes] <- 3
 
 # Assign koiki_renkei area codes for simulation with 1 split
+koiki_1_1 <- pref_1$pre_gappei_code
+koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
+koiki_2_1 <- pref_1$pre_gappei_code
+koiki_2_1[koiki_2_1 %in% c(koiki_2_codes,
+                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 2
+koiki_3_1 <- pref_1$pre_gappei_code
+koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
+
 koiki_1_1 <- pref_1$gun_code
 koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 # When a municipality that belongs to a koiki renkei area is split:
@@ -87,9 +95,7 @@ num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
 
 # Count number of gun splits
-num_gun_split_0 <- count_splits(pref_smc_plans_0, pref_map_0$gun_code)
 gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-num_gun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$gun_code)
 gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
 
 # Count number of koiki renkei splits
@@ -105,37 +111,9 @@ koiki_split_1 <-
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$num_gun_split <- num_gun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
-
-# Post-processing: filter out plans with discontiguous districts
-# Aki-ku　(34107) and Aki-gun (34300) must be in the same district to avoid creating discontiguous districts
-contiguous_0 <- 1:25000
-for(i in 1:25000){
-  contiguous_0[i] <-
-    as.integer(pref_smc_plans_0[,i][which(pref_0$gun_code == 34107)] ==
-                 pref_smc_plans_0[,i][which(pref_0$gun_code == 34300)])
-}
-results_0$contiguous <- contiguous_0
-
-# Ferry routes connect Takehara-shi (34203), Higashihiroshima-shi (34212), and Kure-shi (34202) to Osakikamijima-cho.
-# However, Takehara-shi and Kure-shi are not connected by land.
-# Thus, we must make sure to avoid a situation in which Takehara-shi and Takehara-shi both belong to the district that is different from the district Higashihiroshima-shi belongs to.
-ferry_discontiguity_0 <- 1:25000
-for(i in 1:25000){
-  ferry_discontiguity_0[i] <-
-    as.integer(
-      #We must avoid a situation in which Kure-shi (34202) and Takehara-shi(34203) belong to the same district
-      pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] ==
-        pref_smc_plans_0[,i][which(pref_0$gun_code == 34203)]&
-        #whereby that district is different from the district Higashihiroshima-shi (34212) belongs to
-        pref_smc_plans_0[,i][which(pref_0$gun_code == 34202)] !=
-        pref_smc_plans_0[,i][which(pref_0$gun_code == 34212)]
-    )
-}
-results_0$ferry_discontiguity <- ferry_discontiguity_0
 
 # Compile results: 1 split
 results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
@@ -143,37 +121,43 @@ results_1$max_to_min <- wgt_smc_1$max_to_min
 results_1$num_mun_split <- num_mun_split_1
 results_1$mun_split <- mun_split_1
 results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$num_gun_split <- num_gun_split_1
 results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
-# Post-processing
-contiguous_1 <- 1:25000
-for(i in 1:25000){
-  contiguous_1[i] <-
-    as.integer(pref_smc_plans_1[,i][which(pref_1$gun_code == 34107)] ==
-                 pref_smc_plans_1[,i][which(pref_1$gun_code == 34300)])
-}
-results_1$contiguous <- contiguous_1
+# Filter out discontiguous plans
+# 尾道市(34205) is made up of discontiguous parts, as 尾道市浦崎町 appears to be discontiguous from the rest of 尾道市.
+# However, in practice, 尾道市 is treated as a contiguous unit under the enacted plan.
+# Thus, for the purpose of checking whether plans are contiguous or not,
+# we remove 尾道市浦崎町 as well as its neighboring area, 福山市沼隈町, from the analysis.
 
-ferry_discontiguity_1 <- 1:25000
-for(i in 1:25000){
-  ferry_discontiguity_1[i] <-
-    as.integer(
-      pref_smc_plans_1[,i][which(pref_1$gun_code == 34202)] ==
-        pref_smc_plans_1[,i][which(pref_1$gun_code == 34203)]&
-        pref_smc_plans_1[,i][which(pref_1$gun_code == 34202)] !=
-        pref_smc_plans_1[,i][which(pref_1$gun_code == 34212)]
-    )
-}
-results_1$ferry_discontiguity <- ferry_discontiguity_1
+# Filter out discontiguous area in 尾道市(34205) (i.e. 尾道市浦崎町)
+discont_geom <- data.frame(unit = 1,
+                           geometry = sf::st_cast(pref_0[which(pref_0$code == 34205),]$geometry,
+                                                  "POLYGON"))
+discont_geom <- sf::st_union(sf::st_as_sf(discont_geom[-c(1,2),]))
+
+# Edit pref_0 by removing discontiguous area in 尾道市 (i.e. 尾道市浦崎町)
+pref_0_without_discont <- pref_0
+pref_0_without_discont[which(pref_0_without_discont$code == 34205),]$geometry <- discont_geom
+
+# Edit pref_1 by removing discontiguous area in 尾道市 (i.e. 尾道市浦崎町)
+pref_1_without_discont <- pref_1
+pref_1_without_discont[which(pref_1_without_discont$code == 34205),]$geometry <- discont_geom
+
+# Remove 福山市沼隈町 (34482) from the analysis.
+pref_1_without_discont <- pref_1_without_discont %>% filter(pre_gappei_code %in% 34482 == FALSE)
+pref_smc_plans_1_without_discont <- pref_smc_plans_1[-which(pref_1$pre_gappei_code == 34482),]
+
+# Add bridges and check if valid
+bridges_0 <- c()
+results_0$valid <- check_valid(pref_0_without_discont, pref_smc_plans_0, bridges_0)
+bridges_1 <- c()
+results_1$valid <- check_valid(pref_1_without_discont, pref_smc_plans_1_without_discont, bridges_1)
 
 # TODO: filter out plans with discontiguities
-# Filter out plans with discontiguities
-functioning_results_0 <- results_0[which(results_0$contiguous == 1 & results_0$ferry_discontiguity == 0),]
-functioning_results_1 <- results_1[which(results_1$contiguous == 1 & results_1$ferry_discontiguity == 0 &
-                                           results_1$multi == 0), ]
+functioning_results_0 <- results_0 %>% dplyr::filter(valid)
+functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # Find Optimal Plan
 optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
@@ -189,29 +173,19 @@ colnames(matrix_optimal_0) <- "district"
 optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
 
 # Match district numbers
-optimal_split <- dplyr::inner_join(as.data.frame(pref_1),
-                                   as.data.frame(optimal_boundary_0),
+optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
                                    by = "code")
 sim_smc_pref_1 <- redist::match_numbers(sim_smc_pref_1,
                                         optimal_split$district,
                                         col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref_0 %>%
+mun_boundary <- pref %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_0 %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_1 <- pref_0 %>%
-  filter(gun_code %in% koiki_1_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_2 <- pref_0 %>%
-  filter(gun_code %in% koiki_2_codes) %>%
-  summarise(geometry = sf::st_union(geometry))
-koiki_boundary_3 <- pref_0 %>%
-  filter(gun_code %in% koiki_3_codes) %>%
   summarise(geometry = sf::st_union(geometry))
 
 # Optimal Plan: 1 split
@@ -281,32 +255,28 @@ for (i in 1:length(pref_0$code))
     sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
 }
 
-
-# Max & min pop per district in optimal plan
-max_0 <- max((sim_smc_pref_0 %>% dplyr::filter(draw == optimal_0))$total_pop)
-min_0 <- min((sim_smc_pref_0 %>% dplyr::filter(draw == optimal_0))$total_pop)
-max_1 <- max((sim_smc_pref_1 %>% dplyr::filter(draw == optimal_1))$total_pop)
-min_1 <- min((sim_smc_pref_1 %>% dplyr::filter(draw == optimal_1))$total_pop)
-
 # Save files
 rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
    sim_smc_pref_n,
    wgt_smc_0,
    wgt_smc_1,
    num_mun_split_1,
    mun_split_1,
-   num_gun_split_0,
    gun_split_0,
-   num_gun_split_1,
    gun_split_1,
    koiki_split_0,
    koiki_split_1,
    matrix_optimal_0,
-   matrix_optimal_1
+   matrix_optimal_1,
+   census_mun_old_2020,
+   geom,
+   pop,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_shp_cleaned,
+   old_mun
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
