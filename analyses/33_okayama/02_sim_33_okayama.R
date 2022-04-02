@@ -7,6 +7,8 @@
 pref <- merge_gun(pref)
 
 # Define pref_0
+# This is an object without Kurashiki-shi, which is set aside because
+# its population is larger than the target population
 pref_0 <-  sf::st_as_sf(
   dplyr::bind_rows(
 
