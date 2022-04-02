@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `42_Nagasaki` analysis
-# © ALARM Project, November 2021
+# Download and prepare data for `42_nagasaki` analysis
+# © ALARM Project, April 2021
 ###############################################################################
 
 suppressMessages({
