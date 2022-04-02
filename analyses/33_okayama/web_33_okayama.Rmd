@@ -164,8 +164,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0), # adjust the position of the labels
-              nudge_y = c(0.025,-0.025), # adjust the position of the labels
+              nudge_x = c(-0.04, 0), # adjust the position of the labels
+              nudge_y = c(0.035,-0.035), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -270,7 +270,7 @@ ggplot() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
               nudge_x = c(0, 0), # adjust the position of the labels
-              nudge_y = c(9000,-5000), # adjust the position of the labels
+              nudge_y = c(5000,-5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
