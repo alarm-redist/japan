@@ -1,23 +1,11 @@
 ###############################################################################
 # Simulations for `07_fukushima`
-# © ALARM Project, February 2022
+# © ALARM Project, April 2022
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
-# Clean census data
-census2020_current_municipalities <- census2020 %>%
-  #filter out irrelevant data
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# custom data for the analysis
-pref <- pref_cleaned %>%
-  dplyr::group_by(code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::left_join(census2020_current_municipalities, by = c('code')) %>%
-  dplyr::select(code, pop, geometry)
-
 # Add information about 郡
-pref <- merge_gun(pref, gun_exception)
+pref <- merge_gun(pref)
 
 # Define pref_0
 pref_0 <-  sf::st_as_sf(
@@ -37,26 +25,15 @@ pref_0 <-  sf::st_as_sf(
 )
 
 # Add adjacency
-add_adjacency <- function(pref_n){
-
-  prefadj_n <- redist::redist.adjacency(pref_n)
-
-  # Modify according to ferry adjacencies
-  if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries_n <- add_ferries(pref_n)
-    prefadj_n <- geomander::add_edge(prefadj_n,
-                                     ferries_n[, 1],
-                                     ferries_n[, 2],
-                                     zero = TRUE)
-  }
-
-  #return result
-  return(prefadj_n)
-}
-
 # Make adjacency list
-prefadj_0 <- add_adjacency(pref_0)
+# There are no edges to add as there are no areas disconnected from the mainland
+# Note: 友ヶ島 is uninhabited.
+# Note: 北山村 and 新宮市飛地, where surrounded by other prefecture, are treated as an island,
+# but 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市 in our analysis,
+# as it is treated under status quo.
+# Thus, we treat them as adjacent to 新宮市, which we don't have to add edges in this data pre-processing.
+# Therefore, we simply make a list without ferries.
+prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
 "suggest <-  geomander::suggest_component_connection(shp = pref_n,
@@ -85,7 +62,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.30,
+                                   pop_tol= 0.40,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
