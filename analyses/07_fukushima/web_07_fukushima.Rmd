@@ -191,7 +191,7 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
-               color = c("black", "black", "white"), size = 3,
+               color = c("white", "black", "white"), size = 3,
               nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
               nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -234,7 +234,8 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("white" ,"black", "black"), size = 3,
               nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
               nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
