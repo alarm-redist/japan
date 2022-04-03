@@ -12,8 +12,12 @@ doi: "10.7910/DVN/Z9UKSH"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 options(width = 100)
+library(redist)
+library(geomander)
 library(tidyverse)
 library(gt)
+library(extrafontdb)
+library(Rttf2pt1)
 
 pref_code <- 07
 pref_name <- "fukushima"
@@ -241,7 +245,7 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±40%
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
 * 有効な区割り案（飛び地を生じさせない）の数 : 
     + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
@@ -249,4 +253,7 @@ ggplot() +
 
 ### 県特有の設定  
 
-* 人口最大の市区町村（いわき市）は、平成の大合併以前より変更がないため分割しない 
+* 最大市区町村の分割を許容する区割り案は作成しない
+    + 本プロジェクトでは市区町村の分割は平成の大合併前の境界を用いる
+    + 分割対象である人口最大の市区町村（いわき市）は、1966年以降は市区町村合併をしていない
+    + よって、本プロジェクトではいわき市を分割しない
