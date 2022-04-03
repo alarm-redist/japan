@@ -4,8 +4,7 @@
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-# Define which municipality/gun belongs to which koiki renkei area
-# Make sure to convert municipality codes into to "gun" codes if "gun" was merged
+#Define using the municipality codes, not the gun codes
 koiki_1_codes <- c(7203, 7207, 7210, 7211, 7214, 7322, 7342, 7408, 7501, 7521)
 koiki_2_codes <- c(7205, 7461, 7464, 7465, 7466, 7481)
 koiki_3_codes <- c(7208, 7402)
