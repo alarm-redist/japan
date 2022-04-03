@@ -40,7 +40,7 @@ sq_gun_splits <- 1
 sq_koiki_splits <- 2
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c(7461)
+gun_exception <- c(7460)
 
 # Change time limit
 options(timeout = 300)
