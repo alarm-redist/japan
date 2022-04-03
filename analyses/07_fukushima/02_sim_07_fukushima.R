@@ -27,12 +27,6 @@ pref_0 <-  sf::st_as_sf(
 # Add adjacency
 # Make adjacency list
 # There are no edges to add as there are no areas disconnected from the mainland
-# Note: 友ヶ島 is uninhabited.
-# Note: 北山村 and 新宮市飛地, where surrounded by other prefecture, are treated as an island,
-# but 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市 in our analysis,
-# as it is treated under status quo.
-# Thus, we treat them as adjacent to 新宮市, which we don't have to add edges in this data pre-processing.
-# Therefore, we simply make a list without ferries.
 prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
@@ -62,7 +56,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.40,
+                                   pop_tol= 0.10,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -138,4 +132,9 @@ run_simulations <- function(pref_n, prefadj_n){
 
 }
 
+# Run simulations
+# For Fukushima, we only run `0_split` models.
+# This us because the largest municipality (いわき市),
+# which is subjected to be split in the `1_split` model with the historical boundaries before 平成の大合併,
+# has not been merged since 1966.
 run_simulations(pref_0, prefadj_0)
