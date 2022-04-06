@@ -1,11 +1,13 @@
-# 50-State Redistricting Simulations
+# 47-Prefecture Redistricting Simulations
 
 <img src="https://alarm-redist.github.io/assets/alarm_256_tr.png" align="right" height=128>
+<img src="https://alarm-redist.github.io/assets/fifty_states_256_tr.png" align="right" height=128>
 
 ### The ALARM Project (Japan)
 
 [![License: CC0 1.0](https://img.shields.io/badge/Data%20License-Public%20domain-lightgrey.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 [![License: MIT](https://img.shields.io/badge/Software%20License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Dataverse DOI-10.7910/DVN/Z9UKSH](<https://img.shields.io/badge/Dataverse DOI-10.7910/DVN/Z9UKSH-orange>)](https://doi.org/10.7910/DVN/Z9UKSH)
 
 This repository contains code to sample districting plans for the 15 Japanese prefectures subject to 10増10減 (changes in the number of Lower House seats) following the demographic shifts reflected in the 2020 Census, according to relevant legal requirements.
 
