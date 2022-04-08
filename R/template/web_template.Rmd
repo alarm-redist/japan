@@ -57,12 +57,21 @@ load(here::here(paste("data-out/pref/",
 # summary table
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~split_0, ~split_1,
-  "県内較差", sq_max_to_min, results_0$max_to_min[optimal_0], results_1$max_to_min[optimal_1],
-  "改善率", NA, (sq_max_to_min - results_0$max_to_min[optimal_0])/(sq_max_to_min - 1), (sq_max_to_min - results_1$max_to_min[optimal_1])/(sq_max_to_min - 1),
+  "県内較差", sq_max_to_min, 
+              results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
+              results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min,
+  "改善率", NA, 
+          (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
+          (sq_max_to_min - results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min)/(sq_max_to_min - 1),
   "選挙区数", ndists_old, ndists_new, ndists_new,
-  "市区町村の分割", sq_mun_splits, 0, results_1$mun_split[optimal_1],
-  "郡の分割", sq_gun_splits, results_0$gun_split[optimal_0], results_1$gun_split[optimal_1],
-  "広域連携地域の分割", sq_koiki_splits, results_0$koiki_split[optimal_0], results_1$koiki_split[optimal_1]
+  "市区町村の分割", sq_mun_splits, 0, 
+          results_1_sample[which(results_1_sample$index == optimal_1),]$mun_split,
+  "郡の分割", sq_gun_splits, 
+  results_0_sample[which(results_0_sample$index == optimal_0),]$gun_split, 
+  results_1_sample[which(results_1_sample$index == optimal_1),]$gun_split,
+  "広域連携地域の分割", sq_koiki_splits, 
+  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split, 
+  results_1_sample[which(results_1_sample$index == optimal_1),]$koiki_split
 ) 
 
 table_summary %>% 
@@ -184,10 +193,10 @@ ggplot() +
 アルゴリズムが提案した`r format(nsims, big.mark = ",")`案のうち、有効な案の中で、一票の格差が最小のもの
 
 ### 市区町村を分割しない区割り案
-一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
+一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
-redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
+redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
@@ -207,10 +216,10 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
 ### 最大市区町村の分割を許容する区割り案 
 人口が最大の市区町村 : `r split_1_name`
 
-一票の格差 : `r round(results_1[optimal_1,]$max_to_min, digits = 3) `
+一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-redist::redist.plot.plans(sim_smc_pref_1, optimal_1, pref_map_1) +
+redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank())+
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
@@ -273,12 +282,10 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
+* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±`r 100*pop_tol`%
 * アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
-* 有効な区割り案（飛び地を生じさせない）の数 : 
-    + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
-    + 人口最大の市区町村の分割を許容 : `r format(length(functioning_results_1$index), big.mark = ",",  scientific = FALSE)`  
-* 有効な案から一票の格差が最小の区割り案を選定
+* 有効な区割り案（飛び地がない、かつ市区町村を３分割以上しない）の内5,000の案を抽出
+* その中から一票の格差が最小の区割り案を選定
 
 ### 県特有の設定  
 特になし 
