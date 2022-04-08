@@ -104,22 +104,18 @@ run_simulations <- function(pref_n, prefadj_n){
                         "_",
                         as.character(pref_name),
                         "_",
-                        as.character(nsims),
-                        "_",
                         as.character(i),
                         ".Rds",
                         sep = ""))
 
   saveRDS(prefadj_n, paste("data-out/pref/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_",
-                          as.character(nsims),
-                          "_adj_",
-                          as.character(i),
-                          ".Rds",
-                          sep = ""))
+                           as.character(pref_code),
+                           "_",
+                           as.character(pref_name),
+                           "_adj_",
+                           as.character(i),
+                           ".Rds",
+                           sep = ""))
 
   # pref_map object: to be uploaded to Dataverse
   write_rds(pref_map_n, paste("data-out/maps/",

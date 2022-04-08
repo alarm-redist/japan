@@ -23,16 +23,24 @@ for (i in 0:1)
                               sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
 
+  pref_n <- readRDS(paste("data-out/pref/",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_",
+                          as.character(i),
+                          ".Rds",
+                          sep = ""))
+  assign(paste("pref_", i, sep = ""), pref_n)
+
   prefadj_n <-readRDS(paste("data-out/pref/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_",
-                           as.character(nsims),
-                           "_adj_",
-                           as.character(i),
-                           ".Rds",
-                           sep = ""))
+                            as.character(pref_code),
+                            "_",
+                            as.character(pref_name),
+                            "_adj_",
+                            as.character(i),
+                            ".Rds",
+                            sep = ""))
   assign(paste("prefadj_", i, sep = ""), prefadj_n)
 
   sim_smc_pref_n <- readRDS(paste("data-out/plans/",
