@@ -288,7 +288,7 @@ for (i in 0:1){
      mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
      # Remove the column "pop_overlap" that was created when renumbering the district numbers
-     select(-pop_overlap) %>%
+     select(1:3) %>%
 
      write_csv(paste("data-out/plans/",
                      as.character(pref_code),
