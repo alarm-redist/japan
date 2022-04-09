@@ -87,7 +87,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= pop_tol, # Define in 01_prep.R
+                                   pop_tol= pop_tol,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
