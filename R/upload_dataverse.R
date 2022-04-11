@@ -14,6 +14,7 @@
 
 upload_dataverse <- function(pref_code, pref_name){
 
+
     Sys.setenv("DATAVERSE_KEY" = "20cccb27-d4ed-44a3-9ad1-4ac845900f67")
     Sys.setenv("DATAVERSE_SERVER" = "dataverse.harvard.edu")
 
@@ -28,7 +29,7 @@ upload_dataverse <- function(pref_code, pref_name){
             as.character(pref_code),
             "_",
             as.character(pref_name),
-            "_hr_2020_doc.md",
+            "_hr_2020_doc.html",
             sep = "")),
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
@@ -40,7 +41,7 @@ upload_dataverse <- function(pref_code, pref_name){
             as.character(pref_code),
             "_",
             as.character(pref_name),
-            "_hr_2020_map_0.csv",
+            "_hr_2020_map_0.rds",
             sep = "")),
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
@@ -51,7 +52,7 @@ upload_dataverse <- function(pref_code, pref_name){
             as.character(pref_code),
             "_",
             as.character(pref_name),
-            "_hr_2020_map_1.csv",
+            "_hr_2020_map_1.rds",
             sep = "")),
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
@@ -63,7 +64,7 @@ upload_dataverse <- function(pref_code, pref_name){
             as.character(pref_code),
             "_",
             as.character(pref_name),
-            "_hr_2020_plans_0.csv",
+            "_hr_2020_plans_0.rds",
             sep = "")),
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
@@ -74,7 +75,7 @@ upload_dataverse <- function(pref_code, pref_name){
             as.character(pref_code),
             "_",
             as.character(pref_name),
-            "_hr_2020_plans_1.csv",
+            "_hr_2020_plans_1.rds",
             sep = "")),
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
@@ -103,4 +104,3 @@ upload_dataverse <- function(pref_code, pref_name){
     )
 
 }
-
