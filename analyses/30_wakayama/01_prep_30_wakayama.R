@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `30_wakayama` analysis
-# © ALARM Project, March 2022
+# © ALARM Project, April 2022
 ###############################################################################
 
 suppressMessages({
@@ -26,7 +26,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 25000 # Set so that the number of valid plans > 25000
 pref_code <- 30
 pref_name <- "wakayama"
 lakes_removed <- c()
@@ -37,6 +37,7 @@ sq_max_to_tottori2 <- 1.291
 sq_mun_splits <- 0
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
+pop_tol <- 0.10 # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
