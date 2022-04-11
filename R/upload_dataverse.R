@@ -37,7 +37,7 @@ upload_dataverse <- function(pref_code, pref_name){
     # Upload map files
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/maps/",
+            "data-out/maps/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -48,7 +48,7 @@ upload_dataverse <- function(pref_code, pref_name){
 
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/maps/",
+            "data-out/maps/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -60,7 +60,7 @@ upload_dataverse <- function(pref_code, pref_name){
     # Upload plan files
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -71,7 +71,7 @@ upload_dataverse <- function(pref_code, pref_name){
 
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -83,7 +83,7 @@ upload_dataverse <- function(pref_code, pref_name){
     # Upload stats files
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -94,7 +94,7 @@ upload_dataverse <- function(pref_code, pref_name){
 
     dataverse::add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
