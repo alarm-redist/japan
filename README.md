@@ -1,7 +1,7 @@
 # 47-Prefecture Redistricting Simulations
 
 <img src="https://alarm-redist.github.io/assets/alarm_256_tr.png" align="right" height=128>
-<img src="https://alarm-redist.github.io/assets/fifty_states_256_tr.png" align="right" height=128>
+<img src="assets/japan_47pref_256_tr.png" align="right" height=128>
 
 ### The ALARM Project (Japan)
 
