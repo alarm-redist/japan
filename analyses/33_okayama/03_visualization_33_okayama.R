@@ -325,11 +325,26 @@ for (i in 0:1){
                   ".rds",
                   sep = ""),
             compress = "xz")
+}
 
-  # Export `redist_plans` summary statistics to a csv file
-  as_tibble(eval(parse(text = paste("sim_smc_pref_",
-                                    as.character(i),
-                                    "_sample", sep = "")))) %>%
+# Export `redist_plans` summary statistics to a csv file
+# Plans with 0 split: merge with Kurashiki
+sim_smc_pref_0_with_Kurashiki %>%
+  filter(draw %in% valid_sample_0) %>%
+
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_stats_",
+                  as.character(0),
+                  ".csv",
+                  sep = ""))
+
+# Plans with 1 split
+  as_tibble(sim_smc_pref_1_sample) %>%
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
     # Remove the column "pop_overlap" that was created when renumbering the district numbers
@@ -340,7 +355,6 @@ for (i in 0:1){
                     "_",
                     as.character(pref_name),
                     "_hr_2020_stats_",
-                    as.character(i),
+                    as.character(1),
                     ".csv",
                     sep = ""))
-}
