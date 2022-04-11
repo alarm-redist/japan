@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `34_Hiroshima` analysis
-# © ALARM Project, March 2021
+# © ALARM Project, April 2021
 ###############################################################################
 
 suppressMessages({
@@ -26,7 +26,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 75000  # Set so that the number of valid plans > 25000
 pref_code <- 34
 pref_name <- "hiroshima"
 lakes_removed <- c()
@@ -37,6 +37,7 @@ sq_max_to_tottori2 <- 1.742
 sq_mun_splits <- 4
 sq_gun_splits <- 0
 sq_koiki_splits <- 3
+pop_tol <- 0.10 # Set so that re-sampling efficiencies are > 90% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
@@ -61,6 +62,7 @@ sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
   dplyr::group_by(ku) %>%
   dplyr::summarise(geometry = sf::st_union(geometry))
 
+####1. Rural Prefectures########
 # Clean 2020 Census data at the 小地域-level
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
 
