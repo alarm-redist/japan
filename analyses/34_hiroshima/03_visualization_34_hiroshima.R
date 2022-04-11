@@ -300,6 +300,10 @@ rm(pref_smc_plans_0,
    results_0,
    results_1
 )
+
+# remove unnecessary file that was created only for this script
+rm(pref_smc_plans_1_without_discont)
+
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
