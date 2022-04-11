@@ -41,7 +41,7 @@ sq_koiki_splits_name <- "こおりやま広域連携中枢都市圏、しらか�
 split_1_name <- "いわき市"
 
 ## Color Palette
-PAL <- c( '#6D9537', '#DCAD35','#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
+PAL <- c( '#6D9537', '#DCAD35', '#364B7F','#7F4E28', '#2A4E45', '#9A9BB9')
 ```
 
 ```{r load data, include=FALSE}
@@ -221,7 +221,7 @@ if(ndists_new > 6){
 }
 
 ## Reorder Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35','#7F4E28', '#2A4E45', '#9A9BB9')
+PAL <- c( '#DCAD35','#364B7F',  '#6D9537','#7F4E28',  '#2A4E45', '#9A9BB9')
 
 # Co-occurrence plot
 ggplot() +
