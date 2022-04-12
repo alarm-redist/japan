@@ -131,12 +131,12 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
-    footnote = split_1_name,
+    footnote = sq_gun_splits_name,
     locations = cells_body(
-      columns = 4,
-      rows = 4
+      columns = 2:4,
+      rows = 5
     ) 
-  ) %>% 
+  ) %>%
  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
@@ -202,7 +202,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -256,7 +256,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#DCAD35', '#9A9BB9','#2A4E45','#364B7F', '#6D9537',    '#7F4E28')
 
 # Co-occurrence plot
 ggplot() +
@@ -269,7 +269,7 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = c(0, 0, 0), # adjust the position of the labels
               nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
