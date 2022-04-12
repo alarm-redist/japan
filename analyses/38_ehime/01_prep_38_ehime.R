@@ -24,9 +24,9 @@ files.sources = list.files()
 sapply(files.sources, source)
 setwd("..")
 
-# Define parameters for simulation
+# TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 25000 # Set so that the number of valid plans > 5,000
 pref_code <- 38
 pref_name <- "ehime"
 lakes_removed <- c()
@@ -37,6 +37,7 @@ sq_max_to_tottori2 <- 1.684
 sq_mun_splits <- 1
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
+pop_tol <- 0.25 # Set so that re-sampling efficiencies are > 90% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
@@ -55,12 +56,18 @@ pref_shp_cleaned <- pref_shp_2015 %>%
 # Download 2020 Census data at 小地域-level
 pref_pop_2020 <- download_pop_2020(pref_code)
 
+# remove lake if needed
+"ifelse(is.null(lakes_removed),
+       pref_shp_cleaned <- pref_shp_cleaned,
+       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))"
+
 # status quo
 sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
   dplyr::group_by(ku) %>%
   dplyr::summarise(geometry = sf::st_union(geometry))
 
+####1. Rural Prefectures########
 # Clean 2020 Census data at the 小地域-level
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
 
