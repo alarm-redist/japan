@@ -194,9 +194,17 @@ ggplot() +
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
+```{r kurashiki, include= FALSE}
+kurashiki <- pref %>%
+  filter(code == 33202)
+```
+
 ```{r optimal plan (0 split)}
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
+  
+  # add Kurashiki-shi
+  geom_sf(data = kurashiki, fill = '#9A9BB9', color = "grey30", lwd = 0.4) + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
