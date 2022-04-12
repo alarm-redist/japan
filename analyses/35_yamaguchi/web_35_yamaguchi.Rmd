@@ -40,7 +40,7 @@ sq_koiki_splits_name <- "山口県央連携都市圏域"
 split_1_name <- "下関市"
 
 ## Color Palette
-PAL <- c('#DCAD35', '#364B7F', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -182,7 +182,7 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = c("white", "black"), size = 3,
               nudge_x = c(0.10), # adjust the position of the labels
               nudge_y = c(0), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -206,7 +206,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = c("black", "black"), size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = c("white", "black"), size = 3,
                nudge_x = c(10000), # adjust the position of the labels
                nudge_y = c(0), # adjust the position of the labels
                family = "HiraginoSans-W3") +
@@ -234,7 +234,7 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = c("white", "black"), size = 3,
                nudge_x = c(10000), # adjust the position of the labels
                nudge_y = c(0), # adjust the position of the labels
                family = "HiraginoSans-W3") +
@@ -264,7 +264,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette 
-PAL <- c('#6D9537', '#DCAD35', '#364B7F', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#DCAD35', '#364B7F', '#6D9537', '#9A9BB9', '#2A4E45', '#7F4E28')
 
 # Co-occurrence plot
 ggplot() +
@@ -276,7 +276,7 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = c("black", "black"), size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = c("white", "black"), size = 3,
               nudge_x = c(10000), # adjust the position of the labels
               nudge_y = c(0), # adjust the position of the labels
               family = "HiraginoSans-W3") +
