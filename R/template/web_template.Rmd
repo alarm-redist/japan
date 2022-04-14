@@ -295,7 +295,9 @@ ggplot() +
   + 市区町村が3つ以上の選挙区に分割される案
 * 有効な案の中から5,000の案を無作為に抽出
 
-[データをダウンロード](https://doi.org/10.7910/DVN/Z9UKSH)
+<div style="text-align: center; font-size: 25px">
+[**データをダウンロード**](https://doi.org/10.7910/DVN/Z9UKSH)
+</div>
 
 ### 県特有の設定  
 特になし 
