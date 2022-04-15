@@ -28,11 +28,9 @@ pref_0 <-  sf::st_as_sf(
 # Make adjacency list
 # There are no edges to add as there are no areas disconnected from the mainland
 # Note: 友ヶ島 is uninhabited.
-# Note: 北山村 and 新宮市飛地, where surrounded by other prefecture, are treated as an island,
-# but 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市 in our analysis,
-# as it is treated under status quo.
-# Thus, we treat them as adjacent to 新宮市, which we don't have to add edges in this data pre-processing.
-# Therefore, we simply make a list without ferries.
+# Note: 北山村 and 新宮市飛地 are surrounded by another prefecture.
+# Under the enacted plan, 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市.
+# Thus, we do the same in our analysis.
 prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
@@ -133,7 +131,11 @@ run_simulations <- function(pref_n, prefadj_n){
          envir = .GlobalEnv)
 
 }
-
+# For Wakayama, we only run `0_split` models.
+# Whereas the 1_split model by default splits the largest municipality based on boundaries before 平成の大合併,
+# there are no such boundaries for the largest municipality in Wakayama, 和歌山市
+# The last time any municipality was merged into 和歌山市 was 1959
+# Thus, we only run a 0_split model
 run_simulations(pref_0, prefadj_0)
 
 
