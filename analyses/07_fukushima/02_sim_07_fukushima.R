@@ -130,9 +130,10 @@ run_simulations <- function(pref_n, prefadj_n){
 
 # Run simulations
 # For Fukushima, we only run `0_split` models.
-# This us because the largest municipality (いわき市),
-# which is subjected to be split in the `1_split` model with the historical boundaries before 平成の大合併,
-# has not been merged since 1966.
+# Whereas the 1_split model by default splits the largest municipality based on boundaries before 平成の大合併,
+# there are no such boundaries for the largest municipality in Fukushima, いわき市.
+# The last time any municipality was merged into いわき市 was 1966.
+# Thus, we only run a 0_split model
 run_simulations(pref_0, prefadj_0)
 
 # Histogram showing plans diversity
