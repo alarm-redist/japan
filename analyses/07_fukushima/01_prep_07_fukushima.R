@@ -27,7 +27,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 25000 # Set so that the number of valid plans > 5000
 pref_code <- 07
 pref_name <- "fukushima"
 lakes_removed <- c()
@@ -38,6 +38,7 @@ sq_max_to_tottori2 <- 1.727
 sq_mun_splits <- 0
 sq_gun_splits <- 1
 sq_koiki_splits <- 2
+pop_tol <- 0.10 # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c(7460)
