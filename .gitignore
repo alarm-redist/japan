@@ -1,8 +1,20 @@
+# Rproject
 .Rproj.user
-.DS_Store
 .Rhistory
-*.dat
-data-raw/**
-!data-raw/route_data.rda
-!data-raw/port_data.rda
-!data-raw/lake_data.rda
+.RData
+.Ruserdata
+
+# Raw and draft data
+data-raw/*
+!data-raw/*.rda
+
+# misc and  LaTeX
+*.tmp
+*.swp
+*.bak
+*.log
+.DS_store
+
+# HTML knitting
+analyses/**/*_files/*
+!analyses/**/*_files/figure-html5
