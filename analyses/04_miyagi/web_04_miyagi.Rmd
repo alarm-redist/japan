@@ -6,6 +6,7 @@ author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
+    self_contained: false
 doi: "10.7910/DVN/Z9UKSH"
 ---
 
@@ -293,10 +294,10 @@ ggplot() +
   + 市区町村が3つ以上の選挙区に分割される案
 * 有効な案の中から5,000の案を無作為に抽出
 
-<div style="text-align: center; font-size: 25px">
-[**データをダウンロード**](https://doi.org/10.7910/DVN/Z9UKSH)
-</div>
-
 ### 県特有の設定  
 
 * 宮城野区港５丁目は厳密には飛び地とみなすこともできるが、現行の区割りでは飛び地として扱われていないため、本プロジェクトでも飛び地として扱わない。
+
+# データとプログラム
+* [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
+* [**GitHub** : プログラム・コード](https://github.com/alarm-redist/japan)
