@@ -177,7 +177,7 @@ ggplot() +
 ```
 
 # アルゴリズムの提案
-アルゴリズムが提案した5,000案のうち、有効な案の中で、一票の格差が最小のもの
+アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
