@@ -218,8 +218,11 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
+# Reorder the color palette 
+PAL <- c('#2A4E45', '#6D9537', '#364B7F', '#DCAD35', '#9A9BB9')
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
-  labs(title = element_blank())+
+  labs(title = element_blank()) + 
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -227,7 +230,7 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -257,7 +260,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#DCAD35', '#9A9BB9','#2A4E45','#364B7F', '#6D9537',    '#7F4E28')
+PAL <- c('#9A9BB9', '#6D9537','#2A4E45','#364B7F', '#DCAD35')
 
 # Co-occurrence plot
 ggplot() +
