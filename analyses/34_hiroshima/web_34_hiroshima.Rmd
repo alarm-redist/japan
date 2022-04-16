@@ -6,6 +6,7 @@ author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
+    self_contained: false
 doi: "10.7910/DVN/Z9UKSH"
 ---
 
@@ -302,3 +303,7 @@ ggplot() +
 ### 県特有の設定  
 
 * 尾道市浦崎町は厳密には飛び地とみなすこともできるが、現行の区割りでは飛び地として扱われていないため、本プロジェクトでも飛び地として扱わない。
+
+# データとプログラム
+* [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
+* [**GitHub** : プログラム・コード](https://github.com/alarm-redist/japan)
