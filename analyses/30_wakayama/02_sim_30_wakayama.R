@@ -1,6 +1,6 @@
 ###############################################################################
 # Simulations for `30_wakayama`
-# © ALARM Project, March 2022
+# © ALARM Project, April 2022
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -28,11 +28,9 @@ pref_0 <-  sf::st_as_sf(
 # Make adjacency list
 # There are no edges to add as there are no areas disconnected from the mainland
 # Note: 友ヶ島 is uninhabited.
-# Note: 北山村 and 新宮市飛地, where surrounded by other prefecture, are treated as an island,
-# but 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市 in our analysis,
-# as it is treated under status quo.
-# Thus, we treat them as adjacent to 新宮市, which we don't have to add edges in this data pre-processing.
-# Therefore, we simply make a list without ferries.
+# Note: 北山村 and 新宮市飛地 are surrounded by another prefecture.
+# Under the enacted plan, 北山村 is merged together with 東牟婁郡, and 新宮市飛地 is merged with 新宮市.
+# Thus, we do the same in our analysis.
 prefadj_0 <- redist::redist.adjacency(pref_0)
 
 # Optional: Suggest connection between disconnected groups
@@ -62,7 +60,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.10,
+                                   pop_tol= pop_tol,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -79,8 +77,6 @@ run_simulations <- function(pref_n, prefadj_n){
                         "_",
                         as.character(pref_name),
                         "_",
-                        as.character(nsims),
-                        "_",
                         as.character(i),
                         ".Rds",
                         sep = ""))
@@ -89,23 +85,21 @@ run_simulations <- function(pref_n, prefadj_n){
                            as.character(pref_code),
                            "_",
                            as.character(pref_name),
-                           "_",
-                           as.character(nsims),
                            "_adj_",
                            as.character(i),
                            ".Rds",
                            sep = ""))
 
-  saveRDS(pref_map_n, paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+  # pref_map object: to be uploaded to Dataverse
+  write_rds(pref_map_n, paste("data-out/maps/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_hr_2020_map_",
+                              as.character(i),
+                              ".rds",
+                              sep = ""),
+            compress = "xz")
 
   saveRDS(sim_smc_pref_n, paste("data-out/plans/",
                                 as.character(pref_code),
@@ -137,5 +131,18 @@ run_simulations <- function(pref_n, prefadj_n){
          envir = .GlobalEnv)
 
 }
-
+# For Wakayama, we only run `0_split` models.
+# Whereas the 1_split model by default splits the largest municipality based on boundaries before 平成の大合併,
+# there are no such boundaries for the largest municipality in Wakayama, 和歌山市
+# The last time any municipality was merged into 和歌山市 was 1959
+# Thus, we only run a 0_split model
 run_simulations(pref_0, prefadj_0)
+
+
+# Histogram showing plans diversity
+# Ideally, the majority of mass to would be above 50% and
+# we would not see a large spike at 0.
+# However, for some prefectures, it is impossible to get a diverse set of plans
+# because there are fewer possible plans.
+
+hist(plans_diversity(sim_smc_pref_0))
