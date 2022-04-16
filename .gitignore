@@ -4,9 +4,10 @@
 .RData
 .Ruserdata
 
-# Raw and draft data
+# Raw and output data
 data-raw/*
 !data-raw/*.rda
+!data-out/**/*.Rdata
 
 # misc and  LaTeX
 *.tmp
