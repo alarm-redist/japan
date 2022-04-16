@@ -14,12 +14,11 @@
 
 upload_dataverse <- function(pref_code, pref_name){
 
-
     Sys.setenv("DATAVERSE_KEY" = "20cccb27-d4ed-44a3-9ad1-4ac845900f67")
     Sys.setenv("DATAVERSE_SERVER" = "dataverse.harvard.edu")
 
     # Upload rules
-    dataverse::add_dataset_file(
+    add_dataset_file(
         file=here::here(paste(
             "analyses/",
             stringr::str_pad(pref_code, 2, pad = "0"),
@@ -35,9 +34,9 @@ upload_dataverse <- function(pref_code, pref_name){
     )
 
     # Upload map files
-    dataverse::add_dataset_file(
+    add_dataset_file(
         file=here::here(paste(
-            "data_out/maps/",
+            "data-out/maps/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -46,9 +45,9 @@ upload_dataverse <- function(pref_code, pref_name){
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
 
-    dataverse::add_dataset_file(
+    add_dataset_file(
         file=here::here(paste(
-            "data_out/maps/",
+            "data-out/maps/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -58,9 +57,9 @@ upload_dataverse <- function(pref_code, pref_name){
     )
 
     # Upload plan files
-    dataverse::add_dataset_file(
+    add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -69,9 +68,9 @@ upload_dataverse <- function(pref_code, pref_name){
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
 
-    dataverse::add_dataset_file(
+    add_dataset_file(
         file=here::here(paste(
-            "data_out/plans/",
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -80,10 +79,10 @@ upload_dataverse <- function(pref_code, pref_name){
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
 
-    # Upload stats files
-    dataverse::add_dataset_file(
-        file=here::here(paste(
-            "data_out/plans/",
+    # Upload summary statistics (csv)
+    add_dataset_file(
+        file= here::here(paste(
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
@@ -92,9 +91,12 @@ upload_dataverse <- function(pref_code, pref_name){
         dataset="doi:10.7910/DVN/Z9UKSH"
     )
 
-    dataverse::add_dataset_file(
-        file=here::here(paste(
-            "data_out/plans/",
+    # Pause execution
+    Sys.sleep(30)
+
+    add_dataset_file(
+        file= here::here(paste(
+            "data-out/plans/",
             as.character(pref_code),
             "_",
             as.character(pref_name),
