@@ -6,6 +6,7 @@ author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
+    self_contained: false
 doi: "10.7910/DVN/Z9UKSH"
 ---
 
@@ -41,7 +42,7 @@ sq_koiki_splits_name <- "こおりやま広域連携中枢都市圏、しらか�
 split_1_name <- "いわき市"
 
 ## Color Palette
-PAL <- c( '#6D9537', '#DCAD35','#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
+PAL <- c('#6D9537','#DCAD35', '#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
 ```
 
 ```{r load data, include=FALSE}
@@ -56,16 +57,16 @@ load(here::here(paste("data-out/pref/",
 
 ```{r table summary}
 # summary table
-sim_gun_split <- ifelse(is.null(results_0$num_gun_split[optimal_0]), 0, results_0$num_gun_split[optimal_0])
+sim_gun_split <- ifelse(is.null(results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split), 0, (results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split))
 
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~split_0, 
-  "県内較差", sq_max_to_min, results_0$max_to_min[optimal_0], 
-  "改善率", NA, (sq_max_to_min - results_0$max_to_min[optimal_0])/(sq_max_to_min - 1), 
+  "県内較差", sq_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
+  "改善率", NA, (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new,
   "市区町村の分割", sq_mun_splits, 0, 
   "郡の分割", sq_gun_splits, sim_gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, results_0$koiki_split[optimal_0], 
+  "広域連携地域の分割", sq_koiki_splits, results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
 ) 
 
 table_summary %>% 
@@ -176,13 +177,15 @@ ggplot() +
 ```
 
 # アルゴリズムの提案
-アルゴリズムが提案した`r format(nsims, big.mark = ",")`案のうち、有効な案の中で、一票の格差が最小のもの
+アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
 ### 市区町村を分割しない区割り案
-一票の格差 : `r round(results_0[optimal_0,]$max_to_min, digits = 3) `
+一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
-redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
+# Reorder the color palette 
+PAL <- c('#364B7F','#DCAD35', '#7F4E28', '#6D9537', '#9A9BB9', '#2A4E45')
+redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
   scale_fill_manual(values = PAL, guide = "none") + 
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
@@ -191,7 +194,7 @@ redist::redist.plot.plans(sim_smc_pref_0, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
-               color = c("white", "black", "white"), size = 3,
+               color = c("black", "white", "black"), size = 3,
               nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
               nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -221,7 +224,7 @@ if(ndists_new > 6){
 }
 
 ## Reorder Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35','#7F4E28', '#2A4E45', '#9A9BB9')
+PAL <- c('#364B7F','#DCAD35', '#6D9537',  '#7F4E28',  '#2A4E45', '#9A9BB9')
 
 # Co-occurrence plot
 ggplot() +
@@ -235,7 +238,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
-               color = c("white" ,"black", "black"), size = 3,
+               color = c("black" ,"black", "black"), size = 3,
               nudge_x = c(-5000, -5000, -5000), # adjust the position of the labels
               nudge_y = c(-5000, -5000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -246,11 +249,18 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の総人口 / 選挙区数) ±10%
-* アルゴリズムが導出する案の総数 : `r format(nsims, big.mark = ",")`
-* 有効な区割り案（飛び地を生じさせない）の数 : 
-    + 市区町村の分割無し : `r format(length(functioning_results_0$index), big.mark = ",", scientific = FALSE)`  
-* 有効な案から一票の格差が最小の区割り案を選定
+ * 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ±`r 100*pop_tol`%
+   + サンプリング効率が80%~100%となるように調節
+ * 市区町村分割を許容しない案、及び日本人人口が最大の市（政令指定都市の行政区を除く）の分割を許容する案の2種類を作成
+   + 最大市区町村を分割する際は、平成の大合併以前の市区町村界に基づく
+   + 旧市区町村単位の人口（総人口-外国人人口）は、合併後の市区町村の人口（総人口-外国人人口）と旧市区町村単位の日本人人口を元に推計
+ * 郡の分割は、現行の区割りにて分割されている場合のみ許容
+ * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
+ * 市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(nsims, big.mark = ",")`作成 
+ * 以下の案を棄却し有効な案を選定
+   + 飛び地が生じる案
+   + 市区町村が3つ以上の選挙区に分割される案
+ * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定  
 
@@ -258,3 +268,7 @@ ggplot() +
     + 本プロジェクトでは市区町村の分割は平成の大合併前の境界を用いる
     + 分割対象である人口最大の市区町村（いわき市）は、1966年以降は市区町村合併をしていない
     + よって、本プロジェクトではいわき市を分割しない
+
+# データとプログラム
+* [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
+* [**GitHub** : プログラムとコード](https://github.com/alarm-redist/japan)
