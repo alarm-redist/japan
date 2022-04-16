@@ -37,7 +37,7 @@ sq_max_to_tottori2 <- 1.684
 sq_mun_splits <- 1
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
-pop_tol <- 0.25 # Set so that re-sampling efficiencies are > 90% at each stage
+pop_tol <- 0.25 # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
