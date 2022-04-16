@@ -1,8 +1,9 @@
 ###############################################################################
 # Simulations for `34_Hiroshima`
-# © ALARM Project, March 2021
+# © ALARM Project, April 2021
 ###############################################################################
 
+####-------------- 1. Method for Rural Prefectures-------------------------####
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -69,6 +70,7 @@ prefadj_1 <- geomander::add_edge(prefadj_1,
                                  suggest$y,
                                  zero = TRUE)
 
+
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
 
@@ -82,7 +84,7 @@ run_simulations <- function(pref_n, prefadj_n){
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
                                    ndists = ndists_new,
-                                   pop_tol= 0.10,
+                                   pop_tol= pop_tol,
                                    total_pop = pop,
                                    adj = prefadj_n)
 
@@ -99,8 +101,6 @@ run_simulations <- function(pref_n, prefadj_n){
                         "_",
                         as.character(pref_name),
                         "_",
-                        as.character(nsims),
-                        "_",
                         as.character(i),
                         ".Rds",
                         sep = ""))
@@ -109,23 +109,21 @@ run_simulations <- function(pref_n, prefadj_n){
                            as.character(pref_code),
                            "_",
                            as.character(pref_name),
-                           "_",
-                           as.character(nsims),
                            "_adj_",
                            as.character(i),
                            ".Rds",
                            sep = ""))
 
-  saveRDS(pref_map_n, paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+  # pref_map object: to be uploaded to Dataverse
+  write_rds(pref_map_n, paste("data-out/maps/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_hr_2020_map_",
+                              as.character(i),
+                              ".rds",
+                              sep = ""),
+            compress = "xz")
 
   saveRDS(sim_smc_pref_n, paste("data-out/plans/",
                                 as.character(pref_code),
@@ -160,3 +158,12 @@ run_simulations <- function(pref_n, prefadj_n){
 
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
+
+# Histogram showing plans diversity
+# Ideally, the majority of mass to would be above 50% and
+# we would not see a large spike at 0.
+# However, for some prefectures, it is impossible to get a diverse set of plans
+# because there are fewer possible plans.
+
+hist(plans_diversity(sim_smc_pref_0))
+hist(plans_diversity(sim_smc_pref_1))
