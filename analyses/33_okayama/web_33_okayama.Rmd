@@ -39,7 +39,7 @@ sq_mun_splits_name <- "岡山市北区・南区・東区、吉備中央町、真
 sq_gun_splits_name <- "加賀郡"
 sq_koiki_splits_name <- "岡山連携中枢都市圏、高梁川流域連携中枢都市圏"
 split_1_name <- "倉敷市"
-## Color Palette
+## Default Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
@@ -170,6 +170,10 @@ if(ndists_old > 6){
   sq_pref_map <- sq_pref %>% 
     mutate(color = ku)
 }
+
+## Change order of color palette
+PAL <- c('#7F4E28' , '#DCAD35', '#364B7F', '#9A9BB9', '#6D9537', '#7F4E28')
+
 # Plot Map
 ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
@@ -180,7 +184,8 @@ ggplot() +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names),  size = 3,
+               color = c("white", "black"),
               nudge_x = c(-0.04, 0), # adjust the position of the labels
               nudge_y = c(0.035,-0.035), # adjust the position of the labels
               family = "HiraginoSans-W3") +
