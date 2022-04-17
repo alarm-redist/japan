@@ -40,7 +40,7 @@ sq_gun_splits_name <- ""
 sq_koiki_splits_name <- "松山圏域"
 split_1_name <- "松山市"
 
-## Color Palette
+## Default Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
@@ -171,6 +171,10 @@ if(ndists_old > 6){
   sq_pref_map <- sq_pref %>% 
     mutate(color = ku)
 }
+
+## Reorder Color Palette
+PAL <- c('#DCAD35', '#7F4E28', '#364B7F', '#6D9537')
+
 # Plot Map
 ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
