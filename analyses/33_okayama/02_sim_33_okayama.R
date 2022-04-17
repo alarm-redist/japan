@@ -60,41 +60,13 @@ new_1 <- as.character(split_code)
 pref_1 <- reflect_old_boundaries(pref_0_with_kurashiki, old_mun, census_mun_old_2020, new_1)
 
 # Add adjacency
-add_adjacency <- function(pref_n){
-
-  prefadj_n <- redist::redist.adjacency(pref_n)
-
-  # Modify according to ferry adjacencies
-  if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries_n <- add_ferries(pref_n)
-    prefadj_n <- geomander::add_edge(prefadj_n,
-                                     ferries_n[, 1],
-                                     ferries_n[, 2],
-                                     zero = TRUE)
-  }
-
-  #return result
-  return(prefadj_n)
-}
-
-# Make adjacency list
-prefadj_0 <- add_adjacency(pref_0)
-prefadj_1 <- add_adjacency(pref_1)
-
-# Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref_n,
-                                                    adj = prefadj_n)
-prefadj_n <- geomander::add_edge(prefadj_n,
-                                 suggest$x,
-                                 suggest$y,
-                                 zero = TRUE)"
-
-
-# TODO Repair adjacencies if necessary, and document these changes.
-# prefadj_x <- geomander::add_edge(prefadj_x,
-# which(pref_x$pre_gappei_code == xxxxx),
-# which(pref_x$pre_gappei_code == xxxxx))
+# Since there are no ferry-related adjacencies to add in Okayama,
+# we simply use `redist::redist.adjacency()` to construct
+# adjacency lists.
+ferries_0 <- add_ferries(pref_0) # No ferry-related adjancencies
+ferries_1 <- add_ferries(pref_1) # No ferry-related adjancencies
+prefadj_0 <- redist::redist.adjacency(pref_0)
+prefadj_1 <- redist::redist.adjacency(pref_1)
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
