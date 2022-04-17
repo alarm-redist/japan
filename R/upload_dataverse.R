@@ -25,7 +25,7 @@ upload_dataverse <- function(pref_code, pref_name){
             "_",
             as.character(pref_name),
             "/",
-            as.character(pref_code),
+            stringr::str_pad(pref_code, 2, pad = "0"),
             "_",
             as.character(pref_name),
             "_hr_2020_doc.html",
