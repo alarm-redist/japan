@@ -2,7 +2,6 @@
 # Data visualization for `33_Okayama`
 # © ALARM Project, April 2021
 ###############################################################################
-
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
 # Define using the municipality codes, not the gun codes
@@ -21,20 +20,26 @@ for (i in 0:1)
                               as.character(pref_code),
                               "_",
                               as.character(pref_name),
-                              "_map_",
-                              as.character(nsims),
-                              "_",
+                              "_hr_2020_map_",
                               as.character(i),
-                              ".Rds",
+                              ".rds",
                               sep = ""))
   assign(paste("pref_map_", i, sep = ""), pref_map_n)
+
+  pref_n <- readRDS(paste("data-out/pref/",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_",
+                          as.character(i),
+                          ".Rds",
+                          sep = ""))
+  assign(paste("pref_", i, sep = ""), pref_n)
 
   prefadj_n <-readRDS(paste("data-out/pref/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),
-                            "_",
-                            as.character(nsims),
                             "_adj_",
                             as.character(i),
                             ".Rds",
@@ -145,13 +150,31 @@ results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 functioning_results_0 <- results_0 %>% dplyr::filter(valid)
 functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
+# nrow(functioning_results_0) and nrow(functioning_results_1) must be over 5,000.
+# If not, increase nsims and run more simulations.
+
+# Sample 5,000 plans
+valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
+sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
+  filter(draw %in% valid_sample_0)
+
+valid_sample_1 <- sample(functioning_results_1$index, 5000, replace = FALSE)
+sim_smc_pref_1_sample <- sim_smc_pref_1 %>%
+  filter(draw %in% valid_sample_1)
+
+# Filter out sampled plans
+results_0_sample <- functioning_results_0 %>%
+  filter(index %in% valid_sample_0)
+results_1_sample <- functioning_results_1 %>%
+  filter(index %in% valid_sample_1)
+
 # Find Optimal Plan
-optimal_0 <- functioning_results_0$index[which(functioning_results_0$max_to_min ==
-                                                 min(functioning_results_0$max_to_min))][1]
-results_0[optimal_0,]
-optimal_1 <- functioning_results_1$index[which(functioning_results_1$max_to_min ==
-                                                 min(functioning_results_1$max_to_min))][1]
-results_1[optimal_1,]
+optimal_0 <- results_0_sample$index[which(results_0_sample$max_to_min ==
+                                            min(results_0_sample$max_to_min))][1]
+results_0_sample[which(results_0_sample$index == optimal_0),]
+optimal_1 <- results_1_sample$index[which(results_1_sample$max_to_min ==
+                                            min(results_1_sample$max_to_min))][1]
+results_1_sample[which(results_1_sample$index == optimal_1),]
 
 # Optimal Plan: 0 split
 matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0))
@@ -211,9 +234,9 @@ boundary_1 <- rbind(old_boundary, mun, gun)
 
 # Co-occurrence
 # Filter out plans with top 10% koiki-renkei areas
-good_num_0 <-  functioning_results_0 %>%
+good_num_0 <- results_0_sample %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(functioning_results_0$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_0_sample$index)*0.1)) %>%
   select(index)
 good_num_0 <- as.vector(t(good_num_0))
 sim_smc_pref_0_good <- sim_smc_pref_0 %>%
@@ -224,9 +247,9 @@ m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
 # Since we set aside 倉敷市 when running the simulations, the simulations yield redistricting plans
 # with ndists_new-1 districts. Thus, we create ndists_new-1 clusters.
+prec_clusters_0 = cutree(cl_co_0, ndists_new-1)
 pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
 names(pref_membership_0) <- "membership"
 
@@ -256,6 +279,9 @@ rm(pref_smc_plans_0,
    pref_smc_plans_1,
    pref_smc_plans_n,
    sim_smc_pref_n,
+   sim_smc_pref_0,
+   sim_smc_pref_1,
+   sim_smc_pref_0_good,
    wgt_smc_0,
    wgt_smc_1,
    num_mun_split_1,
@@ -272,7 +298,11 @@ rm(pref_smc_plans_0,
    pref_pop_2020,
    pref_shp_2015,
    pref_shp_cleaned,
-   old_mun
+   old_mun,
+   functioning_results_0,
+   functioning_results_1,
+   results_0,
+   results_1
 )
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
@@ -281,3 +311,50 @@ save.image(paste("data-out/pref/",
                  "_data",
                  ".Rdata",
                  sep = ""))
+
+# Save relevant files to upload to Dataverse
+for (i in 0:1){
+  # `redist_plans` object
+  write_rds(paste("sim_smc_pref_", as.character(i), "_sample", sep = ""),
+            paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_plans_",
+                  as.character(i),
+                  ".rds",
+                  sep = ""),
+            compress = "xz")
+}
+
+# Export `redist_plans` summary statistics to a csv file
+# Plans with 0 split: merge with Kurashiki
+sim_smc_pref_0_with_Kurashiki %>%
+  filter(draw %in% valid_sample_0) %>%
+
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_stats_",
+                  as.character(0),
+                  ".csv",
+                  sep = ""))
+
+# Plans with 1 split
+  as_tibble(sim_smc_pref_1_sample) %>%
+    mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+
+    # Remove the column "pop_overlap" that was created when renumbering the district numbers
+    select(1:3) %>%
+
+    write_csv(paste("data-out/plans/",
+                    as.character(pref_code),
+                    "_",
+                    as.character(pref_name),
+                    "_hr_2020_stats_",
+                    as.character(1),
+                    ".csv",
+                    sep = ""))

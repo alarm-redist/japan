@@ -3,6 +3,7 @@
 # © ALARM Project, April 2021
 ###############################################################################
 
+####-------------- 1. Method for Rural Prefectures-------------------------####
 # Add information about 郡
 pref <- merge_gun(pref)
 
@@ -58,7 +59,12 @@ new_1 <- as.character(split_code)
 # based on the official definition (total population - foreign population)
 pref_1 <- reflect_old_boundaries(pref_0_with_kurashiki, old_mun, census_mun_old_2020, new_1)
 
-# Make adjacency list
+# Add adjacency
+# Since there are no ferry-related adjacencies to add in Okayama,
+# we simply use `redist::redist.adjacency()` to construct
+# adjacency lists.
+ferries_0 <- add_ferries(pref_0) # No ferry-related adjancencies
+ferries_1 <- add_ferries(pref_1) # No ferry-related adjancencies
 prefadj_0 <- redist::redist.adjacency(pref_0)
 prefadj_1 <- redist::redist.adjacency(pref_1)
 
@@ -76,7 +82,7 @@ run_simulations <- function(pref_n, prefadj_n){
     # Create redist.map object
     pref_map_n <- redist::redist_map(pref_n,
                                      ndists = ndists_new,
-                                     pop_tol= 0.30,
+                                     pop_tol= pop_tol,
                                      total_pop = pop,
                                      adj = prefadj_n)
 
@@ -84,7 +90,7 @@ run_simulations <- function(pref_n, prefadj_n){
     # Create redist.map object
     pref_map_n <- redist::redist_map(pref_n,
                                      ndists = ndists_new - 1, # set aside Kurashiki
-                                     pop_tol= 0.30,
+                                     pop_tol= pop_tol,
                                      total_pop = pop,
                                      adj = prefadj_n)
   }
@@ -102,8 +108,6 @@ run_simulations <- function(pref_n, prefadj_n){
                         "_",
                         as.character(pref_name),
                         "_",
-                        as.character(nsims),
-                        "_",
                         as.character(i),
                         ".Rds",
                         sep = ""))
@@ -112,23 +116,21 @@ run_simulations <- function(pref_n, prefadj_n){
                            as.character(pref_code),
                            "_",
                            as.character(pref_name),
-                           "_",
-                           as.character(nsims),
                            "_adj_",
                            as.character(i),
                            ".Rds",
                            sep = ""))
 
-  saveRDS(pref_map_n, paste("data-out/maps/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_map_",
-                            as.character(nsims),
-                            "_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
+  # pref_map object: to be uploaded to Dataverse
+  write_rds(pref_map_n, paste("data-out/maps/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_hr_2020_map_",
+                              as.character(i),
+                              ".rds",
+                              sep = ""),
+            compress = "xz")
 
   saveRDS(sim_smc_pref_n, paste("data-out/plans/",
                                 as.character(pref_code),
@@ -163,3 +165,12 @@ run_simulations <- function(pref_n, prefadj_n){
 
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
+
+# Histogram showing plans diversity
+# Ideally, the majority of mass to would be above 50% and
+# we would not see a large spike at 0.
+# However, for some prefectures, it is impossible to get a diverse set of plans
+# because there are fewer possible plans.
+
+hist(plans_diversity(sim_smc_pref_0))
+hist(plans_diversity(sim_smc_pref_1))
