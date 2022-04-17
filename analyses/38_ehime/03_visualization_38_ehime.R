@@ -314,7 +314,7 @@ for (i in 0:1){
 
 
 # Export `redist_plans` summary statistics to a csv file
-# Plans with 0 split: merge with Kurashiki
+# Merge with Matsuyama
 sim_smc_pref_0_with_Matsuyama %>%
   filter(draw %in% valid_sample_0) %>%
 
@@ -329,6 +329,7 @@ sim_smc_pref_0_with_Matsuyama %>%
                   ".csv",
                   sep = ""))
 
+# Merge with Matsuyama
 sim_smc_pref_1_with_Matsuyama %>%
   filter(draw %in% valid_sample_1) %>%
 
