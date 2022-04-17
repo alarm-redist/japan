@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `04_Miyagi` analysis
-# © ALARM Project, March 2021
+# © ALARM Project, April 2021
 ###############################################################################
 
 suppressMessages({
@@ -26,7 +26,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 25000 # Set so that the number of valid plans > 5,000
 pref_code <- 04
 pref_name <- "miyagi"
 lakes_removed <- c()
@@ -37,6 +37,7 @@ sq_max_to_tottori2 <- 1.993
 sq_mun_splits <- 2
 sq_gun_splits <- 2
 sq_koiki_splits <- 1
+pop_tol <- 0.15 # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c(4400, 4420)
@@ -55,12 +56,18 @@ pref_shp_cleaned <- pref_shp_2015 %>%
 # Download 2020 Census data at 小地域-level
 pref_pop_2020 <- download_pop_2020(pref_code)
 
+# remove lake if needed
+"ifelse(is.null(lakes_removed),
+       pref_shp_cleaned <- pref_shp_cleaned,
+       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))"
+
 # status quo
 sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
   dplyr::group_by(ku) %>%
   dplyr::summarise(geometry = sf::st_union(geometry))
 
+####1. Rural Prefectures########
 # Clean 2020 Census data at the 小地域-level
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
 
@@ -80,7 +87,7 @@ pop <- pref_pop_2020 %>%
   dplyr::rename(code = mun_code)
 
 # Reflect change in municipality code
-# 富谷町 --> 富谷市 (municipality code/name changed in 2016)
+# 富谷町 --> 富谷市 (municipality code/name was changed in 2016)
 pref_shp_cleaned[which(pref_shp_cleaned$code == 4423), ]$code <- 4216
 
 geom <- pref_shp_cleaned %>%
