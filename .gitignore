@@ -19,3 +19,22 @@ data-raw/*
 # HTML knitting
 analyses/**/*_files/*
 !analyses/**/*_files/figure-html5
+en/*_files/*
+en/*_catche/*
+!en/*_files/figure-html5
+*_files/*
+*_catche/*
+!*_files/figure-html5
+docs/**/**/*.csv
+docs/**/**/*.rds
+docs/*.css
+docs/*_catche/*
+docs/en/*_files/*
+docs/en/*_catche/*
+docs/**/**/*.R
+docs/**/**/*.md
+docs/**/**/*.Rmd
+docs/**/**/*.html
+docs/**/**/*_files/*
+!docs/**/**/*index.html
+!docs/**/**/*_files/figure-html5/
