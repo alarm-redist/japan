@@ -14,7 +14,7 @@ collections:
 navbar:
     logo:
         image: assets/alarm_256_tr.png
-        href: index.html
+        href: https://alarm-redist.github.io/
     search: true
     right:
         - text: Home
