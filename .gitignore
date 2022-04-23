@@ -29,12 +29,9 @@ docs/**/**/*.csv
 docs/**/**/*.rds
 docs/*.css
 docs/*_catche/*
-docs/en/*_files/*
 docs/en/*_catche/*
 docs/**/**/*.R
 docs/**/**/*.md
 docs/**/**/*.Rmd
 docs/**/**/*.html
-docs/**/**/*_files/*
 !docs/**/**/*index.html
-!docs/**/**/*_files/figure-html5/
