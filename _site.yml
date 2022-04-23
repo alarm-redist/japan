@@ -18,11 +18,11 @@ navbar:
     search: true
     right:
         - text: Home
-          href: index.html
+          href: https://alarm-redist.github.io/
         - text: About
-          href: about.html
+          href: https://alarm-redist.github.io/about.html
         - text: Applications
-          href: applications.html
+          href: https://alarm-redist.github.io/applications.html
         - text: redist
           href: https://alarm-redist.github.io/redist/
         - icon: fab fa-github

@@ -2,7 +2,7 @@
 title: | 
   47-Prefecture Redistricting Simulations
 description: |
-  <img src='../../assets/japan_47pref_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
+  <img src='../assets/japan_47pref_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
   Comprehensive project to simulate alternative legislative redistricting plans of House of Representatives for all 47 prefectures in Japan.
 date: April 19, 2022
 authors:
