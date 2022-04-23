@@ -17,8 +17,6 @@ data-raw/*
 .DS_store
 
 # HTML knitting
-analyses/**/*_files/*
-!analyses/**/*_files/figure-html5
 en/*_files/*
 en/*_catche/*
 !en/*_files/figure-html5

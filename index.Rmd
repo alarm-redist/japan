@@ -4,7 +4,7 @@ title: |
 description: |
   <img src='assets/japan_47pref_256_tr.png' height=100 style='float: left; margin: -18px 8px -2px 0;'>
   アルゴリズムを活用した<br/> 衆議院小選挙区の区割り改定案の作成と分析 
-date: April 19, 2022
+date: April 23, 2022
 authors:
     - name: 宮﨑 将
     - name: 山田 健人
@@ -125,7 +125,7 @@ cat('</div><br />\n\n')
 ## 出典と著作権 {.appendix}  
 本プロジェクトを引用する場合は以下のように明記してください。
 
-<pre class="citation-appendix short">Miyazaki, et al. (2022, April 19). 47-Prefecture Redistricting Simulations
+<pre class="citation-appendix short">Miyazaki, et al. (2022, April 23). 47-Prefecture Redistricting Simulations
 . Retrieved from https://doi.org/10.7910/DVN/Z9UKSH</pre> 
 <p>BibTeX citation</p>
 <pre class="citation-appendix long">@misc{miyazaki202247-prefecture,
