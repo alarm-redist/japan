@@ -11,16 +11,16 @@ pref <- merge_gun(pref)
 pref_0 <-  sf::st_as_sf(
   dplyr::bind_rows(
 
-    # Set aside gun that are not respected under the status quo
-    pref %>% filter(gun_code %in% as.numeric(gun_exception)),
-
     # Merge gun
     pref %>%
       dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
       dplyr::group_by(gun_code) %>%
       dplyr::summarize(geometry = sf::st_union(geometry),
                        pop = sum(pop),
-                       code = code[1])
+                       code = code[1]),
+
+    # Set aside gun that are not respected under the status quo
+    pref %>% filter(gun_code %in% as.numeric(gun_exception))
   )
 )
 
@@ -60,20 +60,16 @@ add_adjacency <- function(pref_n){
 prefadj_0 <- add_adjacency(pref_0)
 prefadj_1 <- add_adjacency(pref_1)
 
-# Suggest connection between disconnected groups
-suggest_0 <-  geomander::suggest_component_connection(shp = pref_0,
-                                                    adj = prefadj_0)
+# Repair adjacency list
+# Under the enacted plan, 対馬市(42209) and 壱岐市(42210) are considered as
+# being contiguous to 大村市(42205) because they are connected via air routes.
+# Thus, we consider 対馬市(42209) and 壱岐市(42210) to be contiguous to 大村市(42205).
 prefadj_0 <- geomander::add_edge(prefadj_0,
-                                 suggest_0$x,
-                                 suggest_0$y,
-                                 zero = TRUE)
-
-suggest_1 <-  geomander::suggest_component_connection(shp = pref_1,
-                                                    adj = prefadj_1)
+                                 which(pref_0$code == 42209), #対馬市
+                                 which(pref_0$code == 42205)) #大村市
 prefadj_1 <- geomander::add_edge(prefadj_1,
-                                 suggest_1$x,
-                                 suggest_1$y,
-                                 zero = TRUE)
+                                 which(pref_1$code == 42209), #対馬市
+                                 which(pref_1$code == 42205)) #大村市
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
