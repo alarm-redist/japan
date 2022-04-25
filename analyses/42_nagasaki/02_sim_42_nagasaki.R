@@ -63,13 +63,30 @@ prefadj_1 <- add_adjacency(pref_1)
 # Repair adjacency list
 # Under the enacted plan, 対馬市(42209) and 壱岐市(42210) are considered as
 # being contiguous to 大村市(42205) because they are connected via air routes.
-# Thus, we consider 対馬市(42209) and 壱岐市(42210) to be contiguous to 大村市(42205).
+# Thus, we consider 対馬市(42209) and 壱岐市(42210) to be adjacent to 大村市(42205).
 prefadj_0 <- geomander::add_edge(prefadj_0,
                                  which(pref_0$code == 42209), #対馬市
+                                 which(pref_0$code == 42205)) #大村市
+prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 which(pref_0$code == 42210), #壱岐市
                                  which(pref_0$code == 42205)) #大村市
 prefadj_1 <- geomander::add_edge(prefadj_1,
                                  which(pref_1$code == 42209), #対馬市
                                  which(pref_1$code == 42205)) #大村市
+prefadj_1 <- geomander::add_edge(prefadj_1,
+                                 which(pref_1$code == 42210), #壱岐市
+                                 which(pref_1$code == 42205)) #大村市
+
+# In addition, under the enacted plan, 西海市(42212) and 佐世保市(42202) are considered
+# to be contiguous, as those municipalities are connected via a bridge.
+# Thus, we add an adjacency between 西海市(42212) and 佐世保市(42202) and
+# treat them as being adjacent to each other.
+prefadj_0 <- geomander::add_edge(prefadj_0,
+                                 which(pref_0$code == 42212), #西海市
+                                 which(pref_0$code == 42202)) #佐世保市
+prefadj_1 <- geomander::add_edge(prefadj_1,
+                                 which(pref_1$code == 42212), #対馬市
+                                 which(pref_1$code == 42202)) #佐世保市
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
