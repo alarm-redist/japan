@@ -114,11 +114,22 @@ results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
+# Strictly speaking, putting 西海市(42212) in the same district as 佐世保市 would constitute
+# creating a discontiguous district. However, 西海市 is placed in the same district as
+# 佐世保市 under the enacted map, and the district is not considered to be discontiguous.
+# Thus, we allow 西海市 to be in the same district as 佐世保市, and
+# for the purpose of checking whether plans are contiguous or not, we remove 西海市
+# from the analysis.
+pref_0_without_discont <- pref_0[-which(pref_0$code == 42212),]
+pref_smc_plans_0_without_discont <- pref_smc_plans_0[-which(pref_0$code == 42212),]
+pref_1_without_discont <- pref_1[-which(pref_1$code == 42212),]
+pref_smc_plans_1_without_discont <- pref_smc_plans_1[-which(pref_1$code == 42212),]
+
 # Add bridges and check if valid
 bridges_0 <- c()
-results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
+results_0$valid <- check_valid(pref_0_without_discont, pref_smc_plans_0_without_discont, bridges_0)
 bridges_1 <- c()
-results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
+results_1$valid <- check_valid(pref_1_without_discont, pref_smc_plans_1_without_discont, bridges_1)
 
 # TODO: filter out plans with discontiguities
 functioning_results_0 <- results_0 %>% dplyr::filter(valid)
@@ -268,13 +279,21 @@ rm(pref_smc_plans_0,
    results_0,
    results_1
 )
+
+# remove unnecessary files that were created only for this script
+rm(pref_smc_plans_0_without_discont,
+   pref_smc_plans_1_without_discont,
+   pref_0_without_discont,
+   pref_1_without_discont)
+
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
                  as.character(pref_name),
                  "_data",
                  ".Rdata",
-                 sep = ""))
+                 sep = ""),
+           compress = "xz") # compress file
 
 # Save relevant files to upload to Dataverse
 for (i in 0:1){
