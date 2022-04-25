@@ -7,7 +7,7 @@ output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
     self_contained: false
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -133,17 +133,17 @@ table_summary %>%
       rows = 4
     ) 
   ) %>% 
-  tab_footnote(
-    footnote = split_1_name,
+    tab_footnote(
+    footnote = sq_gun_splits_name,
     locations = cells_body(
-      columns = 4,
-      rows = 4
+      columns = 2,
+      rows = 5
     ) 
-  ) %>% 
+  ) %>%
  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
-      columns = 2:4,
+      columns = 2,
       rows = 6
     ) 
   ) %>% 
@@ -177,13 +177,13 @@ ggplot() +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+          fill = NA, lwd = 0.2) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(-0.28, 0.33), # adjust the position of the labels
+              nudge_y = c(0, 0.05), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -197,17 +197,21 @@ ggplot() +
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
+# Reorder the color palette
+PAL <- c('#364B7F','#DCAD35', '#6D9537')
+
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
-  labs(title = element_blank())+
+  labs(title = element_blank())+ 
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+          fill = NA, lwd = 0.2) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(-32000, 36000), # adjust the position of the labels
+              nudge_y = c(-5000, 8800), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -220,18 +224,22 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
+# Reorder the color palette
+PAL <- c('#364B7F', '#DCAD35','#6D9537')
+
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
-  labs(title = element_blank())+
+  labs(title = element_blank())+ 
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+          fill = NA, lwd = 0.2) +
   scale_color_manual(values = c("black", "grey60", "grey30")) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(-32000, 36000), # adjust the position of the labels
+              nudge_y = c(-5000, 8800), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -259,7 +267,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#DCAD35', '#364B7F')
 
 # Co-occurrence plot
 ggplot() +
@@ -268,13 +276,13 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+          fill = NA, lwd = 0.015) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(-32000, 36000), # adjust the position of the labels
+              nudge_y = c(-5000, 8800), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -297,7 +305,9 @@ ggplot() +
 * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定  
-特になし 
+
+* 現行の区割りでは、空路を介した連続性に配慮し、対馬市・壱岐市は大村市と同一の選挙区とされている。よって、本プロジェクトにおいても、対馬市・壱岐市は大村市と隣接しているものとして扱った。
+* 現行の区割りに従い、西海市と佐世保市は隣接しているものとして扱った。西海市と佐世保市が同一の選挙区となる場合、西海市は飛び地として扱わないこととした。
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
