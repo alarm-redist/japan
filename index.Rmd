@@ -111,6 +111,8 @@ filter(japan, available) %>%
 cat('</div><br />\n\n')
 ```
 
+## 謝辞 {.appendix}
+本プロジェクトの一部は、[ハーバード大学エドウィン・O・ライシャワー日本研究所](https://rijs.fas.harvard.edu/ja)の援助を受けました。
 
 ## データについて {.appendix}
 
