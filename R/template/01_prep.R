@@ -153,6 +153,8 @@ pref_geom_only_1 <- pref_geom_only %>%
     slice(1)
 pref_geom_only_1[pref_geom_only_1$code == "132090040"]$pop <-
     pref_pop_only[pref_pop_only$code == "132090450",]$pop　# 町田市南町田
+# Add sub_code
+pref_geom_only_1$sub_code = 450
 
 # Group together 町田市木曽西
 pref_mutual[pref_mutual$code == "132090112",]$geometry <-
@@ -160,10 +162,11 @@ pref_mutual[pref_mutual$code == "132090112",]$geometry <-
                  filter(pref_geom_only, code == "132090114")$geometry)"
 
 # Finalize pref object
-pref <- rbind(pref_mutual, pref_geom_only_1)
 pref <- pref %>%
     select(mun_code, sub_code, pop, geometry) %>%
     rename(code = mun_code) %>%
+    mutate(code = as.numeric(code)) %>%
+    arrange(code) %>%
     sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly

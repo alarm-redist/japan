@@ -172,22 +172,6 @@ hist(plans_diversity(sim_smc_pref_0))
 hist(plans_diversity(sim_smc_pref_1))
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
-# Clean 2015 Census shapefile
-pref <- pref_cleaned %>%
-  dplyr::select(code, KIHON1, JINKO, geometry)
-
-# Calculate population of Japanese nationals as of 2015 at the 小地域 level
-pref <- calc_kokumin(pref, dem_pops)
-
-# Filter out relevant data from 2020 Census
-census2020_current_municipalities <- census_mun_old_2020 %>%
-  filter(type_of_municipality %in% c("a", "1", "9") == FALSE )
-
-# Estimate 2020 pop. at the 小地域 level
-pref <- estimate_2020_pop(pref, census2020_current_municipalities) %>%
-  dplyr::select(code, KIHON1, pop_estimate, geometry) %>%
-  dplyr::rename(subcode = KIHON1, pop = pop_estimate)
-
 # Obtain codes of 郡 to merge
 pref <- merge_gun(pref)
 gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
@@ -195,8 +179,7 @@ gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1
 gun_codes <- setdiff(gun_codes, gun_exception)
 
 # Set aside non-郡 municipalities
-pref_non_gun <- pref %>%
-  dplyr::filter(gun_code %in% gun_codes == FALSE)
+pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
 
 # Merge together 郡
 pref_gun <- NULL
@@ -245,8 +228,7 @@ for (i in 2:nrow(pref))
   pref_sep <- rbind(pref_sep, new_rows)
 }
 
-pref <- pref_sep %>%
-  sf::st_as_sf()
+pref <- sf::st_as_sf(pref_sep)
 
 # Make adjacency list
 prefadj <- redist::redist.adjacency(pref)
