@@ -102,40 +102,34 @@ sum(pref$pop)
 # Clean 2020 Census data at the 小地域-level
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE)
 
-# Match data and clean
+# Match 2015 shapefile (`pref_shp_cleaned`) with 2020 Census data (`pref_pop_2020`)
 # Combine municipality code with sub-code
-pref_shp_cleaned <- pref_shp_cleaned %>%
-    mutate(code = str_c(code, KIHON1))
+pref_shp_cleaned <- mutate(pref_shp_cleaned, code = str_c(code, KIHON1))
 # Combine municipality code with sub-code
-pref_pop_2020 <- pref_pop_2020 %>%
-    mutate(code = str_c(mun_code, sub_code))
+pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
-# TODO Need to match areas that do not match
-# Areas that are accounted for in both dataframes
-pref_mutual <- pref_pop_2020 %>%
-    inner_join(pref_shp_cleaned, by = "code")
+# TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
+# 1. Areas that are accounted for in both dataframes
+pref_mutual <- merge(pref_pop_2020, pref_shp_cleaned, by = "code")
 
-# Areas that are not accounted for in 2020 data
-pref_geom_only <- pref_shp_cleaned %>%
-    left_join(pref_pop_2020, by = "code")
+# 2. Areas that exist only in 2015 shapefile (`pref_shp_cleaned`)
+pref_geom_only <- merge(pref_shp_cleaned, pref_pop_2020, by = "code", all.x = TRUE)
 pref_geom_only <- setdiff(pref_geom_only, pref_mutual)
 
-# Areas that are not accounted for in 2015 data
-pref_pop_only <- pref_pop_2020 %>%
-    left_join(pref_shp_cleaned, by = "code")
+# 3. Areas that exist only in 2020 Census data (`pref_pop_2020`)
+pref_pop_only <- merge(pref_pop_2020, pref_shp_cleaned, by = "code", all.x = TRUE)
 pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
     filter(pop > 0)
 
 # Match or combine data so that every single census block is taken into account
-"#Example
-#Add municipality code, sub_code, sub_name to areas that only exist in 2015 data
-#pref_geom_only$pop <- 0
+# Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
+pref_geom_only$pop <- 0
 pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
-# Match or combine areas so that each area in pref_pop_only is matched with a certain area
+# Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
 pref_mutual[pref_mutual$code == "131030300",][2,]$JINKO <-
     pref_mutual[pref_mutual$code == "131030300",][2,]$JINKO +
-    pref_pop_only[(pref_pop_only$mun_code == "13103") & (pref_pop_only$sub_code == "0310"),]$pop"
+    pref_pop_only[(pref_pop_only$mun_code == "13103") & (pref_pop_only$sub_code == "0310"),]$pop
 
 # Finalize pref object
 pref <- rbind(pref_mutual, pref_geom_only)
@@ -144,5 +138,5 @@ pref <- pref %>%
     rename(code = mun_code)
 pref <- sf::st_as_sf(pref)
 
-# Finally, confirm that the manual operations were conducted correctly
+# Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)

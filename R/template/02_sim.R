@@ -294,25 +294,37 @@ sim_smc_pref <- redist::redist_smc(
   constraints = constr,
   pop_temper = 0.05)
 
-# Save map and simulation data
-saveRDS(pref_map, paste("data-out/maps/",
-                        as.character(pref_code),
-                        "_",
-                        as.character(pref_name),
-                        "_map_",
-                        as.character(nsims),
-                        ".Rds",
-                        sep = ""))
+# Histogram showing plans diversity
+# Ideally, the majority of mass to would be above 50% and
+# we would not see a large spike at 0.
+# However, for some prefectures, it is impossible to get a diverse set of plans
+# because there are fewer possible plans.
+hist(plans_diversity(sim_smc_pref))
+
+
+# Save pref object, pref_map object, adjacency list, and simulation data
+saveRDS(pref, paste("data-out/pref/",
+                    as.character(pref_code),
+                    "_",
+                    as.character(pref_name),
+                    ".Rds",
+                    sep = ""))
 
 saveRDS(prefadj, paste("data-out/pref/",
                        as.character(pref_code),
                        "_",
                        as.character(pref_name),
-                       "_",
-                       as.character(nsims),
-                       "_adj",
-                       ".Rds",
+                       "_adj.Rds",
                        sep = ""))
+
+# pref_map object: to be uploaded to Dataverse
+write_rds(pref_map, paste("data-out/maps/",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_hr_2020_map.rds",
+                          sep = ""),
+          compress = "xz")
 
 saveRDS(sim_smc_pref, paste("data-out/plans/",
                             as.character(pref_code),
@@ -324,6 +336,4 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             as.character(nsims),
                             ".Rds",
                             sep = ""))
-
-
 
