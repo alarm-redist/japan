@@ -195,7 +195,7 @@ for(i in 1:length(gun_codes)){
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
   # merge back together
-  gun$subcode <- "0000"
+  gun$sub_code <- "0000"
   gun$gun_code <- gun_codes[i]
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
@@ -253,8 +253,8 @@ prefadj <- geomander::add_edge(prefadj,
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj <- geomander::add_edge(prefadj,
-                                # which(pref$code == xxxxx & pref$subcode == "xxxx"),
-                                # which(pref$code == xxxxx & pref$subcode == "xxxx"))
+                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"),
+                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"))
 
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
