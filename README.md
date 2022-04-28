@@ -3,7 +3,7 @@
 <img src="https://alarm-redist.github.io/assets/alarm_256_tr.png" align="right" height=128>
 <img src="assets/japan_47pref_256_tr.png" align="right" height=128>
 
-### The ALARM Project (Japan)
+## The ALARM Project (Japan)
 
 [![License: CC0 1.0](https://img.shields.io/badge/Data%20License-Public%20domain-lightgrey.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 [![License: MIT](https://img.shields.io/badge/Software%20License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -24,6 +24,10 @@ for this project. These consist of four files for each analysis:
 - two `.rds` files containing `redist_map` and `redist_plans` objects, which
 contain the actual shapefiles and district assignment matrices and may be used
 for further analysis.
+
+## Acknowledgement
+
+We acknowledge the partial support from the [Edwin O. Reischauer Institute of Japanese Studies (RIJS)](https://rijs.fas.harvard.edu) at Harvard University.
 
 ## Repository Structure
 
