@@ -195,7 +195,7 @@ for(i in 1:length(gun_codes)){
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
   # merge back together
-  gun$sub_code <- "0000"
+  gun$sub_code <- 0
   gun$gun_code <- gun_codes[i]
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
