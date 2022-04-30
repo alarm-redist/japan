@@ -382,8 +382,30 @@ results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
 
-# To-do: filter out plans with multi-splits
-functioning_results <- dplyr::filter(results, multi == 0)
+# Confirm that the gun boundaries that are respected under the enacted plan
+# are respected under the simulated plans
+
+# Define the codes of the gun that must be kept together in the same district
+respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
+
+# Evaluate whether the gun that must be kept together in the same district are
+# in the same district in the simulated plans
+respect_gun_matrix <- matrix(0, nrow = length(respect_gun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_gun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_gun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]))
+  }
+}
+
+# Store result
+results$respect_gun <- colSums(respect_gun_matrix)
+
+# Filter out plans with multi-splits
+# as well as plans that split gun that should have been respected
+functioning_results <- results %>%
+  filter(respect_gun == length(respect_gun_code), multi == 0)
 
 # Find Optimal Plan
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
@@ -456,9 +478,7 @@ for (i in 1:length(pref$code))
 
 
 # Save files
-rm(census2020,
-   census2020_current_municipalities,
-   cl_co,
+rm(cl_co,
    constr,
    dem_pops,
    m_co,
