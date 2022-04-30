@@ -381,12 +381,9 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
-# Add bridges and check if valid
-bridges <- c()
-results$valid <- check_valid(pref, pref_smc_plans, bridges)
 
-# To-do: filter out plans with discontiguities/multi-splits
-functioning_results <- results %>% dplyr::filter(multi == 0 && valid)
+# To-do: filter out plans with multi-splits
+functioning_results <- dplyr::filter(results, multi == 0)
 
 # Find Optimal Plan
 optimal <- functioning_results$index[which(functioning_results$max_to_min ==
