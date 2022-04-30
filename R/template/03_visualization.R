@@ -198,7 +198,7 @@ old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
 boundary_1 <- rbind(old_boundary, mun, gun)
 
 # Co-occurrence
-# Filter out plans with top 10% koiki-renkei areas
+# Filter out plans with top 10% maxmin ratio
 good_num_0 <- results_0_sample %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(length(results_0_sample$index)*0.1)) %>%
@@ -310,19 +310,16 @@ for (i in 0:1){
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 pref_map <- readRDS(paste("data-out/maps/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_map_",
-                           as.character(nsims),
-                           ".Rds",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_hr_2020_map.rds",
                            sep = ""))
 
 prefadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         "_",
                          as.character(nsims),
                          "_adj",
                          ".Rds",
@@ -407,13 +404,24 @@ results$respect_gun <- colSums(respect_gun_matrix)
 functioning_results <- results %>%
   filter(respect_gun == length(respect_gun_code), multi == 0)
 
+# Sample 5,000 plans
+valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
+sim_smc_pref_sample <- sim_smc_pref %>%
+  filter(draw %in% valid_sample_pref)
+
+# Filter out sampled plans
+results_sample <- functioning_results %>%
+  filter(index %in% valid_sample_pref)
+
 # Find Optimal Plan
-optimal <- functioning_results$index[which(functioning_results$max_to_min ==
-                                           min(functioning_results$max_to_min))][1]
-results[optimal,]
+optimal <- results_sample$index[which(
+  results_sample$max_to_min ==
+    min(results_sample$max_to_min))][1]
+results_sample[which(results_sample$index == optimal),]
 
 # Gun/Municipality boundaries
-mun_boundary <- pref %>%
+mun_boundary <- pref_shp_cleaned %>%
+  mutate(code = as.numeric(substr(code, 1, 5))) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 gun_boundary <- pref %>%
@@ -428,7 +436,7 @@ mun$type <- "市区町村の境界"
 gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
 gun$type <- "郡の境界"
 
-# Boundary for plot with 0 split
+# Municipality/Gun boundary
 boundary <- rbind(mun, gun)
 
 # District Boundary of Optimal Plan
@@ -437,7 +445,7 @@ colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
 # Co-occurrence
-# Filter out plans with top 10% koiki-renkei areas
+# Filter out plans with top 10% maxmin ratio
 good_num <-  functioning_results %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
@@ -480,25 +488,32 @@ for (i in 1:length(pref$code))
 # Save files
 rm(cl_co,
    constr,
-   dem_pops,
    m_co,
    mun,
    gun,
    mun_boundary,
    gun_boundary,
-   pref_cleaned,
+   pref_shp_cleaned,
    pref_gun,
-   pref_map,
    pref_non_gun,
-   pref_raw,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_mutual,
+   pref_pop_only,
+   pref_geom_only,
    pref_smc_plans,
    sim_smc_pref_good,
+   sim_smc_pref,
    wgt_smc,
    num_mun_split,
    mun_split,
    gun_split,
    koiki_split,
-   matrix_optimal
+   matrix_optimal,
+   functioning_results,
+   results,
+   respect_gun_matrix,
+   pref_sep
 )
 
 save.image(paste("data-out/pref/",
