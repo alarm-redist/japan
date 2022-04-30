@@ -254,15 +254,16 @@ results_tama_sample[which(results_tama_sample$index == optimal_tama),]
 # Gun/Municipality boundaries
 mun_boundary_tama <-  pref_shp_cleaned %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
-  filter(code  %in% c(13101:13123,
-                          13360, 13380, 13400, 13420) == FALSE) %>%
+  filter(code %in% c(13101:13123) == FALSE) %>%
+  filter(code < 13360) %>% #Filter out islands
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 gun_boundary_tama <- tama %>%
   filter(gun_code >= (tama$code[1]%/%1000)* 1000 + 300) %>%
+  filter(code  %in% c(13101:13123,
+                      13360, 13380, 13400, 13420) == FALSE) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
-
 
 # Combine municipality/gun boundary data
 mun_tama <- mun_boundary_tama %>% summarise(geometry = sf::st_combine(geometry))
@@ -341,7 +342,7 @@ rm(cl_co_special_wards,
    pref_shp_2015,
    pref_mutual,
    pref_pop_only,
-   pref_geom_only
+   pref_geom_only,
    special_wards_smc_plans,
    tama_smc_plans,
    sim_smc_special_wards_good,
@@ -379,3 +380,41 @@ save.image(paste("data-out/pref/",
                  "_data",
                  ".Rdata",
                  sep = ""))
+
+# Save relevant files to upload to Dataverse
+# `redist_plans` object
+write_rds(sim_smc_special_wards_sample,
+          paste("data-out/plans/",
+                as.character(pref_code),
+                "_",
+                as.character(pref_name),
+                "_hr_2020_plans_special_wards.rds",
+                sep = ""),
+          compress = "xz")
+write_rds(sim_smc_tama_sample,
+          paste("data-out/plans/",
+                as.character(pref_code),
+                "_",
+                as.character(pref_name),
+                "_hr_2020_plans_tama.rds",
+                sep = ""),
+          compress = "xz")
+
+# Export `redist_plans` summary statistics to a csv file
+as_tibble(sim_smc_special_wards_sample) %>%
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_stats_special_wards.csv",
+                  sep = ""))
+as_tibble(sim_smc_tama_sample) %>%
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_stats_tama.csv",
+                  sep = ""))
+
