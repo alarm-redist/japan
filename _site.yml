@@ -1,7 +1,7 @@
 name: alarm
 title: ALARM Project
 description: The Algorithm-Assisted Redistricting Methodology Project
-base_url: https://alarm-redist.github.io/
+base_url: https://alarm-redist.github.io/japan/
 google_analytics: "G-8ZZ8YY5N8M"
 output_dir: "docs"
 theme: alarm_japan.css
