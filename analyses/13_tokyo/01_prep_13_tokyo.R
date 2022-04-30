@@ -105,16 +105,47 @@ pref_geom_only$pop <- 0
 pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
-pref_mutual[pref_mutual$code == "131030300",][2,]$JINKO <-
-    pref_mutual[pref_mutual$code == "131030300",][2,]$JINKO +
-    pref_pop_only[(pref_pop_only$mun_code == "13103") & (pref_pop_only$sub_code == "0310"),]$pop
+# Assign 港区 to 港区台場
+pref_mutual[pref_mutual$code == "131030300",]$pop <- # 港区台場
+    pref_mutual[pref_mutual$code == "131030300",]$pop + # 港区台場
+    pref_pop_only[pref_pop_only$code == "131030310",]$pop
+
+# Assign 新宿区四谷 to 新宿区四谷
+pref_mutual[pref_mutual$code == "131040010",]$pop <- # 新宿区四谷
+  pref_mutual[pref_mutual$code == "131040010",]$pop + # 新宿区四谷
+  pref_pop_only[pref_pop_only$code == "131040011",]$pop +
+  pref_pop_only[pref_pop_only$code == "131040012",]$pop
+
+# Assign 昭島市もくせいの杜 to 昭島市福島町
+pref_mutual[pref_mutual$code == "132070051",]$pop <- # 昭島市福島町
+  pref_mutual[pref_mutual$code == "132070051",]$pop + # 昭島市福島町
+  pref_pop_only[pref_pop_only$code == "132070230",]$pop　# 昭島市もくせいの杜
+
+# Assign 町田市南町田(pop: 450) to 町田市鶴間、小川
+pref_geom_only_1 <- pref_geom_only %>%
+  filter(code %in% c("132090040", "132090200")) %>% # 町田市鶴間, 町田市小川
+  group_by(mun_code) %>%
+  mutate(geometry = sf::st_union(geometry)) %>%
+  ungroup() %>%
+  slice(1)
+pref_geom_only_1[pref_geom_only_1$code == "132090040"]$pop <-
+  pref_pop_only[pref_pop_only$code == "132090450",]$pop　# 町田市南町田
+# Add sub_code
+pref_geom_only_1$sub_code = 450
+
+# Group together 町田市木曽西
+pref_mutual[pref_mutual$code == "132090112",]$geometry <-
+  sf::st_union(filter(pref_mutual, code == "132090112")$geometry,
+               filter(pref_geom_only, code == "132090114")$geometry)
 
 # Finalize pref object
-pref <- rbind(pref_mutual, pref_geom_only)
+pref <- rbind(pref_mutual, pref_geom_only_1)
 pref <- pref %>%
     select(mun_code, sub_code, pop, geometry) %>%
-    rename(code = mun_code)
-pref <- sf::st_as_sf(pref)
+    rename(code = mun_code) %>%
+    mutate(code = as.numeric(code)) %>%
+    arrange(code) %>%
+    sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
