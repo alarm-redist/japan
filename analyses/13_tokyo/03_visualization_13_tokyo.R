@@ -196,7 +196,7 @@ mun_split_tama <- redist::redist.splits(tama_smc_plans, tama_map$code)
 gun_index <- tama$gun_code
 gun_index[gun_index < (tama_map$code[1]%/%1000)*1000+300] <-
   seq(100000, 100000 + length(gun_index[gun_index < (tama_map$code[1]%/%1000)*1000+300])-1, by = 1)
-gun_split <- redist::redist.splits(tama_smc_plans, gun_index)
+gun_split_tama <- redist::redist.splits(tama_smc_plans, gun_index)
 
 # Count number of koiki renkei splits
 koiki_split_tama <- 0 # There are no 広域連携 areas in Tokyo
@@ -204,7 +204,7 @@ koiki_split_tama <- 0 # There are no 広域連携 areas in Tokyo
 # Compile results
 results_tama <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_tama)))
 results_tama$max_to_min <- wgt_smc_tama$max_to_min
-results_tama$gun_split <- gun_split
+results_tama$gun_split <- gun_split_tama
 results_tama$num_mun_split <- num_mun_split_tama
 results_tama$mun_split <- mun_split_tama
 results_tama$multi <-  num_mun_split_tama - mun_split_tama
@@ -322,28 +322,55 @@ for (i in 1:length(tama$code))
 }
 
 ###### Save files #####
-rm(cl_co,
-   constr,
-   dem_pops,
-   m_co,
-   mun,
-   gun,
-   mun_boundary,
-   gun_boundary,
-   pref_cleaned,
+rm(cl_co_special_wards,
+   cl_co_tama,
+   constr_special_wards,
+   constr_tama,
+   m_co_special_wards,
+   m_co_tama,
+   mun_special_wards,
+   mun_tama,
+   gun_tama,
+   mun_boundary_special_wards,
+   mun_boundary_tama,
+   gun_boundary_tama,
+   pref_shp_cleaned,
    pref_gun,
-   pref_map,
    pref_non_gun,
-   pref_raw,
-   pref_smc_plans,
-   sim_smc_pref_good,
-   wgt_smc,
-   num_mun_split,
-   mun_split,
-   gun_split,
-   koiki_split,
-   matrix_optimal
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_mutual,
+   pref_pop_only,
+   pref_geom_only
+   special_wards_smc_plans,
+   tama_smc_plans,
+   sim_smc_special_wards_good,
+   sim_smc_tama_good,
+   sim_smc_special_wards,
+   sim_smc_tama,
+   wgt_smc_special_wards,
+   wgt_smc_tama,
+   num_mun_split_special_wards,
+   num_mun_split_tama,
+   mun_split_special_wards,
+   mun_split_tama,
+   gun_split_special_wards,
+   gun_split_tama,
+   koiki_split_special_wards,
+   koiki_split_tama,
+   matrix_optimal_special_wards,
+   matrix_optimal_tama,
+   functioning_results_special_wards,
+   functioning_results_tama,
+   results_special_wards,
+   results_tama,
+   respect_gun_matrix,
+   pref_sep
 )
+
+# Further remove files specific to Tokyo
+rm(sq_pref,
+   pref_geom_only_1)
 
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
