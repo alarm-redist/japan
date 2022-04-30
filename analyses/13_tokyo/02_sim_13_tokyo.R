@@ -75,7 +75,7 @@ tama <-  filter(pref, code %in% c(13101:13123,
 
 # Calculate seats to allocate
 ndists_new_special_wards <- round(ndists_new * (sum(special_wards$pop)/sum(pref$pop)))
-ndists_new_rural <- round(ndists_new * (sum(tama$pop)/sum(pref$pop)))
+ndists_new_tama <- round(ndists_new * (sum(tama$pop)/sum(pref$pop)))
 
 #######Special wards###############
 # Make adjacency list
@@ -92,11 +92,11 @@ if(check_ferries(pref_code) == TRUE){
 }
 
 # Suggest connection between disconnected groups
-suggest <-  geomander::suggest_component_connection(shp = special_wards,
+suggest_special_wards <-  geomander::suggest_component_connection(shp = special_wards,
                                                     adj = special_wardsadj)
 special_wardsadj <- geomander::add_edge(special_wardsadj,
-                                        suggest$x,
-                                        suggest$y,
+                                        suggest_special_wards$x,
+                                        suggest_special_wards$y,
                                         zero = TRUE)
 
 # Repair adjacencies
@@ -164,31 +164,31 @@ special_wards_add_edge <-
     which(special_wards$code == 13108 & special_wards$sub_code == 420)
   ), ncol = 2, byrow = TRUE)
 
-
+#Add edges
 special_wardsadj <- geomander::add_edge(special_wardsadj,
-                                        which(special_wards$code == 13111 & special_wards$sub_code == 580),
-                                        which(pref$code == xxxxx & pref$sub_code == "xxxx"))
+                                        special_wards_add_edge[,1],
+                                        special_wards_add_edge[,2])
 
 # Define pref_map object
 special_wards_map <- redist::redist_map(special_wards,
-                                       ndists = ndists_new_special_wards,
-                                       pop_tol= 0.08,
-                                       total_pop = pop,
-                                       adj = special_wardsadj)
+                                        ndists = ndists_new_special_wards,
+                                        pop_tol= pop_tol_special_wards,
+                                        total_pop = pop,
+                                        adj = special_wardsadj)
 
 # Define constraints
 constr_special_wards = redist::redist_constr(special_wards_map)
 constr_special_wards = redist::add_constr_splits(constr_special_wards,
-                                                 strength = 5,
+                                                 strength = 1,
                                                  admin = special_wards_map$code)
 constr_special_wards = redist::add_constr_multisplits(constr_special_wards,
-                                                      strength = 10,
+                                                      strength = 2,
                                                       admin = special_wards_map$code)
 
 # Run simulation
 sim_smc_special_wards <- redist::redist_smc(
   map = special_wards_map,
-  nsims = 1000,
+  nsims = nsims,
   counties = special_wards_map$code,
   constraints = constr_special_wards,
   pop_temper = 0.05)
@@ -200,88 +200,77 @@ sim_smc_special_wards <- redist::redist_smc(
 # because there are fewer possible plans.
 hist(plans_diversity(sim_smc_special_wards))
 
-
 # Save pref object, pref_map object, adjacency list, and simulation data
-saveRDS(pref, paste("data-out/pref/",
-                    as.character(pref_code),
-                    "_",
-                    as.character(pref_name),
-                    ".Rds",
-                    sep = ""))
+saveRDS(special_wards, paste("data-out/pref/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_special_wards.Rds",
+                        sep = ""))
 
-saveRDS(prefadj, paste("data-out/pref/",
-                       as.character(pref_code),
-                       "_",
-                       as.character(pref_name),
-                       "_adj.Rds",
-                       sep = ""))
-
-# pref_map object: to be uploaded to Dataverse
-write_rds(pref_map, paste("data-out/maps/",
+saveRDS(special_wardsadj, paste("data-out/pref/",
                           as.character(pref_code),
                           "_",
                           as.character(pref_name),
-                          "_hr_2020_map.rds",
-                          sep = ""),
-          compress = "xz")
+                          "_adj_special_wards.Rds",
+                          sep = ""))
 
-saveRDS(sim_smc_pref, paste("data-out/plans/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
+# pref_map object: to be uploaded to Dataverse
+write_rds(special_wards_map, paste("data-out/maps/",
+                             as.character(pref_code),
+                             "_",
+                             as.character(pref_name),
+                             "_hr_2020_map_special_wards.rds",
+                             sep = ""),
+                      compress = "xz")
+
+saveRDS(sim_smc_special_wards, paste("data-out/plans/",
+                               as.character(pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_",
+                               as.character(sim_type),
+                               "_",
+                               as.character(nsims),
+                               "_special_wards.Rds",
+                               sep = ""))
 
 ########### Tama area ###############
-
 # Make adjacency list
-prefadj <- redist::redist.adjacency(pref)
+tamaadj <- redist::redist.adjacency(tama)
 
-# Modify according to ferry adjacencies
-if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries <- add_ferries(pref)
-    prefadj <- geomander::add_edge(prefadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
-                                   zero = TRUE)
-}
+# No-ferry-related adjacencies to add in Tama
 
-# Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref,
-                                                    adj = prefadj)
-prefadj <- geomander::add_edge(prefadj,
-                               suggest$x,
-                               suggest$y,
-                               zero = TRUE)"
-
-# TODO Repair adjacencies if necessary, and document these changes.
-# prefadj <- geomander::add_edge(prefadj,
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"),
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"))
+# Suggest connection between disconnected groups
+suggest_tama <-  geomander::suggest_component_connection(shp = tama,
+                                                    adj = tamaadj)
+tamaadj <- geomander::add_edge(tamaadj,
+                               suggest_tama$x,
+                               suggest_tama$y,
+                               zero = TRUE)
 
 # Define pref_map object
-pref_map <- redist::redist_map(pref,
-                               ndists = ndists_new,
-                               pop_tol= 0.10,
+tama_map <- redist::redist_map(tama,
+                               ndists = ndists_new_tama,
+                               pop_tol= pop_tol_tama,
                                total_pop = pop,
-                               adj = prefadj)
+                               adj = tamaadj)
 
 # Define constraints
-constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5)
-constr = redist::add_constr_multisplits(constr, strength = 10)
+constr_tama = redist::redist_constr(tama_map)
+constr_tama = redist::add_constr_splits(constr_tama,
+                                        strength = 1,
+                                        admin = tama_map$code)
+constr_tama = redist::add_constr_multisplits(constr_tama,
+                                             strength = 2,
+                                             admin = tama_map$code)
 
 # Run simulation
-sim_smc_pref <- redist::redist_smc(
-  map = pref_map,
+sim_smc_tama <- redist::redist_smc(
+  map = tama_map,
   nsims = nsims,
-  counties = pref$code,
-  constraints = constr,
+  counties = tama_map$code,
+  constraints = constr_tama,
   pop_temper = 0.05)
 
 # Histogram showing plans diversity
@@ -289,40 +278,39 @@ sim_smc_pref <- redist::redist_smc(
 # we would not see a large spike at 0.
 # However, for some prefectures, it is impossible to get a diverse set of plans
 # because there are fewer possible plans.
-hist(plans_diversity(sim_smc_pref))
-
+hist(plans_diversity(sim_smc_tama))
 
 # Save pref object, pref_map object, adjacency list, and simulation data
-saveRDS(pref, paste("data-out/pref/",
-                    as.character(pref_code),
-                    "_",
-                    as.character(pref_name),
-                    ".Rds",
-                    sep = ""))
+saveRDS(tama, paste("data-out/pref/",
+                      as.character(pref_code),
+                      "_",
+                      as.character(pref_name),
+                      "_tama.Rds",
+                      sep = ""))
 
-saveRDS(prefadj, paste("data-out/pref/",
-                       as.character(pref_code),
-                       "_",
-                       as.character(pref_name),
-                       "_adj.Rds",
-                       sep = ""))
+saveRDS(tamaadj, paste("data-out/pref/",
+                        as.character(pref_code),
+                        "_",
+                        as.character(pref_name),
+                        "_adj_tama.Rds",
+                        sep = ""))
 
 # pref_map object: to be uploaded to Dataverse
-write_rds(pref_map, paste("data-out/maps/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_hr_2020_map.rds",
-                          sep = ""),
-                          compress = "xz")
-
-saveRDS(sim_smc_pref, paste("data-out/plans/",
+write_rds(tama_map, paste("data-out/maps/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims),
-                            ".Rds",
-                            sep = ""))
+                            "_hr_2020_map_tama.rds",
+                            sep = ""),
+          compress = "xz")
+
+saveRDS(sim_smc_tama, paste("data-out/plans/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims),
+                              "_tama.Rds",
+                              sep = ""))

@@ -37,7 +37,8 @@ sq_max_to_tottori2 <- 2.096
 sq_mun_splits <- 17
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
-pop_tol <- NA
+pop_tol_special_wards <- 0.06
+pop_tol_tama <- 0.06
   # Population tolerance is set separately for the 23 special wards area and Tama area
   # Set so that re-sampling efficiencies are > 80% at each stage
 
