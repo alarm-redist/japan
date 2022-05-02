@@ -106,6 +106,7 @@ cat('<div class="state-links">')
 filter(japan, available) %>%
     arrange(pref_japanese) %>%
     mutate(html = str_glue('<p><a href="{href}">{pref_japanese}</a></p>')) %>%
+    arrange(pref_code) %>% 
     pull() %>%
     cat(collapse="\n")
 cat('</div><br />\n\n')
