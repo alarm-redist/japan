@@ -457,9 +457,16 @@ sim_smc_pref_good <- sim_smc_pref %>%
 # Obtain co-occurrence matrix
 m_co = redist::prec_cooccurrence(sim_smc_pref_good, sampled_only=TRUE)
 
-# Create clusters
+# Compute clustering
 cl_co = cluster::agnes(m_co)
-prec_clusters = cutree(cl_co, ndists_new)
+
+# Analyze the dendrogram and pick an appropriate number of clusters
+plot(as.dendrogram(cl_co))
+abline(h = 2, col = "red") # explore different depths
+abline(h = 3, col = "blue")
+
+prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number
+
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
 
