@@ -112,7 +112,7 @@ good_num_special_wards <- results_special_wards_sample %>%
   slice(1: as.numeric(length(results_special_wards_sample$index)*0.1)) %>%
   select(index)
 good_num_special_wards <- as.vector(t(good_num_special_wards))
-sim_smc_special_wards_good <- sim_smc_special_wards %>%
+sim_smc_special_wards_good <- sim_smc_special_wards_sample %>%
   filter(draw %in% good_num_special_wards)
 
 # Obtain co-occurrence matrix
@@ -120,7 +120,12 @@ m_co_special_wards = redist::prec_cooccurrence(sim_smc_special_wards_good, sampl
 
 # Create clusters
 cl_co_special_wards = cluster::agnes(m_co_special_wards)
-prec_clusters_special_wards = cutree(cl_co_special_wards, ndists_new_special_wards)
+# analyze the dendogram and pick an appropriate number of clusters
+plot(as.dendrogram(cl_co_special_wards))
+abline(h = 2, col = "red") # explore different depths
+abline(h = 3, col = "blue") # explore different depths
+
+prec_clusters_special_wards = cutree(cl_co_special_wards, 36)
 special_wards_membership <- as_tibble(as.data.frame(prec_clusters_special_wards))
 names(special_wards_membership) <- "membership"
 
@@ -145,7 +150,6 @@ for (i in 1:length(special_wards$code))
       which(prec_clusters_special_wards == prec_clusters_special_wards[i]))])/
     sum(special_wards$pop[special_wardsadj[[i]]+1] * m_co_special_wards[i, special_wardsadj[[i]]+1])
 }
-
 
 
 ##### Tama #####
@@ -288,7 +292,7 @@ good_num_tama <- results_tama_sample %>%
   slice(1: as.numeric(length(results_tama_sample$index)*0.1)) %>%
   select(index)
 good_num_tama <- as.vector(t(good_num_tama))
-sim_smc_tama_good <- sim_smc_tama %>%
+sim_smc_tama_good <- sim_smc_tama_sample %>%
   filter(draw %in% good_num_tama)
 
 # Obtain co-occurrence matrix
@@ -296,7 +300,13 @@ m_co_tama = redist::prec_cooccurrence(sim_smc_tama_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_tama = cluster::agnes(m_co_tama)
-prec_clusters_tama = cutree(cl_co_tama, ndists_new_tama)
+
+# Analyze the dendogram and pick an appropriate number of clusters
+plot(as.dendrogram(cl_co_tama))
+abline(h = 2, col = "red") # explore different depths
+abline(h = 3, col = "blue")
+
+prec_clusters_tama = cutree(cl_co_tama, 16)
 tama_membership <- as_tibble(as.data.frame(prec_clusters_tama))
 names(tama_membership) <- "membership"
 

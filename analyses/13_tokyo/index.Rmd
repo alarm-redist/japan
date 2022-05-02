@@ -150,7 +150,7 @@ table_summary %>%
   ) 
 ```
 
-# 現行の区割り(２３区地域)
+# 現行の区割り(２３区地域、島嶼部を含む)
 ```{r status quo plan special wards, warning=FALSE, message = FALSE}
 # Set Colors for Plot
 sq_special_wards_map <- sq_special_wards %>% 
@@ -170,6 +170,8 @@ ggplot() +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
+島嶼部は、品川区の一部、大田区の一部と同じ東京３区
+
 # 現行の区割り(多摩地域)
 ```{r status quo plan tama, warning=FALSE, message = FALSE}
 # Set Colors for Plot
@@ -200,7 +202,7 @@ ggplot() +
 # アルゴリズムの提案
 アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
-### 23区地域
+### 23区地域(島嶼部を含む)
 ```{r optimal plan boundaries, include = FALSE}
 optimal_boundary_special_wards_shp <- optimal_boundary_special_wards %>%
   filter(code < 13300) %>% #filter out islands
@@ -229,6 +231,7 @@ ggplot() +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
+島嶼部は、航路で結ばれている港区海岸と同一の選挙区
 
 ### 多摩地域 
 ```{r optimal plan for Tama}
@@ -251,6 +254,9 @@ redist::redist.plot.plans(sim_smc_tama_sample, optimal_tama, tama_map) +
 
 # 共起分析
 * 有効な案のうち一票の格差が下位10％の案を抽出
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりをk設定
+  + 23区地域: k = 36
+  + 多摩地域: k = 16
 * 読み取り方  
 地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
@@ -264,7 +270,6 @@ special_wards_cooc <-
         special_wards_membership) %>%
   mutate(color = redist:::color_graph(.$adj, as.integer(.$membership))) %>%
   filter(code < 13300)   # filter out islands
-
 
 # Co-occurrence plot
 ggplot() +
@@ -304,7 +309,7 @@ ggplot() +
   scale_color_manual(values = c("grey40", "grey20")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = 0, # adjust the position of the labels
               nudge_y = 2000, # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -322,6 +327,7 @@ ggplot() +
 * 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
+  + 東京都の島嶼部は、航路で結ばれている港区海岸と同一の選挙区とした
 * 区割り改定案を23区地域、多摩地域それぞれ`r format(nsims, big.mark = ",")`作成 
 * 市区町村が3つ以上の選挙区に分割される案を棄却し有効な案を選定
 * 有効な案の中から5,000の案を無作為に抽出
