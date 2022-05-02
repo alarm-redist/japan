@@ -171,7 +171,7 @@ tamaadj <- readRDS(paste("data-out/pref/",
                        "_adj_tama.Rds",
                        sep = ""))
 
-sim_smc_tama <- saveRDS(paste("data-out/plans/",
+sim_smc_tama <- readRDS(paste("data-out/plans/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),

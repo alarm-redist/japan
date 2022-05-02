@@ -1,12 +1,12 @@
 ---
 title: "東京都 (議員定数：25 → 30)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: May 1, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
-    self_contained: false
+    self_contained: true
 doi: "10.7910/DVN/Z9UKSH"
 ---
 

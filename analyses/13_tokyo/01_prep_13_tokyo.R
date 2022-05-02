@@ -120,7 +120,7 @@ pref_mutual[pref_mutual$code == "131040010",]$pop <- # 新宿区四谷
 # Assign 昭島市もくせいの杜 to 昭島市福島町
 pref_mutual[pref_mutual$code == "132070051",]$pop <- # 昭島市福島町
   pref_mutual[pref_mutual$code == "132070051",]$pop + # 昭島市福島町
-  pref_pop_only[pref_pop_only$code == "132070230",]$pop　# 昭島市もくせいの杜
+  pref_pop_only[pref_pop_only$code == "132070230",]$pop # 昭島市もくせいの杜
 
 # Assign 町田市南町田(pop: 450) to 町田市鶴間、小川
 pref_geom_only_1 <- pref_geom_only %>%
@@ -130,7 +130,7 @@ pref_geom_only_1 <- pref_geom_only %>%
   ungroup() %>%
   slice(1)
 pref_geom_only_1[pref_geom_only_1$code == "132090040"]$pop <-
-  pref_pop_only[pref_pop_only$code == "132090450",]$pop　# 町田市南町田
+  pref_pop_only[pref_pop_only$code == "132090450",]$pop # 町田市南町田
 # Add sub_code
 pref_geom_only_1$sub_code = 450
 
@@ -150,3 +150,4 @@ pref <- pref %>%
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
+sum(pref$pop)
