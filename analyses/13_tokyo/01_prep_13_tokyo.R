@@ -40,7 +40,6 @@ sq_koiki_splits <- 0
 pop_tol_special_wards <- 0.06
 pop_tol_tama <- 0.06
   # Population tolerance is set separately for the 23 special wards area and Tama area
-  # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
