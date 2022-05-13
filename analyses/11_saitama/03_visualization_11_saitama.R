@@ -1,13 +1,13 @@
 ###############################################################################
-# Data visualization for `00_pref`
-# © ALARM Project, April 2021
+# Data visualization for `11_saitama`
+# © ALARM Project, May 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
 # Define using the municipality codes, not the gun codes
-koiki_1_codes <- c()
-koiki_2_codes <- c()
+koiki_1_codes <- c(11207, 11361, 11362, 11363, 11365)
+koiki_2_codes <- c(11211, 11381, 11383, 11385)
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
