@@ -389,15 +389,68 @@ pref_mutual[pref_mutual$code == "112240180",]$pop <- # 笹目
   pref_mutual[pref_mutual$code == "112240180",]$pop + # 笹目
   pref_pop_only[pref_pop_only$code == "112240190",]$pop　# 大字下笹目
 
- "狭山台"
-  "下日出谷西"
-  "大字下日出谷"
-  "坂田東"
- "坂田西"
- "大字坂田"
- "下石戸"
- "藤ノ木"
- "大字会野谷"
+# Assign 入間市 狭山台 to 宮寺, and merge six blocks (宮寺 大字新久 大字狭山ケ原 大字狭山台 大字根岸 大字中神) together.
+# This is because 入間市 狭山台 is newly created in 2018 by combining parts of those six blocks.
+pref_mutual[pref_mutual$code == "112250320",]$pop <- # 宮寺
+ pref_mutual[pref_mutual$code == "112250320",]$pop + # 宮寺
+ pref_pop_only[pref_pop_only$code == "112250430",]$pop # 狭山台
+# Combine the four blocks
+pref_mutual_new_address <- pref_mutual %>%
+ dplyr::filter(code %in% c("112250320",
+                           "112250210",
+                           "112250220",
+                           "112250340",
+                           "112250310",
+                           "112250300")) %>%
+ dplyr::summarise(code = first(code),
+                  mun_code = first(mun_code),
+                  sub_code = first(sub_code),
+                  sub_name = "combined",
+                  pop = sum(pop),
+                  CITY_NAME = first(CITY_NAME),
+                  S_NAME = first(S_NAME),
+                  KIHON1 = first(KIHON1),
+                  JINKO = sum(JINKO),
+                  geometry = sf::st_union(geometry))
+# Data frame expect those four blocks
+pref_mutual_without_new_address <- pref_mutual %>%
+ dplyr::filter(!code %in% c("112250320",
+                            "112250210",
+                            "112250220",
+                            "112250340",
+                            "112250310",
+                            "112250300"))
+# Combine them together
+pref_mutual <- pref_mutual_new_address %>%
+ dplyr::bind_rows(pref_mutual_without_new_address)
+
+# Assign 桶川市 下日出谷西 and 大字下日出谷 (new) to 大字下日出谷 (old)
+pref_geom_only_1 <- pref_geom_only %>%
+  filter(code %in% c("112310130"))
+pref_geom_only_1[pref_geom_only_1$code == "112310130"]$pop <-
+  pref_pop_only[pref_pop_only$code == "112310131",]$pop +
+  pref_pop_only[pref_pop_only$code == "112310132",]$pop
+# Add sub_code
+pref_geom_only_1$sub_code = 130
+# bind it with. mutual data frame
+pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
+
+# Assign 桶川市 坂田東, 坂田西, and 大字坂田 (new) to 大字坂田 (old)
+pref_geom_only_1 <- pref_geom_only %>%
+  filter(code %in% c("112310140"))
+pref_geom_only_1[pref_geom_only_1$code == "112310140"]$pop <-
+  pref_pop_only[pref_pop_only$code == "112310141",]$pop +
+  pref_pop_only[pref_pop_only$code == "112310142",]$pop +
+  pref_pop_only[pref_pop_only$code == "112310143",]$pop
+# Add sub_code
+pref_geom_only_1$sub_code = 140
+# bind it with. mutual data frame
+pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
+
+
+"下石戸"
+"藤ノ木"
+"大字会野谷"
  "道佛"
 
 "Example
