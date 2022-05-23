@@ -347,11 +347,11 @@ pref_mutual_without_new_address <- pref_mutual %>%
 pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
-# Assign 東松山市 大字松山 (new) and 美原町 to 大字松山
+# Assign 東松山市 大字松山 (new) and 美原町 to 大字松山 (old) of `pop_geom_only`
 pref_geom_only_1 <- pref_geom_only %>%
   filter(code %in% c("112120090")) # 大字松山
 pref_geom_only_1[pref_geom_only_1$code == "112120090"]$pop <-
-  pref_pop_only[pref_pop_only$code == "112120091",]$pop +　# 大字松山
+  pref_pop_only[pref_pop_only$code == "112120091",]$pop + #大字松山
   pref_pop_only[pref_pop_only$code == "112120600",]$pop
 # Add sub_code
 pref_geom_only_1$sub_code = 90
@@ -361,7 +361,7 @@ pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
 # Firstly, merge 大字松山 into 加美町
 pref_mutual[pref_mutual$code == "112120070",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "112120070")$geometry,
-               filter(pref_geom_only, code == "112120090")$geometry)
+               filter(pref_mutual, code == "112120090")$geometry)
 # Combine with 大字市ノ川
 pref_mutual_new_address <- pref_mutual %>%
   dplyr::filter(code %in% c("112120070",
@@ -384,10 +384,16 @@ pref_mutual_without_new_address <- pref_mutual %>%
 pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
+#
+# Assign 戸田市 新越谷 to 七左町
+pref_mutual[pref_mutual$code == "112220440",]$pop <- # 七左町
+  pref_mutual[pref_mutual$code == "112220440",]$pop + # 七左町
+  pref_pop_only[pref_pop_only$code == "112220860",]$pop # 新越谷
+
 # Assign 戸田市 大字下笹目 to 笹目
 pref_mutual[pref_mutual$code == "112240180",]$pop <- # 笹目
   pref_mutual[pref_mutual$code == "112240180",]$pop + # 笹目
-  pref_pop_only[pref_pop_only$code == "112240190",]$pop　# 大字下笹目
+  pref_pop_only[pref_pop_only$code == "112240190",]$pop # 大字下笹目
 
 # Assign 入間市 狭山台 to 宮寺, and merge six blocks (宮寺 大字新久 大字狭山ケ原 大字狭山台 大字根岸 大字中神) together.
 # This is because 入間市 狭山台 is newly created in 2018 by combining parts of those six blocks.
@@ -535,4 +541,4 @@ pref <- pref_mutual %>%
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
-
+sum(pref$pop)
