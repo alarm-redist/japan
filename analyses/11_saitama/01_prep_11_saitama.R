@@ -26,7 +26,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 50000 # Set so that the number of valid plans > 5,000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c()
@@ -347,7 +347,7 @@ pref_mutual_without_new_address <- pref_mutual %>%
 pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
-# Assign 東松山市 大字松山 (new) and 美原町 to 大字松山 (old) of `pop_geom_only`
+# Assign 東松山市 大字松山 (new) and 美原町 to 大字松山 (old) of `pref_geom_only`
 pref_geom_only_1 <- pref_geom_only %>%
   filter(code %in% c("112120090")) # 大字松山
 pref_geom_only_1[pref_geom_only_1$code == "112120090"]$pop <-
