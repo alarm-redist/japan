@@ -37,7 +37,7 @@ sq_max_to_tottori2 <- 2.012
 sq_mun_splits <- 3
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
-pop_tol <- 0.15
+pop_tol <- 0.20
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()

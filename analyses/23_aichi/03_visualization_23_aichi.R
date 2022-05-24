@@ -1,6 +1,6 @@
 ###############################################################################
-# Data visualization for `00_pref`
-# © ALARM Project, April 2021
+# Data visualization for `23_aichi`
+# © ALARM Project, May 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -20,9 +20,7 @@ prefadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         as.character(nsims),
-                         "_adj",
-                         ".Rds",
+                         "_adj.Rds",
                          sep = ""))
 
 sim_smc_pref <- readRDS(paste("data-out/plans/",
@@ -95,7 +93,7 @@ results$respect_gun <- colSums(respect_gun_matrix)
 
 # Filter out plans with multi-splits
 # as well as plans that split gun that should have been respected
-sim_smc_pref_sample <- results %>%
+functioning_results <- results %>%
   filter(respect_gun == length(respect_gun_code), multi == 0)
 
 # Sample 5,000 plans
@@ -140,12 +138,12 @@ optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
-good_num <-  functioning_results %>%
+good_num <-  results_sample %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
   select(index)
 good_num <- as.vector(t(good_num))
-sim_smc_pref_good <- sim_smc_pref %>%
+sim_smc_pref_good <- sim_smc_pref_sample %>%
   filter(draw %in% good_num)
 
 # Obtain co-occurrence matrix
@@ -156,10 +154,10 @@ cl_co = cluster::agnes(m_co)
 
 # Analyze the dendrogram and pick an appropriate number of clusters
 plot(as.dendrogram(cl_co))
-abline(h = 2, col = "red") # explore different depths
-abline(h = 3, col = "blue")
+abline(h = 1, col = "red") # explore different depths
+abline(h = 0.5, col = "blue")
 
-prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number
+prec_clusters = cutree(cl_co, 16)  # change ndists_new to an appropriate number
 
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
@@ -223,7 +221,8 @@ save.image(paste("data-out/pref/",
                  as.character(pref_name),
                  "_data",
                  ".Rdata",
-                 sep = ""))
+                 sep = ""),
+           compress = "xz")
 
 # Save relevant files to upload to Dataverse
 # `redist_plans` object

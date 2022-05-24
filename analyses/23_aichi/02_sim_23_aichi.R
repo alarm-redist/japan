@@ -112,7 +112,7 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.18,
+                               pop_tol= 0.20,
                                total_pop = pop,
                                adj = prefadj)
 
@@ -124,7 +124,7 @@ constr = redist::add_constr_multisplits(constr, strength = 4, admin = pref_map$c
 # Run simulation
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
-  nsims = 1000,
+  nsims = 25000,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
@@ -135,7 +135,6 @@ sim_smc_pref <- redist::redist_smc(
 # However, for some prefectures, it is impossible to get a diverse set of plans
 # because there are fewer possible plans.
 hist(plans_diversity(sim_smc_pref))
-
 
 # Save pref object, pref_map object, adjacency list, and simulation data
 saveRDS(pref, paste("data-out/pref/",
