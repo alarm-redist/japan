@@ -321,9 +321,7 @@ prefadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         as.character(nsims),
-                         "_adj",
-                         ".Rds",
+                         "_adj.Rds",
                          sep = ""))
 
 sim_smc_pref <- readRDS(paste("data-out/plans/",
