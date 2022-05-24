@@ -445,9 +445,9 @@ optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
-good_num <-  functioning_results %>%
+good_num <-  results_sample %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
   select(index)
 good_num <- as.vector(t(good_num))
 sim_smc_pref_good <- sim_smc_pref %>%
