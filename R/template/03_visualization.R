@@ -450,7 +450,7 @@ good_num <-  results_sample %>%
   slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
   select(index)
 good_num <- as.vector(t(good_num))
-sim_smc_pref_good <- sim_smc_pref %>%
+sim_smc_pref_good <- sim_smc_pref_sample %>%
   filter(draw %in% good_num)
 
 # Obtain co-occurrence matrix
