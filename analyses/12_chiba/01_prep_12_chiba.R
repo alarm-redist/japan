@@ -1,6 +1,6 @@
 ###############################################################################
-# Download and prepare data for `00_pref` analysis
-# © ALARM Project, April 2021
+# Download and prepare data for `12_chiba` analysis
+# © ALARM Project, June 2022
 ###############################################################################
 
 suppressMessages({
@@ -27,20 +27,20 @@ setwd("..")
 # TODO: Define parameters for simulation
 sim_type <- "smc"
 nsims <- 25000 # Set so that the number of valid plans > 5,000
-pref_code <- 0
-pref_name <- ""
+pref_code <- 12
+pref_name <- "chiba"
 lakes_removed <- c()
-ndists_new <- 0
-ndists_old <- 0
-sq_max_to_min <- 1
-sq_max_to_tottori2 <- 1
-sq_mun_splits <- 0
-sq_gun_splits <- 0
+ndists_new <- 14
+ndists_old <- 13
+sq_max_to_min <-  1.392
+sq_max_to_tottori2 <- 1.994
+sq_mun_splits <- 5
+sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.10
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c()
+gun_exception <- c(12403) # Sanbu-gun with 12409, 12410
 
 # Change time limit
 options(timeout = 300)
@@ -66,37 +66,6 @@ sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
     dplyr::group_by(ku) %>%
     dplyr::summarise(geometry = sf::st_union(geometry))
-
-####1. Rural Prefectures########
-# Clean 2020 Census data at the 小地域-level
-pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
-
-# Download and clean 2020 census data at municipality/old-munipality-level
-census_mun_old_2020 <- clean_2020_census(pref_code)
-# Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
-# reflect_old_boundaries() automatically estimates the size of the Japanese population
-# based on the official definition (total population - foreign population)
-
-# Download data from old boundaries (pre-平成の大合併)
-old_mun <- download_old_shp(pref_code)
-
-# custom data for the analysis
-pop <- pref_pop_2020 %>%
-    dplyr::group_by(mun_code) %>%
-    dplyr::summarise(pop = sum(pop)) %>%
-    dplyr::rename(code = mun_code)
-
-geom <- pref_shp_cleaned %>%
-    dplyr::group_by(code) %>%
-    dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-    dplyr::select(code, geometry)
-
-# Combine data frames
-pref <- merge(pop, geom, by = "code")
-pref <- sf::st_as_sf(pref)
-
-# Confirm that the population figure matches that of the redistricting committee
-sum(pref$pop)
 
 ####2. Urban Prefectures########
 # Clean 2020 Census data at the 小地域-level
@@ -127,6 +96,81 @@ pref_geom_only$pop <- 0
 pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
+
+#12206 木更津市
+"千束台"
+"北浜町"
+
+#12207 松戸市
+# merge to 122071290 南花島
+
+"南花島向町"
+"南花島中町"
+
+#12208
+# 野田市 Chaos with geom_only!
+"山崎"
+"花井"
+"花井"
+"岩名"
+"岩名"
+"五木新町"
+"岡田"
+"丸井"
+
+#12210
+"小林飛地"
+"中之郷飛地"
+"川島飛地"
+"小萱場"
+"吉井上"
+
+#12212
+"寺崎北"
+
+#12213
+"八坂台"
+
+#12217
+"柏インター東"
+"柏インター南"
+"染井入新田"
+
+#12219
+"姉崎東"
+
+#12220
+"美原"
+"おおたかの森東"
+"おおたかの森西"
+
+#12228
+"物井"
+"内黒田"
+"四街道"
+"四街道"
+"中台"
+"中野"
+"さつきケ丘"
+"さちが丘"
+"美しが丘"
+"めいわ"
+"鷹の台"
+"もねの里"
+"中央"
+
+#12229
+"袖ケ浦駅前"
+
+#12230
+"八街は"
+
+#12347
+"大門"
+
+#12443
+"御宿台"
+
 "Example
 # Assign 港区 to 港区台場
 pref_mutual[pref_mutual$code == "131030300",]$pop <- # 港区台場
