@@ -197,20 +197,51 @@ pref_mutual[pref_mutual$code == "232132030",]$pop <- # 西尾市羽塚町
   pref_mutual[pref_mutual$code == "232132030",]$pop + # 西尾市羽塚町
   pref_pop_only[pref_pop_only$code == "232137530",]$pop  # 西尾市羽塚西ノ山
 
-# Assign 西尾市富山 to 西尾市富山町
-pref_mutual[pref_mutual$code == "232132070",]$pop <- # 西尾市富山町
-  pref_mutual[pref_mutual$code == "232132070",]$pop + # 西尾市富山町
-  pref_pop_only[pref_pop_only$code == "232137540",]$pop  # 西尾市富山
+# Assign 西尾市富山&矢田 to 西尾市上矢田町・下矢田町・富山町
+toyama <- pref_mutual %>%
+  filter(code %in% c("232132050", "232132060", "232132070") == TRUE) %>%
+        # 西尾市上矢田町・下矢田町・富山町
+  group_by(mun_code) %>%
+  summarize(code = code[1],
+            mun_code = mun_code[1],
+            sub_code = sub_code[1],
+            sub_name = "矢田,富山",
+            pop = sum(pop) +
+              pref_pop_only[pref_pop_only$code == "232137540",]$pop +  # 西尾市富山
+              pref_pop_only[pref_pop_only$code == "232137550",]$pop,   # 西尾市矢田
+            CITY_NAME = CITY_NAME[1],
+            S_NAME = "矢田,富山",
+            KIHON1 = KIHON1[1],
+            JINKO = sum(JINKO),
+            geometry = sf::st_union(geometry))
 
-# Assign 西尾市矢田 to 西尾市上矢田町
-pref_mutual[pref_mutual$code == "232132050",]$pop <- # 西尾市上矢田町
-  pref_mutual[pref_mutual$code == "232132050",]$pop + # 西尾市上矢田町
-  pref_pop_only[pref_pop_only$code == "232137550",]$pop  # 西尾市矢田
+pref_mutual <- pref_mutual %>%
+  filter(code %in% c("232132050", "232132060", "232132070") == FALSE)
 
-# Assign 常滑市虹の丘 to 常滑市大鳥町
-pref_mutual[pref_mutual$code == "232160430",]$pop <- # 常滑市大鳥町
-  pref_mutual[pref_mutual$code == "232160430",]$pop + # 常滑市大鳥町
-  pref_pop_only[pref_pop_only$code == "232160490",]$pop  # 常滑市虹の丘
+pref_mutual <- bind_rows(pref_mutual, toyama)
+
+
+# Assign 常滑市虹の丘 to 常滑市大鳥町・大和町・森西町・錦町
+nijinooka <- pref_mutual %>%
+  filter(code %in% c("232160430", "232160440","232160450", "232160470") == TRUE) %>%
+  # 常滑市大鳥町・大和町・森西町・錦町
+  group_by(mun_code) %>%
+  summarize(code = code[1],
+            mun_code = mun_code[1],
+            sub_code = sub_code[1],
+            sub_name = "大鳥,大和,虹の丘",
+            pop = sum(pop) +
+              pref_pop_only[pref_pop_only$code == "232160490",]$pop, # 常滑市虹の丘
+            CITY_NAME = CITY_NAME[1],
+            S_NAME = "大鳥,大和,虹の丘",
+            KIHON1 = KIHON1[1],
+            JINKO = sum(JINKO),
+            geometry = sf::st_union(geometry))
+
+pref_mutual <- pref_mutual %>%
+  filter(code %in% c("232160430", "232160440","232160450", "232160470") == FALSE)
+
+pref_mutual <- bind_rows(pref_mutual, nijinooka)
 
 # Assign 常滑市大谷朝陽ヶ丘 to 常滑市大谷
 pref_mutual[pref_mutual$code == "232160910",]$pop <- # 常滑市大谷
@@ -269,7 +300,7 @@ pref <- pref %>%
     select(mun_code, sub_code, pop, geometry) %>%
     rename(code = mun_code) %>%
     mutate(code = as.numeric(code)) %>%
-    arrange(code) %>%
+    arrange(code, sub_code) %>%
     sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly

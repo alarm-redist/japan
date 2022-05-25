@@ -93,15 +93,15 @@ pref_add_edge <-
     which(pref$code == 23213 & pref$sub_code == 7520)[3],
     #知多郡-知多郡島嶼部
     which(pref$code == 23440)[1],
-    6001,
+    which(pref$code == 23440)[4],
     which(pref$code == 23440)[1],
-    6004,
+    which(pref$code == 23440)[7],
     which(pref$code == 23440)[1],
-    6005,
+    which(pref$code == 23440)[8],
     which(pref$code == 23440)[1],
-    6006,
+    which(pref$code == 23440)[9],
     which(pref$code == 23440)[1],
-    6007
+    which(pref$code == 23440)[10]
 ), ncol = 2, byrow = TRUE)
 
 #Add edges
