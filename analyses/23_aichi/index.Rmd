@@ -38,7 +38,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "一宮市、瀬戸市、豊田市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- "衣浦定住自立圏"
-optimal_splits_name <- "名古屋市港区、名古屋市中村区、名古屋市熱田区"
+optimal_splits_name <- "名古屋市中村区、名古屋市熱田区、名古屋市港区"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -189,9 +189,6 @@ colnames(optimal_matrix) <- "district"
 optimal_plan <- cbind(pref_map, optimal_matrix) %>% 
     mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
 
-# Change color for 熱田区 etc
-optimal_plan[which(optimal_plan$district == 15),]$color <- 5
-
 ggplot() +
   geom_sf(data = optimal_plan, aes(fill = as.factor(color)), 
           show.legend = FALSE, lwd = 0) +
@@ -203,7 +200,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "white", "black", "black"),
+              color = c("white", "black", "black", "white", "black"),
               nudge_x = c(0, 2000, 0, 0, 0), # adjust the position of the labels
               nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
               #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
@@ -245,7 +242,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "black", "white", "white"),
+              color = c("white", "black", "white", "black", "black"),
               nudge_x = c(8000, 2000, 0, 0, 0), # adjust the position of the labels
               nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
               #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
