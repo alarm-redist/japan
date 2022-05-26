@@ -26,7 +26,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 50000 # Set so that the number of valid plans > 5,000
+nsims <- 25000 # Set so that the number of valid plans > 5,000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c()
@@ -40,7 +40,15 @@ sq_koiki_splits <- 0
 pop_tol <- 0.10
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c(11324) # Iruma (and 11326, 11327)
+# For Saitama, which has many discontinuity of gun,
+# we will set those gun as `gun_exception` to use in the `02_sim` process.
+
+gun_exception <- c(11320, # Iruma (11324, 11326, 11327)
+                   11340, # Hiki (11341, 11342, 11343, 11346, 11347, 11348, 11349)
+                   11360, # Chichibu (11361, 11362,11363, 11365, 11369)
+                   11380, # Kodama (11381, 11383, 11385)
+                   11460 # Kitakatsushika (11464, 11465)
+                   )
 
 # Change time limit
 options(timeout = 300)
@@ -219,11 +227,6 @@ pref_geom_only_1$sub_code = 1080
 # bind it with. mutual data frame
 pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
 # Then, combine 藤倉 with  大袋新田, 大袋, 山城, 増形, 豊田本, 小室, 野田, and 池辺
-# Firstly, merge 藤倉 into 大袋新田
-pref_mutual[pref_mutual$code == "112011040",]$geometry <-
-  sf::st_union(filter(pref_mutual, code == "132090112")$geometry,
-               filter(pref_geom_only, code == "112011040")$geometry)
-# Combine the eight blocks
 pref_mutual_new_address <- pref_mutual %>%
   dplyr::filter(code %in% c("112011040",
                             "112011030",
