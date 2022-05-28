@@ -12,22 +12,20 @@ gun_codes <- setdiff(gun_codes, gun_exception)
 
 # For Saitama with many discontinuity of gun,
 # we will summarize geometry into multiple contiguous unit of gun.
-# Furthermore, for Chichibu-gun, we ,merge Chichibu (city) together with Chichibu-gun,
-# because that is the only way to keep Chichibu-gun intact.
-# set chichibu code
-chichibu <- 11207
 # Set aside non-郡 municipalities
 pref_non_gun <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_codes, gun_exception, chichibu) == FALSE)
+  dplyr::filter(gun_code %in% c(gun_codes, gun_exception) == FALSE)
 
 pref_gun_discontinuity <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_exception, chichibu) == TRUE) %>%
+  dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
   dplyr::mutate(gun_block = case_when(
     code %in% c(11324) == TRUE ~ 11324,
     code %in% c(11326, 11327) == TRUE ~ 11326,
     code %in% c(11346, 11347) == TRUE ~ 11346,
     code %in% c(11341, 11342, 11343, 11348, 11349) == TRUE ~ 11341,
-    code %in% c(11361, 11362,11363, 11365, 11369, 11207) == TRUE ~ 11361,
+    code %in% c(11361) == TRUE ~ 11361,
+    code %in% c(11365) == TRUE ~ 11365,
+    code %in% c(11362,11363, 11369) == TRUE ~ 11362,
     code %in% c(11381) == TRUE ~ 11381,
     code %in% c(11383, 11385) == TRUE ~ 11383,
     code %in% c(11464) == TRUE ~ 11464,
