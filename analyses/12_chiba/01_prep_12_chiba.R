@@ -78,27 +78,203 @@ pref_shp_cleaned <- mutate(pref_shp_cleaned, code = str_c(code, KIHON1))
 pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
 # TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
+### Unique Method for Chiba ###
+# Since 野田市 (12208) and 四街道市 (12228) changed KIHON1 code and
+# assign a new number that duplicates the old number of other 小地域
+# between the 2015 and 2020 censuses, we set 野田市 and 四街道市 aside
 # 1. Areas that are accounted for in both dataframes
-pref_mutual <- merge(pref_pop_2020, pref_shp_cleaned, by = "code")
-
+pref_mutual <- merge(pref_pop_2020, pref_shp_cleaned, by = "code") %>%
+    dplyr::filter(mun_code %in% c(12208, 12228) == FALSE)
 # 2. Areas that exist only in 2015 shapefile (`pref_shp_cleaned`)
 pref_geom_only <- merge(pref_shp_cleaned, pref_pop_2020, by = "code", all.x = TRUE)
-pref_geom_only <- setdiff(pref_geom_only, pref_mutual)
+pref_geom_only <- setdiff(pref_geom_only, pref_mutual) %>%
+    dplyr::filter(mun_code %in% c(12208, 12228) == FALSE)
 
 # 3. Areas that exist only in 2020 Census data (`pref_pop_2020`)
 pref_pop_only <- merge(pref_pop_2020, pref_shp_cleaned, by = "code", all.x = TRUE)
 pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
-    filter(pop > 0)
+    filter(pop > 0) %>%
+    dplyr::filter(mun_code %in% c(12208, 12228) == FALSE)
 
 # Match or combine data so that every single census block is taken into account
 # Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
 pref_geom_only$pop <- 0
 pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
+### Unique Method for Chiba ###
+# Match population data and shape file by S_NAME for 野田市 (12208) and 四街道市 (12228).
+# Subset the shape file
+pref_noda_yotsukaido_shp <- pref_shp_cleaned %>%
+    dplyr::mutate(mun_code = as.numeric(code) %/% 10000) %>%
+    dplyr::filter(mun_code %in% c(12208, 12228)) %>%
+    dplyr::mutate(sub_name = S_NAME)
+# Match by S_NAME (sub_name)
+pref_noda_yotsukaido_mutual <- pref_pop_2020 %>%
+    dplyr::filter(mun_code %in% c(12208, 12228)) %>%
+    dplyr::inner_join(pref_noda_yotsukaido_shp, by = "sub_name")
+pref_noda_yotsukaido_pop_only <- pref_pop_2020 %>%
+    dplyr::filter(mun_code %in% c(12208, 12228)) %>%
+    dplyr::left_join(pref_noda_yotsukaido_shp, by = "sub_name") %>%
+    dplyr::setdiff(pref_noda_yotsukaido_mutual)
+pref_noda_yotsukaido_geom_only <- pref_pop_2020 %>%
+    dplyr::filter(mun_code %in% c(12208, 12228)) %>%
+    dplyr::right_join(pref_noda_yotsukaido_shp, by = "sub_name") %>%
+    dplyr::setdiff(pref_noda_yotsukaido_mutual)
+
+# Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
+# Assign 清水公園東 (pop) to 清水公園東一丁目 and 清水公園東二丁目 (geom)
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080700", "122080710")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080700"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080080",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign 桜の里 (pop) to 桜の里一丁目 桜の里二丁目 and 桜の里三丁目 (geom)
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080720", "122080730", "122080740")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080720"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080090",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign つつみ野 (pop) to つつみ野一丁目 and つつみ野二丁目 (geom)
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080750", "122080760")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080750"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080100",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign みずき (pop) to みずき一丁目
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080690")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080690"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080260",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign 泉 (pop) to 泉一丁目 泉二丁目 and 泉三丁目 (geom)
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080770", "122080780", "122080790")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080770"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080400",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign 光葉町 (pop) to 光葉町一丁目
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122080800")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122080800"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080410",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 700
+pref_geom_only_1$mun_code.y = 12208
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+# Assign なみき (pop) to 次木 (mutual), and merge six blocks (次木 親野井 古布内) together.
+# This is because なみき is newly created in 2016 by combining parts of those three blocks.
+pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080630",]$pop <-
+    pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080630",]$pop +
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080810",]$pop
+# Combine the four blocks
+pref_mutual_new_address <- pref_noda_yotsukaido_mutual %>%
+    dplyr::filter(code.y %in% c("122080620",
+                              "122080610")) %>%
+    dplyr::summarise(code.y = first(code.y),
+                     mun_code.y = first(mun_code.y),
+                     sub_code = first(sub_code),
+                     sub_name = "combined",
+                     pop = sum(pop),
+                     CITY_NAME = first(CITY_NAME),
+                     S_NAME = first(S_NAME),
+                     KIHON1 = first(KIHON1),
+                     JINKO = sum(JINKO),
+                     geometry = sf::st_union(geometry))
+# Data frame expect those four blocks
+pref_mutual_without_new_address <- pref_noda_yotsukaido_mutual %>%
+    dplyr::filter(!code.y %in% c("122080620",
+                                 "122080610"))
+# Combine them together
+pref_noda_yotsukaido_mutual <- pref_mutual_new_address %>%
+    dplyr::bind_rows(pref_mutual_without_new_address)
+
+# Assign 丸井 (pop) to 岡田 (mutual)
+pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080670",]$pop <-
+    pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080670",]$pop +
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080840",]$pop
+
+# Assign 千代田 (pop) to 千代田一丁目 (geom)
+pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
+    filter(code.y %in% c("122280260")) %>%
+    group_by(mun_code.y) %>%
+    mutate(geometry = sf::st_union(geometry)) %>%
+    ungroup() %>%
+    slice(1)
+pref_geom_only_1[pref_geom_only_1$code.y == "122280260"]$pop <-
+    pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122280230",]$pop
+# Add sub_code and mun_code
+pref_geom_only_1$sub_code = 260
+pref_geom_only_1$mun_code.y = 12228
+# bind it with. mutual data frame
+pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
+
+"旭ケ丘"
+"みそら"
+"つくし座"
+"さちが丘"
+"美しが丘"
+"めいわ"
+"池花"
+"鷹の台"
+"もねの里"
+
+### General Method ###
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
 
 #12206 木更津市
 "千束台"
+
 "北浜町"
 
 #12207 松戸市
@@ -107,27 +283,18 @@ pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 "南花島向町"
 "南花島中町"
 
-#12208
-# 野田市 Chaos with geom_only!
-"山崎"
-"花井"
-"花井"
-"岩名"
-"岩名"
-"五木新町"
-"岡田"
-"丸井"
-
+# 茂原
 #12210
-"小林飛地"
-"中之郷飛地"
-"川島飛地"
+"小林飛地" # Number only? merge with Kanbayashi to avoid tobochi?
+
+"中之郷飛地" # Number only? or assign to 中之郷 or 六ツ野　
+
+"川島飛地" # Number only? or assign to 川島 or 六ツ野　
 "小萱場"
 "吉井上"
 
 #12212
 "寺崎北"
-
 #12213
 "八坂台"
 
@@ -144,21 +311,6 @@ pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 "おおたかの森東"
 "おおたかの森西"
 
-#12228
-"物井"
-"内黒田"
-"四街道"
-"四街道"
-"中台"
-"中野"
-"さつきケ丘"
-"さちが丘"
-"美しが丘"
-"めいわ"
-"鷹の台"
-"もねの里"
-"中央"
-
 #12229
 "袖ケ浦駅前"
 
@@ -170,6 +322,8 @@ pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
 #12443
 "御宿台"
+
+
 
 "Example
 # Assign 港区 to 港区台場
