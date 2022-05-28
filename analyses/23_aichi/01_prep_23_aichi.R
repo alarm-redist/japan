@@ -268,7 +268,7 @@ pref_mutual[pref_mutual$code == "232201101",]$pop <- # 稲沢市稲島町
   pref_mutual[pref_mutual$code == "232201101",]$pop + # 稲沢市稲島町
   pref_pop_only[pref_pop_only$code == "232201103",]$pop  # 稲沢市東畑
 
-# Assign 稲沢市島北浦町&島本郷町&島寺西町&島新田町   to 稲沢市島町
+# Assign 稲沢市島北浦町&島本郷町&島寺西町&島新田町 to 稲沢市島町
 pref_mutual[pref_mutual$code == "232202141",]$pop <- # 稲沢市島町
   pref_mutual[pref_mutual$code == "232202141",]$pop + # 稲沢市島町
   pref_pop_only[pref_pop_only$code == "232202143",]$pop +  # 稲沢市東畑
@@ -305,3 +305,4 @@ pref <- pref %>%
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
+sum(pref$pop)
