@@ -10,35 +10,8 @@ gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1
 # Filter out exceptions
 gun_codes <- setdiff(gun_codes, gun_exception)
 
-# For Saitama with many discontinuity of gun,
-# we will summarize geometry into multiple contiguous unit of gun.
-# Furthermore, for Chichibu-gun, we ,merge Chichibu (city) together with Chichibu-gun,
-# because that is the only way to keep Chichibu-gun intact.
-# set chichibu code
-chichibu <- 11207
 # Set aside non-郡 municipalities
-pref_non_gun <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_codes, gun_exception, chichibu) == FALSE)
-
-pref_gun_discontinuity <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_exception, chichibu) == TRUE) %>%
-  dplyr::mutate(gun_block = case_when(
-    code %in% c(11324) == TRUE ~ 11324,
-    code %in% c(11326, 11327) == TRUE ~ 11326,
-    code %in% c(11346, 11347) == TRUE ~ 11346,
-    code %in% c(11341, 11342, 11343, 11348, 11349) == TRUE ~ 11341,
-    code %in% c(11361, 11362,11363, 11365, 11369, 11207) == TRUE ~ 11361,
-    code %in% c(11381) == TRUE ~ 11381,
-    code %in% c(11383, 11385) == TRUE ~ 11383,
-    code %in% c(11464) == TRUE ~ 11464,
-    code %in% c(11465) == TRUE ~ 11465)) %>%
-  dplyr::group_by(gun_block) %>%
-  dplyr::summarise(code = dplyr::first(code),
-                   gun_code = dplyr::first(gun_code),
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-
+pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
 
 # Merge together 郡
 pref_gun <- NULL
@@ -60,9 +33,7 @@ for(i in 1:length(gun_codes)){
 }
 
 # Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun,
-                         pref_gun_discontinuity,
-                         pref_gun)
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -96,26 +67,26 @@ prefadj <- redist::redist.adjacency(pref)
 
 # Modify according to ferry adjacencies
 if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries <- add_ferries(pref)
-    prefadj <- geomander::add_edge(prefadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
-                                   zero = TRUE)
+  # add ferries
+  ferries <- add_ferries(pref)
+  prefadj <- geomander::add_edge(prefadj,
+                                 ferries[, 1],
+                                 ferries[, 2],
+                                 zero = TRUE)
 }
 
 # Optional: Suggest connection between disconnected groups
-suggest <-  geomander::suggest_component_connection(shp = pref,
+"suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
-                               zero = TRUE)
+                               zero = TRUE)"
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj <- geomander::add_edge(prefadj,
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"),
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"))
+# which(pref$code == xxxxx & pref$sub_code == "xxxx"),
+# which(pref$code == xxxxx & pref$sub_code == "xxxx"))
 
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
@@ -126,14 +97,14 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
 
 # Run simulation
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
-  counties = pref$gun_code,
+  counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
 

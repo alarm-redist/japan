@@ -16,13 +16,15 @@ pref_map <- readRDS(paste("data-out/maps/",
                           "_",
                           as.character(pref_name),
                           "_hr_2020_map.rds",
-                           sep = ""))
+                          sep = ""))
 
 prefadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         "_adj.Rds",
+                         as.character(nsims),
+                         "_adj",
+                         ".Rds",
                          sep = ""))
 
 sim_smc_pref <- readRDS(paste("data-out/plans/",
@@ -54,25 +56,20 @@ koiki_2[!koiki_2 %in% 2] <-
 
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
-mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-mun_split <- mun_split[,1]
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
 
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
   seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
-gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-gun_split <- gun_split[,1]
+gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
+
 # Count number of koiki renkei splits
 koiki_split <-
   redist::redist.splits(pref_smc_plans, koiki_1) +
   redist::redist.splits(pref_smc_plans, koiki_2)
-koiki_split <- koiki_split %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-koiki_split <- koiki_split[,1]
+
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
@@ -88,11 +85,6 @@ results$index <- 1:nrow(wgt_smc)
 # are respected under the simulated plans
 
 # Define the codes of the gun that must be kept together in the same district
-# For Saitama, we will assign `gun_exception` here that allows splits.
-# This is because we assigned `gun_exception` in `01_prep_11_saitama` uniquely,
-# in order to deal with discontiguous 郡
-# Code of 郡 that are split under the status quo
-gun_exception <- c(11320) # Iruma (11324, 11326, 11327)
 respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
 
 # Evaluate whether the gun that must be kept together in the same district are
@@ -134,12 +126,7 @@ mun_boundary <- pref_shp_cleaned %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_mutual %>%
-  select(mun_code, sub_code, pop, geometry) %>%
-  rename(code = mun_code) %>%
-  mutate(code = as.numeric(code)) %>%
-  arrange(code) %>%
-  merge_gun() %>%
+gun_boundary <- pref %>%
   filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
@@ -202,7 +189,7 @@ for (i in 1:length(pref$code))
   cooc_ratio[i] <- 1 -
     sum(pref$pop[relcomp(prefadj[[i]]+1,
                          which(prec_clusters == prec_clusters[i]))] * m_co[i, relcomp(prefadj[[i]]+1,
-                                                                   which(prec_clusters == prec_clusters[i]))])/
+                                                                                      which(prec_clusters == prec_clusters[i]))])/
     sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
 }
 
@@ -218,14 +205,11 @@ rm(cl_co,
    pref_shp_cleaned,
    pref_gun,
    pref_non_gun,
-   pref_gun_discontinuity,
-   chichibu,
    pref_pop_2020,
    pref_shp_2015,
    pref_mutual,
    pref_pop_only,
    pref_geom_only,
-   pref_geom_only_1,
    pref_smc_plans,
    sim_smc_pref_good,
    sim_smc_pref,
@@ -253,20 +237,20 @@ save.image(paste("data-out/pref/",
 # `redist_plans` object
 write_rds(sim_smc_pref_sample,
           paste("data-out/plans/",
-                  as.character(pref_code),
-                  "_",
-                  as.character(pref_name),
-                  "_hr_2020_plans.rds",
-                  sep = ""),
-            compress = "xz")
+                as.character(pref_code),
+                "_",
+                as.character(pref_name),
+                "_hr_2020_plans.rds",
+                sep = ""),
+          compress = "xz")
 
 # Export `redist_plans` summary statistics to a csv file
 as_tibble(sim_smc_pref_sample) %>%
-    mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
-    write_csv(paste("data-out/plans/",
-                    as.character(pref_code),
-                    "_",
-                    as.character(pref_name),
-                    "_hr_2020_stats.csv",
-                    sep = ""))
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_stats.csv",
+                  sep = ""))
 

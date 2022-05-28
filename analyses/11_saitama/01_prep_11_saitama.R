@@ -4,16 +4,16 @@
 ###############################################################################
 
 suppressMessages({
-    library(dplyr)
-    library(readr)
-    library(sf)
-    library(redist)
-    library(geomander)
-    library(cli)
-    library(here)
-    library(tidyverse)
-    library(nngeo)
-    devtools::load_all() # load utilities
+  library(dplyr)
+  library(readr)
+  library(sf)
+  library(redist)
+  library(geomander)
+  library(cli)
+  library(here)
+  library(tidyverse)
+  library(nngeo)
+  devtools::load_all() # load utilities
 })
 
 set.seed(12345)
@@ -43,12 +43,7 @@ pop_tol <- 0.10
 # For Saitama, which has many discontinuity of gun,
 # we will set those gun as `gun_exception` to use in the `02_sim` process.
 
-gun_exception <- c(11320, # Iruma (11324, 11326, 11327)
-                   11340, # Hiki (11341, 11342, 11343, 11346, 11347, 11348, 11349)
-                   11360, # Chichibu (11361, 11362,11363, 11365, 11369)
-                   11380, # Kodama (11381, 11383, 11385)
-                   11460 # Kitakatsushika (11464, 11465)
-                   )
+gun_exception <- c(11320) # Iruma (11324, 11326, 11327)
 
 # Change time limit
 options(timeout = 300)
@@ -57,7 +52,7 @@ options(timeout = 300)
 pref_shp_2015 <- download_shp(pref_code)
 # Clean 2015 Census shapefile
 pref_shp_cleaned <- pref_shp_2015 %>%
-    clean_jcdf()
+  clean_jcdf()
 # Note that S_NAME shows the name of the first entry of the areas grouped
 # in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
@@ -72,8 +67,8 @@ pref_pop_2020 <- download_pop_2020(pref_code)
 # status quo
 sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
 sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
-    dplyr::group_by(ku) %>%
-    dplyr::summarise(geometry = sf::st_union(geometry))
+  dplyr::group_by(ku) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry))
 
 ####2. Urban Prefectures########
 # Clean 2020 Census data at the 小地域-level
@@ -96,7 +91,7 @@ pref_geom_only <- setdiff(pref_geom_only, pref_mutual)
 # 3. Areas that exist only in 2020 Census data (`pref_pop_2020`)
 pref_pop_only <- merge(pref_pop_2020, pref_shp_cleaned, by = "code", all.x = TRUE)
 pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
-    filter(pop > 0)
+  filter(pop > 0)
 
 # Match or combine data so that every single census block is taken into account
 # Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
@@ -401,37 +396,37 @@ pref_mutual[pref_mutual$code == "112240180",]$pop <- # 笹目
 # Assign 入間市 狭山台 to 宮寺, and merge six blocks (宮寺 大字新久 大字狭山ケ原 大字狭山台 大字根岸 大字中神) together.
 # This is because 入間市 狭山台 is newly created in 2018 by combining parts of those six blocks.
 pref_mutual[pref_mutual$code == "112250320",]$pop <- # 宮寺
- pref_mutual[pref_mutual$code == "112250320",]$pop + # 宮寺
- pref_pop_only[pref_pop_only$code == "112250430",]$pop # 狭山台
+  pref_mutual[pref_mutual$code == "112250320",]$pop + # 宮寺
+  pref_pop_only[pref_pop_only$code == "112250430",]$pop # 狭山台
 # Combine the four blocks
 pref_mutual_new_address <- pref_mutual %>%
- dplyr::filter(code %in% c("112250320",
-                           "112250210",
-                           "112250220",
-                           "112250340",
-                           "112250310",
-                           "112250300")) %>%
- dplyr::summarise(code = first(code),
-                  mun_code = first(mun_code),
-                  sub_code = first(sub_code),
-                  sub_name = "combined",
-                  pop = sum(pop),
-                  CITY_NAME = first(CITY_NAME),
-                  S_NAME = first(S_NAME),
-                  KIHON1 = first(KIHON1),
-                  JINKO = sum(JINKO),
-                  geometry = sf::st_union(geometry))
-# Data frame expect those four blocks
-pref_mutual_without_new_address <- pref_mutual %>%
- dplyr::filter(!code %in% c("112250320",
+  dplyr::filter(code %in% c("112250320",
                             "112250210",
                             "112250220",
                             "112250340",
                             "112250310",
-                            "112250300"))
+                            "112250300")) %>%
+  dplyr::summarise(code = first(code),
+                   mun_code = first(mun_code),
+                   sub_code = first(sub_code),
+                   sub_name = "combined",
+                   pop = sum(pop),
+                   CITY_NAME = first(CITY_NAME),
+                   S_NAME = first(S_NAME),
+                   KIHON1 = first(KIHON1),
+                   JINKO = sum(JINKO),
+                   geometry = sf::st_union(geometry))
+# Data frame expect those four blocks
+pref_mutual_without_new_address <- pref_mutual %>%
+  dplyr::filter(!code %in% c("112250320",
+                             "112250210",
+                             "112250220",
+                             "112250340",
+                             "112250310",
+                             "112250300"))
 # Combine them together
 pref_mutual <- pref_mutual_new_address %>%
- dplyr::bind_rows(pref_mutual_without_new_address)
+  dplyr::bind_rows(pref_mutual_without_new_address)
 
 # Assign 桶川市 下日出谷西 and 大字下日出谷 (new) to 大字下日出谷 (old)
 pref_geom_only_1 <- pref_geom_only %>%
@@ -510,37 +505,37 @@ pref_mutual[pref_mutual$code == "112430160",]$pop <-
 # This is because 宮代町 道佛 is newly created in 2017 from parts of 字道佛.
 # A part of remaining was assigned to 宮代
 pref_mutual[pref_mutual$code == "114420110",]$pop <-
- pref_mutual[pref_mutual$code == "114420110",]$pop +
- pref_pop_only[pref_pop_only$code == "114420280",]$pop
+  pref_mutual[pref_mutual$code == "114420110",]$pop +
+  pref_pop_only[pref_pop_only$code == "114420280",]$pop
 # Combine the four blocks
 pref_mutual_new_address <- pref_mutual %>%
- dplyr::filter(code %in% c("114420110",
-                           "114420150")) %>%
- dplyr::summarise(code = first(code),
-                  mun_code = first(mun_code),
-                  sub_code = first(sub_code),
-                  sub_name = "combined",
-                  pop = sum(pop),
-                  CITY_NAME = first(CITY_NAME),
-                  S_NAME = first(S_NAME),
-                  KIHON1 = first(KIHON1),
-                  JINKO = sum(JINKO),
-                  geometry = sf::st_union(geometry))
+  dplyr::filter(code %in% c("114420110",
+                            "114420150")) %>%
+  dplyr::summarise(code = first(code),
+                   mun_code = first(mun_code),
+                   sub_code = first(sub_code),
+                   sub_name = "combined",
+                   pop = sum(pop),
+                   CITY_NAME = first(CITY_NAME),
+                   S_NAME = first(S_NAME),
+                   KIHON1 = first(KIHON1),
+                   JINKO = sum(JINKO),
+                   geometry = sf::st_union(geometry))
 # Data frame expect those four blocks
 pref_mutual_without_new_address <- pref_mutual %>%
- dplyr::filter(!code %in% c("114420110",
-                            "114420150"))
+  dplyr::filter(!code %in% c("114420110",
+                             "114420150"))
 # Combine them together
 pref_mutual <- pref_mutual_new_address %>%
- dplyr::bind_rows(pref_mutual_without_new_address)
+  dplyr::bind_rows(pref_mutual_without_new_address)
 
 # Finalize pref object
 pref <- pref_mutual %>%
-    select(mun_code, sub_code, pop, geometry) %>%
-    rename(code = mun_code) %>%
-    mutate(code = as.numeric(code)) %>%
-    arrange(code) %>%
-    sf::st_as_sf()
+  select(mun_code, sub_code, pop, geometry) %>%
+  rename(code = mun_code) %>%
+  mutate(code = as.numeric(code)) %>%
+  arrange(code) %>%
+  sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
