@@ -76,12 +76,12 @@ if(check_ferries(pref_code) == TRUE){
 }
 
 # Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref,
+suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
-                               zero = TRUE)"
+                               zero = TRUE)
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj <- geomander::add_edge(prefadj,
