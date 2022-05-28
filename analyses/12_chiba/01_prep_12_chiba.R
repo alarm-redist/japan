@@ -406,33 +406,76 @@ pref_mutual <- rbind(pref_mutual, pref_noda_yotsukaido_mutual)
 
 ### General Method ###
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
+# Assign 木更津市千束台 to 請西
+pref_mutual[pref_mutual$code == "122061160",]$pop <-
+    pref_mutual[pref_mutual$code == "122061160",]$pop +
+    pref_pop_only[pref_pop_only$code == "122061500",]$pop
 
-#12206 木更津市
-"千束台"
+# Assign 木更津市北浜町 to 畔戸
+pref_mutual[pref_mutual$code == "122066640",]$pop <-
+    pref_mutual[pref_mutual$code == "122066640",]$pop +
+    pref_pop_only[pref_pop_only$code == "122066670",]$pop
 
-"北浜町"
+# Assign 松戸市南花島向町 and 南花島中町 into 南花島
+pref_mutual[pref_mutual$code == "122071290",]$pop <-
+    pref_mutual[pref_mutual$code == "122071290",]$pop +
+    pref_pop_only[pref_pop_only$code == "122071640",]$pop +
+    pref_pop_only[pref_pop_only$code == "122071650",]$pop
 
-#12207 松戸市
-# merge to 122071290 南花島
+# Assign 茂原市小林飛地 to 小林
+pref_mutual[pref_mutual$code == "122100050",]$pop <-
+    pref_mutual[pref_mutual$code == "122100050",]$pop +
+    pref_pop_only[pref_pop_only$code == "122100790",]$pop
 
-"南花島向町"
-"南花島中町"
+# Assign 茂原市中之郷飛地 and 川島飛地 into 六ツ野
+pref_mutual[pref_mutual$code == "122100210",]$pop <-
+    pref_mutual[pref_mutual$code == "122100210",]$pop +
+    pref_pop_only[pref_pop_only$code == "122100800",]$pop +
+    pref_pop_only[pref_pop_only$code == "122100810",]$pop
 
-# 茂原
-#12210
-"小林飛地" # Number only? merge with Kanbayashi to avoid tobochi?
+# Assign 茂原市小萱場 to 萱場
+pref_mutual[pref_mutual$code == "122100710",]$pop <-
+    pref_mutual[pref_mutual$code == "122100710",]$pop +
+    pref_pop_only[pref_pop_only$code == "122100820",]$pop
 
-"中之郷飛地" # Number only? or assign to 中之郷 or 六ツ野　
-
-"川島飛地" # Number only? or assign to 川島 or 六ツ野　
-"小萱場"
-"吉井上"
+# Assign 茂原市吉井上 to 吉井下
+pref_mutual[pref_mutual$code == "122100700",]$pop <-
+    pref_mutual[pref_mutual$code == "122100700",]$pop +
+    pref_pop_only[pref_pop_only$code == "122100830",]$pop
 
 #12212
 "寺崎北"
-#12213
-"八坂台"
+# Assign 佐倉市 寺崎北 to 寺崎, and merge two blocks (六崎 寺崎) together.
+# This is because さいたま市 岩槻区 美園 is newly created in 2015 by combining parts of those two blocks.
+pref_mutual[pref_mutual$code == "122120980",]$pop <-
+    pref_mutual[pref_mutual$code == "122120980",]$pop +
+    pref_pop_only[pref_pop_only$code == "122120981",]$pop
+# Combine the four blocks
+pref_mutual_new_address <- pref_mutual %>%
+    dplyr::filter(code %in% c("122120980",
+                              "122120972")) %>%
+    dplyr::summarise(code = first(code),
+                     mun_code = first(mun_code),
+                     sub_code = first(sub_code),
+                     sub_name = "combined",
+                     pop = sum(pop),
+                     CITY_NAME = first(CITY_NAME),
+                     S_NAME = first(S_NAME),
+                     KIHON1 = first(KIHON1),
+                     JINKO = sum(JINKO),
+                     geometry = sf::st_union(geometry))
+# Data frame expect those four blocks
+pref_mutual_without_new_address <- pref_mutual %>%
+    dplyr::filter(!code %in% c("122120980",
+                               "122120972"))
+# Combine them together
+pref_mutual <- pref_mutual_new_address %>%
+    dplyr::bind_rows(pref_mutual_without_new_address)
 
+# Assign 東金市八坂台 to 松之郷
+pref_mutual[pref_mutual$code == "122130150",]$pop <-
+    pref_mutual[pref_mutual$code == "122130150",]$pop +
+    pref_pop_only[pref_pop_only$code == "122130720",]$pop
 #12217
 "柏インター東"
 "柏インター南"
