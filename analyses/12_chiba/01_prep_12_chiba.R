@@ -394,6 +394,16 @@ pref_geom_only_1$mun_code.y = 12228
 # bind it with. mutual data frame
 pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only_1)
 
+# Combine `pref_noda_yotsukaido_mutual` into `pref_mutual`
+# To do so, rename the columns of pref_noda_yotsukaido_mutual.
+# Also, remove the irrelevant columns.
+pref_noda_yotsukaido_mutual <- pref_noda_yotsukaido_mutual %>%
+    dplyr::rename(code = code.y) %>%
+    dplyr::rename(mun_code = mun_code.y) %>%
+    dplyr::select(-c(code.x, mun_code.x))
+# Then, bind rows of pref_noda_yotsukaido_mutual into pref_mutual
+pref_mutual <- rbind(pref_mutual, pref_noda_yotsukaido_mutual)
+
 ### General Method ###
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
 
