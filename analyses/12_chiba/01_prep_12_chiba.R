@@ -40,7 +40,7 @@ sq_koiki_splits <- 0
 pop_tol <- 0.10
 
 # Code of 郡 that are split under the status quo
-gun_exception <- c(12403) # Sanbu-gun with 12409, 12410
+gun_exception <- c(12400) # Sanbu-gun (12403 12409, 12410)
 
 # Change time limit
 options(timeout = 300)
