@@ -5,7 +5,8 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# For rural prefectures, define using the municipality codes, not the gun codes
+# For urban prefectures, define using gun codes
 koiki_1_codes <- c(11207, 11361, 11362, 11363, 11365)
 koiki_2_codes <- c(11211, 11381, 11383, 11385)
 
