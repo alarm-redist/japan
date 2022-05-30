@@ -5,8 +5,9 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# For rural prefectures, define using the municipality codes, not the gun codes
-# For urban prefectures, define using gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c()
 koiki_2_codes <- c()
 
@@ -83,20 +84,31 @@ koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
 # Count number of municipality splits
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
-mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split_1 <- mun_split_1[,1]
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_2_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
 koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1)
-
+koiki_split_1 <- koiki_split_1 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_1 <- koiki_split_1[,1]
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
@@ -128,6 +140,7 @@ functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
@@ -353,19 +366,25 @@ koiki_2[!koiki_2 %in% 2] <-
 
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
-mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split <- mun_split[,1]
 
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
   seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
-gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
-
+gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split <- gun_split[,1]
 # Count number of koiki renkei splits
 koiki_split <-
   redist::redist.splits(pref_smc_plans, koiki_1) +
   redist::redist.splits(pref_smc_plans, koiki_2)
+koiki_split <- koiki_split %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split <- koiki_split[,1]
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
@@ -404,6 +423,7 @@ functioning_results <- results %>%
   filter(respect_gun == length(respect_gun_code), multi == 0)
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
 sim_smc_pref_sample <- sim_smc_pref %>%
   filter(draw %in% valid_sample_pref)
