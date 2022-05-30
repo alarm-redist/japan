@@ -9,59 +9,26 @@ pref <- merge_gun(pref)
 gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
 # Filter out exceptions
 gun_codes <- setdiff(gun_codes, gun_exception)
-
-# For Saitama with many discontinuity of gun,
-# we will summarize geometry into multiple contiguous unit of gun.
 # Set aside non-郡 municipalities
-pref_non_gun <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_codes, gun_exception) == FALSE)
-
-pref_gun_discontinuity <- pref %>%
-  dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
-  dplyr::mutate(gun_block = case_when(
-    code %in% c(11324) == TRUE ~ 11324,
-    code %in% c(11326, 11327) == TRUE ~ 11326,
-    code %in% c(11346, 11347) == TRUE ~ 11346,
-    code %in% c(11341, 11342, 11343, 11348, 11349) == TRUE ~ 11341,
-    code %in% c(11361) == TRUE ~ 11361,
-    code %in% c(11365) == TRUE ~ 11365,
-    code %in% c(11362,11363, 11369) == TRUE ~ 11362,
-    code %in% c(11381) == TRUE ~ 11381,
-    code %in% c(11383, 11385) == TRUE ~ 11383,
-    code %in% c(11464) == TRUE ~ 11464,
-    code %in% c(11465) == TRUE ~ 11465)) %>%
-  dplyr::group_by(gun_block) %>%
-  dplyr::summarise(code = dplyr::first(code),
-                   gun_code = dplyr::first(gun_code),
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
-
-
+pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
 # Merge together 郡
 pref_gun <- NULL
 for(i in 1:length(gun_codes)){
   # filter out gun
   gun <- pref %>%
     dplyr::filter(gun_code == gun_codes[i])
-
   # merge together gun
   gun$code <- gun_codes[i]
   gun <- gun %>%
     dplyr::group_by(code) %>%
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
-
   # merge back together
   gun$sub_code <- 0
   gun$gun_code <- gun_codes[i]
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
-
 # Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun,
-                         pref_gun_discontinuity,
-                         pref_gun)
-
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
                        sub_code = pref[1, ]$sub_code,
@@ -69,11 +36,8 @@ new_rows <- data.frame(code = pref[1, ]$code,
                        pop = 0,
                        gun_code = pref[1, ]$gun_code
 )
-
 new_rows[1, ]$pop <- pref[1, ]$pop
-
 pref_sep <- new_rows
-
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -83,12 +47,9 @@ for (i in 2:nrow(pref))
                          gun_code = pref[i, ]$gun_code
   )
   new_rows[1, ]$pop <- pref[i, ]$pop
-
   pref_sep <- rbind(pref_sep, new_rows)
 }
-
 pref <- sf::st_as_sf(pref_sep)
-
 # Make adjacency list
 prefadj <- redist::redist.adjacency(pref)
 
@@ -128,12 +89,18 @@ constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_co
 constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$gun_code)
 
 # Run simulation
+set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
-  counties = pref$gun_code,
+  runs = 2L,
+  counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
