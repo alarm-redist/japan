@@ -92,9 +92,11 @@ run_simulations <- function(pref_n, prefadj_n){
                                    adj = prefadj_n)
 
   # Run simulation
+  set.seed(2020)
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
+    runs = 2L,
     pop_temper = 0.05
   )
 
@@ -162,6 +164,11 @@ run_simulations <- function(pref_n, prefadj_n){
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
 
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref_0)
+summary(sim_smc_pref_1)
+
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
 # we would not see a large spike at 0.
@@ -170,6 +177,7 @@ run_simulations(pref_1, prefadj_1)
 
 hist(plans_diversity(sim_smc_pref_0))
 hist(plans_diversity(sim_smc_pref_1))
+
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Obtain codes of 郡 to merge
@@ -269,12 +277,18 @@ constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
 constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
 
 # Run simulation
+set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
+  runs = 2L,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
