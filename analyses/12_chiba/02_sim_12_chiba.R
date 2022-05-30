@@ -123,16 +123,16 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.20,
+                               pop_tol= 0.30,
                                total_pop = pop,
                                adj = prefadj)
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 3, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 6, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 7, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
 
-# Run simulation
+set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
@@ -140,6 +140,10 @@ sim_smc_pref <- redist::redist_smc(
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
