@@ -6,7 +6,7 @@ author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
-    self_contained: true
+    self_contained: false
 doi: "10.7910/DVN/Z9UKSH"
 ---
 
@@ -230,7 +230,7 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   scale_linetype_manual(values = c("dotted", "solid", "solid")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
               nudge_x = -9990, # adjust the position of the labels
               nudge_y = 0, # adjust the position of the labels
               family = "HiraginoSans-W3") +
