@@ -16,8 +16,6 @@ suppressMessages({
     devtools::load_all() # load utilities
 })
 
-set.seed(12345)
-
 # Pull functions
 setwd("R")
 files.sources = list.files()
