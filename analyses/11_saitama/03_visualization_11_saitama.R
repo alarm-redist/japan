@@ -179,7 +179,7 @@ cl_co = cluster::agnes(m_co)
 
 # Analyze the dendrogram and pick an appropriate number of clusters
 plot(as.dendrogram(cl_co))
-abline(h = 2, col = "red") # explore different depths
+abline(h = 1, col = "red") # explore different depths
 abline(h = 3, col = "blue")
 
 prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number

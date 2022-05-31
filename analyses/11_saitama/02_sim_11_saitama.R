@@ -27,8 +27,40 @@ for(i in 1:length(gun_codes)){
   gun$gun_code <- gun_codes[i]
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
+
+##########################
+### Method for Saitama ###
+##########################
+# For Saitama with many discontinuity of gun,
+# we will summarize geometry into multiple contiguous unit of gun.
+
+# set aside guns from pref_non_gun
+pref_gun_discontinuity <- pref_non_gun %>%
+  dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
+  dplyr::mutate(gun_block = case_when(
+    code %in% c(11324) == TRUE ~ 11324,
+    code %in% c(11326, 11327) == TRUE ~ 11326,
+    code %in% c(11346, 11347) == TRUE ~ 11346,
+    code %in% c(11341, 11342, 11343, 11348, 11349) == TRUE ~ 11341,
+    code %in% c(11361) == TRUE ~ 11361,
+    code %in% c(11365) == TRUE ~ 11365,
+    code %in% c(11362,11363, 11369) == TRUE ~ 11362,
+    code %in% c(11381) == TRUE ~ 11381,
+    code %in% c(11383, 11385) == TRUE ~ 11383,
+    code %in% c(11464) == TRUE ~ 11464,
+    code %in% c(11465) == TRUE ~ 11465)) %>%
+  dplyr::group_by(gun_block) %>%
+  dplyr::summarise(code = dplyr::first(gun_code),
+                   gun_code = dplyr::first(gun_code),
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+pref_non_gun <- pref_non_gun %>%
+  dplyr::filter(gun_code %in% c(gun_exception) == FALSE)
+
 # Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun, pref_gun_discontinuity)
+
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
                        sub_code = pref[1, ]$sub_code,
@@ -79,14 +111,14 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.10,
+                               pop_tol= 0.20,
                                total_pop = pop,
                                adj = prefadj)
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 8, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
