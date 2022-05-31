@@ -32,8 +32,36 @@ for(i in 1:length(gun_codes)){
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
 
+########################
+### Method for Chiba ###
+########################
+# For Chiba with many discontinuity of gun,
+# we will summarize geometry into multiple contiguous unit of gun.
+# set aside guns from pref_non_gun
+
+pref_gun_discontinuity <- pref_non_gun %>%
+  dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
+  dplyr::mutate(gun_block = case_when(
+    code %in% c(12322) == TRUE ~ 12322,
+    code %in% c(12329) == TRUE ~ 12329,
+    code %in% c(12342) == TRUE ~ 12342,
+    code %in% c(12347) == TRUE ~ 12347,
+    code %in% c(12349) == TRUE ~ 12349,
+    code %in% c(12403, 12409) == TRUE ~ 12403,
+    code %in% c(12410) == TRUE ~ 12410,
+    code %in% c(12441) == TRUE ~ 12441,
+    code %in% c(12443) == TRUE ~ 12443 )) %>%
+  dplyr::group_by(gun_block) %>%
+  dplyr::summarise(code = dplyr::first(gun_code),
+                   gun_code = dplyr::first(gun_code),
+                   pop = sum(pop),
+                   geometry = sf::st_union(geometry))
+
+pref_non_gun <- pref_non_gun %>%
+  dplyr::filter(gun_code %in% c(gun_exception) == FALSE)
+
 # Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun, pref_gun_discontinuity)
 
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -86,29 +114,13 @@ prefadj <- geomander::add_edge(prefadj,
 # TODO Repair adjacencies if necessary, and document these changes.
 pref_add_edge <-
   matrix(c(
-    # 印西市小林北 and 小林
-    which(pref$code == 12231 & pref$sub_code == 90),
-    which(pref$code == 12231 & pref$sub_code == 70),
-    # 印西市笠神 and its 飛地
-    which(pref$code == 12231 & pref$sub_code == 640)[1],
-    which(pref$code == 12231 & pref$sub_code == 640)[2],
-    # 鴨川市太海浜 and its 仁右衛門島
-    which(pref$code == 12223 & pref$sub_code == 580)[1],
-    which(pref$code == 12223 & pref$sub_code == 580)[2],
-    # 横芝光町栗山 and its 飛地
-    which(pref$code == 12410 & pref$sub_code == 880)[1],
-    which(pref$code == 12410 & pref$sub_code == 880)[2],
-    # 香取郡
+    # 長生郡
     which(pref$code == 12420)[1],
     which(pref$code == 12420)[2],
     which(pref$code == 12420)[1],
     which(pref$code == 12420)[3],
-    which(pref$code == 12420)[1],
-    which(pref$code == 12420)[4],
-    which(pref$code == 12420)[1],
-    which(pref$code == 12420)[5],
 
-    # 安房郡鋸南町
+    # 安房郡
     which(pref$code == 12460)[1],
     which(pref$code == 12460)[2],
     which(pref$code == 12460)[1],
@@ -123,7 +135,7 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.30,
+                               pop_tol= 0.20,
                                total_pop = pop,
                                adj = prefadj)
 
