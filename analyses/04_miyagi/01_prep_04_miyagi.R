@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `04_Miyagi` analysis
-# © ALARM Project, April 2021
+# © ALARM Project, May 2021
 ###############################################################################
 
 suppressMessages({
@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 04
 pref_name <- "miyagi"
 lakes_removed <- c()
