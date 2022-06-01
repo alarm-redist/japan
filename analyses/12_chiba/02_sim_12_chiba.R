@@ -196,7 +196,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims*2),
+                            as.character(nsims * 2),
                             ".Rds",
                             sep = ""))
 
