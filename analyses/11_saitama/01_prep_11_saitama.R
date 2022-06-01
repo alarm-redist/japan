@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 50000 # Set so that the number of valid plans > 5,000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c()
@@ -570,7 +570,7 @@ pref_geom_only_1$sub_code = 120
 # Group together with `pref_mutual`
 pref_mutual[pref_mutual$code == "111020110",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "111020110")$geometry,
-               filter(pref_geom_only, code == "111020120")$geometry)
+               filter(pref_geom_only_1, code == "111020120")$geometry)
 # remove the `geom_only_code` from the `geom_only`
 pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
@@ -587,7 +587,7 @@ pref_geom_only_1$sub_code = 230
 # Group together with `pref_mutual`
 pref_mutual[pref_mutual$code == "112420360",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "112420360")$geometry,
-               filter(pref_geom_only, code == "112420230")$geometry)
+               filter(pref_geom_only_1, code == "112420230")$geometry)
 # remove the `geom_only_code` from the `geom_only`
 pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
@@ -607,7 +607,7 @@ pref_geom_only_1$sub_code = 710
 # Group together with `pref_mutual`
 pref_mutual[pref_mutual$code == "112430700",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "112430700")$geometry,
-               filter(pref_geom_only, code == "112430710")$geometry)
+               filter(pref_geom_only_1, code == "112430710")$geometry)
 # remove the `geom_only_code` from the `geom_only`
 pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)

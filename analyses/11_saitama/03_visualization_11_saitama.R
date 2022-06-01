@@ -34,7 +34,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims),
+                              as.character(nsims * 2),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
@@ -265,6 +265,7 @@ write_rds(sim_smc_pref_sample,
 # Export `redist_plans` summary statistics to a csv file
 as_tibble(sim_smc_pref_sample) %>%
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+    select("draw", "district", "total_pop") %>%
     write_csv(paste("data-out/plans/",
                     as.character(pref_code),
                     "_",

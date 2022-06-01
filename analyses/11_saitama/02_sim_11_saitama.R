@@ -32,8 +32,7 @@ for(i in 1:length(gun_codes)){
 ### Method for Saitama ###
 ##########################
 # For Saitama with many discontinuity of gun,
-# we will summarize geometry into multiple contiguous unit of gun.
-
+# we will merge geometry into multiple contiguous unit of gun.
 # set aside guns from pref_non_gun
 pref_gun_discontinuity <- pref_non_gun %>%
   dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
@@ -117,7 +116,7 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 8, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_code)
 constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
 
 # Run simulation
@@ -173,7 +172,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims),
+                            as.character(nsims * 2),
                             ".Rds",
                             sep = ""))
 
