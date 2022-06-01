@@ -114,16 +114,12 @@ prefadj <- geomander::add_edge(prefadj,
 # TODO Repair adjacencies if necessary, and document these changes.
 pref_add_edge <-
   matrix(c(
-    # 長生郡
-    which(pref$code == 12420)[1],
-    which(pref$code == 12420)[2],
-    which(pref$code == 12420)[1],
-    which(pref$code == 12420)[3],
-
-    # 安房郡
+    # 安房郡島部
     which(pref$code == 12460)[1],
     which(pref$code == 12460)[2],
     which(pref$code == 12460)[1],
+    which(pref$code == 12460)[3],
+    which(pref$code == 12460)[2],
     which(pref$code == 12460)[3]
     ), ncol = 2, byrow = TRUE)
 
@@ -141,8 +137,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 7, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 4, admin = pref_map$code)
 
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(

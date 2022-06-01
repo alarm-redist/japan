@@ -82,6 +82,7 @@ pref_shp_cleaned <- mutate(pref_shp_cleaned, code = str_c(code, KIHON1))
 pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
 # TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
+
 ### Unique Method for Chiba ###
 # Since 野田市 (12208) and 四街道市 (12228) changed KIHON1 code and
 # assign a new number that duplicates the old number of other 小地域
@@ -685,56 +686,55 @@ pref_mutual[pref_mutual$code == "122191100",]$pop <-
 # This is because おおたかの森 is newly created in 2019 by combining parts of those blocks.
 geom_only_code <- c("122200560")
 pref_geom_only_1 <- pref_geom_only %>%
-    filter(code %in% geom_only_code)
+  filter(code %in% geom_only_code)
 pref_geom_only_1[pref_geom_only_1$code == "122200560"]$pop <-
-    pref_pop_only[pref_pop_only$code == "122200670",]$pop +
-    pref_pop_only[pref_pop_only$code == "122200680",]$pop
+  pref_mutual[pref_mutual$code == "122200650",]$pop +
+  pref_pop_only[pref_pop_only$code == "122200670",]$pop +
+  pref_pop_only[pref_pop_only$code == "122200680",]$pop
 # Add sub_code
 pref_geom_only_1$sub_code = 560
 # bind it with. mutual data frame
 pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
 # Combine the four blocks
 pref_mutual_new_address <- pref_mutual %>%
-    dplyr::filter(code %in% c("122200560",
-                              "122200650",
-                              "122200660",
-                              "122200530",
-                              "122200600",
-                              "122200610",
-                              "122200470",
-                              "122200310",
-                              "122200030",
-                              "122200480",
-                              "122200570")) %>%
-    dplyr::summarise(code = first(code),
-                     mun_code = first(mun_code),
-                     sub_code = first(sub_code),
-                     sub_name = "combined",
-                     pop = sum(pop),
-                     CITY_NAME = first(CITY_NAME),
-                     S_NAME = first(S_NAME),
-                     KIHON1 = first(KIHON1),
-                     JINKO = sum(JINKO),
-                     geometry = sf::st_union(geometry))
+  dplyr::filter(code %in% c("122200560",
+                            "122200660",
+                            "122200530",
+                            "122200600",
+                            "122200610",
+                            "122200470",
+                            "122200310",
+                            "122200030",
+                            "122200480",
+                            "122200570")) %>%
+  dplyr::summarise(code = first(code),
+                   mun_code = first(mun_code),
+                   sub_code = first(sub_code),
+                   sub_name = "combined",
+                   pop = sum(pop),
+                   CITY_NAME = first(CITY_NAME),
+                   S_NAME = first(S_NAME),
+                   KIHON1 = first(KIHON1),
+                   JINKO = sum(JINKO),
+                   geometry = sf::st_union(geometry))
 # Data frame expect those four blocks
 pref_mutual_without_new_address <- pref_mutual %>%
-    dplyr::filter(!code %in% c("122200560",
-                               "122200650",
-                               "122200660",
-                               "122200530",
-                               "122200600",
-                               "122200610",
-                               "122200470",
-                               "122200310",
-                               "122200030",
-                               "122200480",
-                               "122200570"))
+  dplyr::filter(!code %in% c("122200560",
+                             "122200660",
+                             "122200530",
+                             "122200600",
+                             "122200610",
+                             "122200470",
+                             "122200310",
+                             "122200030",
+                             "122200480",
+                             "122200570"))
 # Combine them together
 pref_mutual <- pref_mutual_new_address %>%
-    dplyr::bind_rows(pref_mutual_without_new_address)
+  dplyr::bind_rows(pref_mutual_without_new_address)
 # remove the `geom_only_code` from the `geom_only`
 pref_geom_only <- pref_geom_only %>%
-    filter(code %in% geom_only_code == FALSE)
+  filter(code %in% geom_only_code == FALSE)
 
 # Assign 流山市美原 to 美原
 # As explained above, the old code for 美原 is used in the 2020 census.
