@@ -116,8 +116,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 6, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
