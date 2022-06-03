@@ -168,9 +168,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(4000, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(3000, 3000, -3000, 3000, -3000), # adjust the position of the labels
+              color = c("black", "white", "black", "black"),
+              nudge_x = c(4000, 2000, 0, 0), # adjust the position of the labels
+              nudge_y = c(3000, 3000, -3000, 3000), # adjust the position of the labels
               #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
               family = "HiraginoSans-W3") +
   

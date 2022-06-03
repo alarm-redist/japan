@@ -147,14 +147,18 @@ gun_boundary <- pref_mutual %>%
   summarise(geometry = sf::st_union(geometry))
 
 # Combine municipality boundary data
-mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+mun <- mun_boundary %>%
+  summarise(geometry = sf::st_combine(geometry))
+mun$geometry <- sf::st_transform(mun$geometry, crs = sf::st_crs(4612))
 mun$type <- "市区町村の境界"
 # Combine gun boundary data
-gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
+gun <- gun_boundary %>%
+  summarise(geometry = sf::st_combine(geometry))
+gun$geometry <- sf::st_transform(gun$geometry, crs = sf::st_crs(4612))
 gun$type <- "郡の境界"
 
 # Municipality/Gun boundary
-boundary <- rbind(mun, gun)
+boundary <- bind_rows(mun, gun)
 
 # District Boundary of Optimal Plan
 matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
@@ -221,7 +225,6 @@ rm(cl_co,
    pref_gun,
    pref_non_gun,
    pref_gun_discontinuity,
-   chichibu,
    pref_pop_2020,
    pref_shp_2015,
    pref_mutual,
