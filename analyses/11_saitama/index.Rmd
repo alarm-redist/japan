@@ -7,7 +7,7 @@ output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
     self_contained: true
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -181,7 +181,6 @@ optimal_matrix <- redist::get_plans_matrix(sim_smc_pref_sample %>% filter(draw =
 colnames(optimal_matrix) <- "district"
 optimal_plan <- cbind(pref_map, optimal_matrix) %>% 
     mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
-
 ggplot() +
   geom_sf(data = optimal_plan, aes(fill = as.factor(color)), 
           show.legend = FALSE, lwd = 0) +
@@ -201,6 +200,7 @@ ggplot() +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
+
 ```
 
 # 共起分析
@@ -220,7 +220,6 @@ if(ndists_new > 6){
   pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
     mutate(color = .$membership)
 }
-
 # Co-occurrence plot
 ggplot() +
   geom_sf(data = pref_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), 
@@ -240,9 +239,18 @@ ggplot() +
               nudge_y = c(-3000, 3000, -3000, 3000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
-
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
+
+
+# Match membership data with map object
+if(ndists_new > 6){
+  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$membership)))
+} else{
+  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
+    mutate(color = .$membership)
+}
 ```
 
 # アルゴリズム設定
