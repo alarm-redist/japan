@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 2.010
 sq_mun_splits <- 8
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
-pop_tol <- 0.10
+pop_tol <- 0.20
 
 # Code of 郡 that are split under the status quo
 # Code of 郡 that are split under the status quo
