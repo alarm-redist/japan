@@ -118,8 +118,6 @@ pref_add_edge <-
     which(pref$code == 12460)[1],
     which(pref$code == 12460)[2],
     which(pref$code == 12460)[1],
-    which(pref$code == 12460)[3],
-    which(pref$code == 12460)[2],
     which(pref$code == 12460)[3]
     ), ncol = 2, byrow = TRUE)
 
@@ -131,14 +129,14 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.20,
+                               pop_tol= pop_tol,
                                total_pop = pop,
                                adj = prefadj)
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
 constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 4, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
 
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(

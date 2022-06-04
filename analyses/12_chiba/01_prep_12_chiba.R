@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 50000 # Set so that the number of valid plans > 5,000
 pref_code <- 12
 pref_name <- "chiba"
 lakes_removed <- c()
@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.994
 sq_mun_splits <- 5
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
-pop_tol <- 0.10
+pop_tol <- 0.25
 
 # Code of 郡 that are split under the status quo
 # For Chiba, which has many discontinuity of gun,
