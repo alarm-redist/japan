@@ -17,8 +17,6 @@ suppressMessages({
 })
 
 
-set.seed(12345)
-
 # Pull functions
 setwd("R")
 files.sources = list.files()
@@ -27,7 +25,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5000
+nsims <- 15000 # Set so that the number of valid plans > 5000
 pref_code <- 07
 pref_name <- "fukushima"
 lakes_removed <- c()

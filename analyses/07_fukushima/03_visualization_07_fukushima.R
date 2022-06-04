@@ -4,7 +4,10 @@
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-#Define using the municipality codes, not the gun codes
+# Define which municipality/gun belongs to which koiki renkei area
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c(7203, 7207, 7210, 7211, 7214, 7322, 7342, 7408, 7501, 7521)
 koiki_2_codes <- c(7205, 7461, 7464, 7465, 7466, 7481)
 koiki_3_codes <- c(7208, 7402)
@@ -52,7 +55,7 @@ for (i in 0)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims),
+                                  as.character(nsims * 2),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -80,7 +83,9 @@ koiki_5_0 <- pref_0$code
 koiki_5_0[koiki_5_0 %in% koiki_5_codes] <- 5
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
@@ -89,6 +94,9 @@ koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_3_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_4_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_5_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -108,6 +116,7 @@ functioning_results_0 <- results_0 %>% dplyr::filter(valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
