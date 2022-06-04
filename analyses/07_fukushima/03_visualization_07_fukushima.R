@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `07_fukushima`
-# © ALARM Project, April 2022
+# © ALARM Project, June 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
