@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `07_fukushima` analysis
-# © ALARM Project, April 2022
+# © ALARM Project, June 2022
 ###############################################################################
 
 suppressMessages({
