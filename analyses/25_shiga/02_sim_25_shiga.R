@@ -137,7 +137,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims),
+                                as.character(nsims * 2),
                                 "_",
                                 as.character(i),
                                 ".Rds",
