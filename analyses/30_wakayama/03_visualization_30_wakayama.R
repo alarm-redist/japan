@@ -4,8 +4,9 @@
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-# Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -50,7 +51,7 @@ for (i in 0)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims),
+                                  as.character(nsims * 2),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -70,11 +71,16 @@ koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_1_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -94,6 +100,7 @@ functioning_results_0 <- results_0 %>% dplyr::filter(valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
@@ -221,7 +228,7 @@ for (i in 0){
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
     # Remove the column "pop_overlap" that was created when renumbering the district numbers
-    select(1:3) %>%
+    select("draw", "district", "total_pop") %>%
 
     write_csv(paste("data-out/plans/",
                     as.character(pref_code),
