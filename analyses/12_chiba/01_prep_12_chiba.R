@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.994
 sq_mun_splits <- 5
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
-pop_tol <- 0.25
+pop_tol <- 0.20
 
 # Code of 郡 that are split under the status quo
 # For Chiba, which has many discontinuity of gun,
@@ -513,8 +513,8 @@ pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
     ungroup() %>%
     slice(1)
 pref_geom_only_1$sub_code = 90
-# Group together with `pref_mutual`
-pref_mutual[pref_noda_yotsukaido_mutual$code.y == "122280080",]$geometry <-
+# Group together with `pref_noda_yotsukaido_mutual`
+pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122280080",]$geometry <-
     sf::st_union(filter(pref_noda_yotsukaido_mutual, code.y == "122280080")$geometry,
                  filter(pref_geom_only_1, code.y == "122280090")$geometry)
 # remove the `geom_only_code` from the `geom_only`
@@ -530,8 +530,8 @@ pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
     ungroup() %>%
     slice(1)
 pref_geom_only_1$sub_code = 310
-# Group together with `pref_mutual`
-pref_mutual[pref_noda_yotsukaido_mutual$code.y == "122080230",]$geometry <-
+# Group together with `pref_noda_yotsukaido_mutual`
+pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080230",]$geometry <-
     sf::st_union(filter(pref_noda_yotsukaido_mutual, code.y == "122080230")$geometry,
                  filter(pref_geom_only_1, code.y == "122080310")$geometry)
 # remove the `geom_only_code` from the `geom_only`
@@ -547,8 +547,8 @@ pref_geom_only_1 <- pref_noda_yotsukaido_geom_only %>%
     ungroup() %>%
     slice(1)
 pref_geom_only_1$sub_code = 191
-# Group together with `pref_mutual`
-pref_mutual[pref_noda_yotsukaido_mutual$code.y == "122080192",]$geometry <-
+# Group together with `pref_noda_yotsukaido_mutual`
+pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080192",]$geometry <-
     sf::st_union(filter(pref_noda_yotsukaido_mutual, code.y == "122080192")$geometry,
                  filter(pref_geom_only_1, code.y == "122080191")$geometry)
 # remove the `geom_only_code` from the `geom_only`
@@ -801,6 +801,7 @@ pref_mutual[pref_mutual$code == "124430100",]$pop <-
     pref_mutual[pref_mutual$code == "124430100",]$pop +
     pref_pop_only[pref_pop_only$code == "124430110",]$pop
 
+#######################################################
 ### Assign remaining `pref_geom` into `pref_mutual` ###
 # Assign 松戸市 八ケ崎 of `pref_geom_only` into 松戸市 八ケ崎 of `pref_mutual`
 geom_only_code <- c("122071072")
@@ -818,7 +819,6 @@ pref_mutual[pref_mutual$code == "122071071",]$geometry <-
 # remove the `geom_only_code` from the `geom_only`
 pref_geom_only <- pref_geom_only %>%
     filter(code %in% geom_only_code == FALSE)
-
 
 # Assign 柏市 柏１丁目 of `pref_geom_only` into 柏市 柏 of `pref_mutual`
 geom_only_code <- c("122170190")

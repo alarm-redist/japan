@@ -105,6 +105,7 @@ functioning_results <- results %>%
   filter(respect_gun == length(respect_gun_code), multi == 0)
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
 sim_smc_pref_sample <- sim_smc_pref %>%
   filter(draw %in% valid_sample_pref)
