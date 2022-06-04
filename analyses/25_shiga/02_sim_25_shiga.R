@@ -1,6 +1,6 @@
 ###############################################################################
 # Simulations for `25_shiga`
-# © ALARM Project, April 2022
+# © ALARM Project, June 2022
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -92,9 +92,11 @@ run_simulations <- function(pref_n, prefadj_n){
                                    adj = prefadj_n)
 
   # Run simulation
+  set.seed(2020)
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
+    runs = 2L,
     pop_temper = 0.05
   )
 
@@ -161,6 +163,11 @@ run_simulations <- function(pref_n, prefadj_n){
 
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref_0)
+summary(sim_smc_pref_1)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and

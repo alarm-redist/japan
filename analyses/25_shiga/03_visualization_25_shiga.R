@@ -5,7 +5,9 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c(25202, 25425, 25441, 25442, 25443)
 
 
@@ -120,6 +122,7 @@ functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
