@@ -135,7 +135,7 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
 constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
 
 set.seed(2020)
