@@ -4,8 +4,9 @@
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-# Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c(38201, 38210, 38215, 38386, 38401, 38402)
 koiki_2_codes <- c(38203, 38484, 38488, 38506)
 
@@ -50,7 +51,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims),
+                                  as.character(nsims * 2),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -64,7 +65,7 @@ for (i in 0:1)
 
 # Add 松山市 back to result of simulation with 0 split
 sim_smc_pref_0_with_Matsuyama <- NULL
-for(i in 1:nsims){
+for(i in 1:as.integer(nsims*2)){
   with_Matsuyama <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_0 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
@@ -75,7 +76,7 @@ for(i in 1:nsims){
 
 # Add 旧松山市 back to result of simulation with 1 split
 sim_smc_pref_1_with_Matsuyama <- NULL
-for(i in 1:nsims){
+for(i in 1:as.integer(nsims*2)){
   with_Matsuyama <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_1 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
@@ -104,16 +105,27 @@ num_mun_split_1 <- 1
 mun_split_1 <- 1
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new - 1, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code) %>%
+  matrix(ncol = ndists_new - 1, byrow = TRUE)
+gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
   1 + #We know that koiki_1 is split because Matsuyama-shi is set aside.
   redist::redist.splits(pref_smc_plans_0, koiki_2_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new - 1, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
+
 koiki_split_1 <-
   1 + #We know that koiki_1 is split because Kyu-Matsuyama-shi is set aside.
   redist::redist.splits(pref_smc_plans_1, koiki_2_1)
+koiki_split_1 <- koiki_split_1 %>%
+  matrix(ncol = ndists_new - 1, byrow = TRUE)
+koiki_split_1 <- koiki_split_1[,1]
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -146,6 +158,7 @@ functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
@@ -318,6 +331,8 @@ for (i in 0:1){
 sim_smc_pref_0_with_Matsuyama %>%
   filter(draw %in% valid_sample_0) %>%
 
+  select("draw", "district", "total_pop") %>%
+
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
   write_csv(paste("data-out/plans/",
@@ -332,6 +347,8 @@ sim_smc_pref_0_with_Matsuyama %>%
 # Merge with Matsuyama
 sim_smc_pref_1_with_Matsuyama %>%
   filter(draw %in% valid_sample_1) %>%
+
+  select("draw", "district", "total_pop") %>%
 
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
