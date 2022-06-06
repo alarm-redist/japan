@@ -38,7 +38,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "さいたま市見沼区、熊谷市、 川口市、春日部市、鴻巣市、 越谷市、久喜市、ふじみ野市" 
 sq_gun_splits_name <- "入間郡"
 sq_koiki_splits_name <- ""
-optimal_splits_name <- "xxxxx"
+optimal_splits_name <- "さいたま市岩槻区、さいたま市北区、川越市、川口市、富士見市、鴻巣市、熊谷市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -65,7 +65,7 @@ table_summary <- dplyr::tribble(
   "県内較差", sq_max_to_min, optimal_max_to_min, 
   "改善率", NA, (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split, 
+  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split - 1, #gun_split is counted in the Urban template 
   "郡の分割", sq_gun_splits, results_sample[which(results_sample$index == optimal),]$gun_split, 
   "広域連携地域の分割", sq_koiki_splits, results_sample[which(results_sample$index == optimal),]$koiki_split
 ) 
@@ -125,6 +125,13 @@ table_summary %>%
       rows = 4
     ) 
   ) %>% 
+  tab_footnote(
+    footnote = sq_gun_splits_name,
+    locations = cells_body(
+      columns = 2:3,
+      rows = 5
+    ) 
+  ) %>% 
   opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
@@ -178,23 +185,24 @@ ggplot() +
 
 ```{r optimal plan}
 optimal_matrix <- redist::get_plans_matrix(sim_smc_pref_sample %>% filter(draw == optimal))
-colnames(optimal_matrix) <- "district"
-optimal_plan <- cbind(pref_map, optimal_matrix) %>% 
-    mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
+ colnames(optimal_matrix) <- "district"
+ optimal_plan <- cbind(pref_map, optimal_matrix) %>% 
+     mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
+ 
 ggplot() +
-  geom_sf(data = optimal_plan, aes(fill = as.factor(color)), 
-          show.legend = FALSE, lwd = 0) +
-  scale_fill_manual(values = PAL, guide = "none") + 
-  
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
-  
-  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "black", "white"),
-              nudge_x = c(0, 2000, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000), # adjust the position of the labels
+   geom_sf(data = optimal_plan, aes(fill = as.factor(color)), 
+           show.legend = FALSE, lwd = 0) +
+   scale_fill_manual(values = PAL, guide = "none") + 
+   
+   geom_sf(data = boundary, aes(color = type), show.legend = "line", 
+           fill = NA, lwd = 0.4) +
+   scale_color_manual(values = c("grey60", "grey30")) +
+   
+   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+   geom_sf_text(data = cities, aes(label = names), size = 3,
+              color = c("white", "black", "black", "black"),
+              nudge_x = c(-1500, 0, 0, 0), # adjust the position of the labels
+              nudge_y = c(-5000, -4000, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
   
@@ -234,9 +242,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "white", "black"),
-              nudge_x = c(8000, 2000, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000), # adjust the position of the labels
+              color = c("white", "white", "black", "black"),
+              nudge_x = c(0, 0, 0, 0), # adjust the position of the labels
+              nudge_y = c(3000, -3000, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
