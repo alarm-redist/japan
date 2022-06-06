@@ -1,7 +1,7 @@
 ---
 title: "埼玉県 (議員定数：15 →16)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: June 6, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -161,9 +161,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black"),
-              nudge_x = c(4000, 2000, 0, 0), # adjust the position of the labels
-              nudge_y = c(3000, 3000, -3000, 3000), # adjust the position of the labels
+              color = c("black", "black", "black", "white"),
+              nudge_x = c(2000, 0, 0, 1000), # adjust the position of the labels
+              nudge_y = c(4000, -3000, -5000, -2500), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
   
@@ -265,9 +265,7 @@ if(ndists_new > 6){
 
 ### 県特有の設定  
 * 以下の地域は隣接するものとして扱った
-  * list
-  * list
-  * list
+  * 深谷市横瀬の一部は他県に囲われた飛び地だが、現行の区割りに従い、本プロジェクトも横瀬と地続きとして扱った
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
