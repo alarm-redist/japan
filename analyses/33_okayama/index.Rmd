@@ -1,7 +1,7 @@
 ---
 title: "岡山県 (議員定数：5 → 4)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: May 31, 2022
+date: June 7, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -39,8 +39,6 @@ sq_mun_splits_name <- "岡山市北区・南区・東区、吉備中央町、真
 sq_gun_splits_name <- "加賀郡"
 sq_koiki_splits_name <- "岡山連携中枢都市圏、高梁川流域連携中枢都市圏"
 split_1_name <- "倉敷市"
-## Default Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -171,8 +169,8 @@ if(ndists_old > 6){
     mutate(color = ku)
 }
 
-## Change order of color palette
-PAL <- c('#7F4E28' , '#DCAD35', '#364B7F', '#9A9BB9', '#6D9537', '#7F4E28')
+## Color palette
+PAL <- c('#9A9BB9', '#DCAD35', '#364B7F', '#7F4E28', '#6D9537')
 
 # Plot Map
 ggplot() +
@@ -185,7 +183,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names),  size = 3,
-               color = c("white", "black"),
+               color = c("black", "white"),
               nudge_x = c(-0.04, 0), # adjust the position of the labels
               nudge_y = c(0.035,-0.035), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -206,11 +204,15 @@ kurashiki <- pref %>%
 ```
 
 ```{r optimal plan (0 split)}
+## Adjust Color palette
+PAL <- c('#6D9537', '#DCAD35', '#364B7F')
+
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
-  labs(title = element_blank())+
+  labs(title = element_blank()) +
+  scale_fill_manual(values = PAL, guide = "none") +
   
   # add Kurashiki-shi
-  geom_sf(data = kurashiki, fill = '#9A9BB9', color = "grey30", lwd = 0.4) + 
+  geom_sf(data = kurashiki, fill = '#7F4E28', color = "grey30", lwd = 0.4) + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -218,7 +220,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names),  size = 3,
-              color = c("black", "black"),
+              color = c("white", "white"),
               nudge_x = c(-5000, 0), # adjust the position of the labels
               nudge_y = c(5000,-5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -234,7 +236,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 
 ```{r optimal plan (1split)}
 # Reorder the color palette
-PAL <- c('#9A9BB9', '#364B7F', '#6D9537', '#DCAD35')
+PAL <- c('#7F4E28', '#DCAD35', '#6D9537', '#364B7F')
 
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank())+ 
@@ -247,7 +249,7 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-               color = c("black", "black"),
+               color = c("white", "white"),
                nudge_x = c(-5000, 0), # adjust the position of the labels
                nudge_y = c(5000,-5000), # adjust the position of the labels
                family = "HiraginoSans-W3") +
@@ -277,7 +279,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#6D9537', '#DCAD35', '#364B7F')
+PAL <- c('#6D9537', '#364B7F', '#DCAD35')
 
 # Co-occurrence plot
 ggplot() +
@@ -291,7 +293,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names),  size = 3,
-               color = c("black", "black"),
+               color = c("white", "black"),
               nudge_x = c(-5000, 0), # adjust the position of the labels
               nudge_y = c(5000,-5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +

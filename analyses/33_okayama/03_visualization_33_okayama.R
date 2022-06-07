@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `33_Okayama`
-# © ALARM Project, April 2021
+# © ALARM Project, June 2021
 ###############################################################################
 # TODO Define the koiki-renkei areas (広域連携)
 # Define using the codes in the column `pref$code`
