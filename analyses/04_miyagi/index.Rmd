@@ -1,7 +1,7 @@
 ---
 title: "宮城県 (議員定数：6 → 5)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: May 31, 2022
+date: June 7, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -38,8 +38,6 @@ sq_mun_splits_name <- "仙台市太白区、大崎市"
 sq_gun_splits_name <- "宮城郡、黒川郡"
 sq_koiki_splits_name <- "大崎定住自立圏"
 split_1_name <- "石巻市"
-## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -169,6 +167,10 @@ if(ndists_old > 6){
   sq_pref_map <- sq_pref %>% 
     mutate(color = ku)
 }
+
+## Color Palette
+PAL <- c('#6D9537', '#7F4E28', '#2A4E45', '#DCAD35', '#364B7F','#9A9BB9')
+
 # Plot Map
 ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
@@ -195,8 +197,12 @@ ggplot() +
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
+# Reorder the color palette 
+PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#7F4E28', '#2A4E45')
+
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
-  labs(title = element_blank())+
+  labs(title = element_blank()) + 
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -218,8 +224,6 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
-# Reorder the color palette 
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45')
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank()) + 
   scale_fill_manual(values = PAL, guide = "none") +
@@ -260,7 +264,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#DCAD35', '#9A9BB9', '#6D9537', '#2A4E45', '#364B7F')
+PAL <- c('#DCAD35', '#7F4E28', '#6D9537', '#2A4E45', '#364B7F')
 
 # Co-occurrence plot
 ggplot() +
