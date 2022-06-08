@@ -44,16 +44,16 @@ pref_gun_discontinuity <- pref_non_gun %>%
   dplyr::mutate(gun_block = case_when(
     code %in% c(12322) == TRUE ~ 12322,
     code %in% c(12329) == TRUE ~ 12329,
-    code %in% c(12342) == TRUE ~ 12342,
-    code %in% c(12347) == TRUE ~ 12347,
-    code %in% c(12349) == TRUE ~ 12349,
+    # Merge 香取市 and 香取郡 together
+    code %in% c(12236, 12342, 12347, 12349) == TRUE ~ 12342,
     code %in% c(12403, 12409) == TRUE ~ 12403,
     code %in% c(12410) == TRUE ~ 12410,
     code %in% c(12441) == TRUE ~ 12441,
     code %in% c(12443) == TRUE ~ 12443 )) %>%
   dplyr::group_by(gun_block) %>%
   dplyr::summarise(code = dplyr::first(gun_code),
-                   gun_code = dplyr::first(gun_code),
+                   # use `last()` to assign `gun_code` of 香取郡
+                   gun_code = dplyr::last(gun_code),
                    pop = sum(pop),
                    geometry = sf::st_union(geometry))
 
@@ -135,8 +135,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$code)
+#constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
 
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
