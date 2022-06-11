@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `38_Ehime`
-# © ALARM Project, March 2021
+# © ALARM Project, June 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -191,7 +191,8 @@ optimal_split <- dplyr::inner_join(as.data.frame(pref_1),
                                    as.data.frame(optimal_boundary_0),
                                    by = "code")
 sim_smc_pref_1_sample <- redist::match_numbers(sim_smc_pref_1_sample,
-                                               optimal_split$district,
+                                               # Add 旧北条市および旧中島町
+                                               c(1, 1, optimal_split$district),
                                                col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries

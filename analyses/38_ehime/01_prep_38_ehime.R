@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 50000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 38
 pref_name <- "ehime"
 lakes_removed <- c()
@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.684
 sq_mun_splits <- 1
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
-pop_tol <- 0.50 # Set so that re-sampling efficiencies are > 80% at each stage
+pop_tol <- 0.25 # Set so that re-sampling efficiencies are > 80% at each stage
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
