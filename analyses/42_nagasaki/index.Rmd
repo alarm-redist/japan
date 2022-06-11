@@ -41,7 +41,7 @@ sq_koiki_splits_name <- "長崎広域連携中枢都市圏、西九州させぼ�
 split_1_name <- "長崎市"
 
 ## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#9A9BB9', '#DCAD35', '#364B7F', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -198,7 +198,7 @@ ggplot() +
 
 ```{r optimal plan (0 split)}
 # Reorder the color palette
-PAL <- c('#9A9BB9','#DCAD35', '#6D9537')
+PAL <- c('#364B7F', '#DCAD35', '#6D9537')
 
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+ 
@@ -225,7 +225,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 
 ```{r optimal plan (1split)}
 # Reorder the color palette
-PAL <- c('#9A9BB9', '#DCAD35','#6D9537')
+PAL <- c('#364B7F', '#DCAD35','#6D9537')
 
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank())+ 
@@ -267,7 +267,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#6D9537', '#9A9BB9', '#DCAD35')
+PAL <- c('#6D9537', '#364B7F', '#DCAD35')
 
 # Co-occurrence plot
 ggplot() +
