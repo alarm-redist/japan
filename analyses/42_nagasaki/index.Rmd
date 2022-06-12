@@ -1,7 +1,7 @@
 ---
 title: "長崎県 (議員定数：4 → 3)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: April 29, 2022
+date: June 6, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -41,7 +41,7 @@ sq_koiki_splits_name <- "長崎広域連携中枢都市圏、西九州させぼ�
 split_1_name <- "長崎市"
 
 ## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#9A9BB9', '#DCAD35', '#364B7F', '#2A4E45', '#7F4E28')
 ```
 
 ```{r load data, include=FALSE}
@@ -198,7 +198,7 @@ ggplot() +
 
 ```{r optimal plan (0 split)}
 # Reorder the color palette
-PAL <- c('#364B7F','#DCAD35', '#6D9537')
+PAL <- c('#364B7F', '#DCAD35', '#6D9537')
 
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+ 
@@ -267,7 +267,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#6D9537', '#DCAD35', '#364B7F')
+PAL <- c('#6D9537', '#364B7F', '#DCAD35')
 
 # Co-occurrence plot
 ggplot() +
@@ -276,7 +276,7 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.015) +
+          fill = NA, lwd = 0.008) +
   scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
@@ -298,7 +298,7 @@ ggplot() +
   + 旧市区町村単位の人口（総人口-外国人人口）は、合併後の市区町村の人口（総人口-外国人人口）と旧市区町村単位の日本人人口を元に推計
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(nsims, big.mark = ",")`作成 
+* 逐次モンテカルロ法(SMC)による2つの独立したシミュレーションにより、市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(2 * nsims, big.mark = ",")`作成
 * 以下の案を棄却し有効な案を選定
   + 飛び地が生じる案
   + 市区町村が3つ以上の選挙区に分割される案
