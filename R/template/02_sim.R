@@ -223,7 +223,7 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
-# to calculate area size, switch off the `geometry (s2)``
+# to calculate area size, switch off the `geometry (s2)`
 sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
@@ -244,7 +244,8 @@ for (i in 2:nrow(pref))
   pref_sep <- rbind(pref_sep, new_rows)
 }
 
-
+# switch on `geometry (s2)`
+sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
 
 # Make adjacency list
