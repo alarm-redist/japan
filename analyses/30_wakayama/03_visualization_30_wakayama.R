@@ -51,7 +51,7 @@ for (i in 0)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
