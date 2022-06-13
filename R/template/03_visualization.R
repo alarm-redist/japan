@@ -420,7 +420,9 @@ results$respect_gun <- colSums(respect_gun_matrix)
 # Filter out plans with multi-splits
 # as well as plans that split gun that should have been respected
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code), multi == 0)
+  filter(respect_gun == length(respect_gun_code), 
+         multi == 0,
+         mun_split <= sq_mun_splits)
 
 # Sample 5,000 plans
 set.seed(2020)
