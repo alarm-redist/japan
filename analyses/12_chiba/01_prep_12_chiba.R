@@ -650,7 +650,8 @@ pref_mutual[pref_mutual$code == "122170140",]$pop <-
 pref_mutual_new_address <- pref_mutual %>%
     dplyr::filter(code %in% c("122170140",
                               "122170870",
-                              "122170420")) %>%
+                              "122170420",
+                              "122170010")) %>%
     dplyr::summarise(code = first(code),
                      mun_code = first(mun_code),
                      sub_code = first(sub_code),
@@ -665,7 +666,8 @@ pref_mutual_new_address <- pref_mutual %>%
 pref_mutual_without_new_address <- pref_mutual %>%
     dplyr::filter(!code %in% c("122170140",
                                "122170870",
-                               "122170420"))
+                               "122170420",
+                               "122170010"))
 # Combine them together
 pref_mutual <- pref_mutual_new_address %>%
     dplyr::bind_rows(pref_mutual_without_new_address)
@@ -681,8 +683,8 @@ pref_mutual[pref_mutual$code == "122191100",]$pop <-
     pref_pop_only[pref_pop_only$code == "122192970",]$pop
 
 # Assign 流山市 おおたかの森東 and おおたかの森西 in to 十太夫 (geom),
-# and merge those blocks (大字流山, 駒木, 東初石, 十太夫,
-# 西初石, 市野谷 大字大畔 大字三輪野山 野々下, 美田) together.
+# and merge those blocks (十太夫, 大字流山, 駒木, 東初石,
+# 西初石, 市野谷, 大字大畔, 大字三輪野山, 野々下, 美田) together.
 # Moreover, since おおたかの森北 is assigned to 美原 in the `pref_mutual` ,
 # we will assigned the population of おおたかの森北 together
 # This is because おおたかの森 was newly created in 2019 by combining parts of those blocks.
@@ -753,7 +755,7 @@ pref_mutual[pref_mutual$code == "122290010",]$pop <-
 pref_mutual_new_address <- pref_mutual %>%
     dplyr::filter(code %in% c("122290010",
                               "122290021",
-                              "122290021" # 奈良輪 has two codes
+                              "122290022" # 奈良輪 has two codes
                               )) %>%
     dplyr::summarise(code = first(code),
                      mun_code = first(mun_code),
@@ -769,7 +771,7 @@ pref_mutual_new_address <- pref_mutual %>%
 pref_mutual_without_new_address <- pref_mutual %>%
     dplyr::filter(!code %in% c("122290010",
                                "122290021",
-                               "122290021" # 奈良輪 has two codes
+                               "122290022" # 奈良輪 has two codes
                                ))
 # Combine them together
 pref_mutual <- pref_mutual_new_address %>%
@@ -864,7 +866,7 @@ pref_geom_only_1 <- pref_geom_only %>%
   mutate(geometry = sf::st_union(geometry)) %>%
   ungroup() %>%
   slice(1)
-pref_geom_only_1$sub_code = 312
+pref_geom_only_1$sub_code = 322
 # Group together with `pref_mutual`
 pref_mutual[pref_mutual$code == "122171100",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "122171100")$geometry,
@@ -1055,7 +1057,7 @@ pref_geom_only_1 <- pref_geom_only %>%
   mutate(geometry = sf::st_union(geometry)) %>%
   ungroup() %>%
   slice(1)
-pref_geom_only_1$sub_code = 440
+pref_geom_only_1$sub_code = 520
 # Group together with `pref_mutual`
 pref_mutual[pref_mutual$code == "122300060",]$geometry <-
   sf::st_union(filter(pref_mutual, code == "122300060")$geometry,
