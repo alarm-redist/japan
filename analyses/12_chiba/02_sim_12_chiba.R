@@ -46,13 +46,14 @@ pref_gun_discontinuity <- pref_non_gun %>%
     code %in% c(12329) == TRUE ~ 12329,
     # Merge 香取市 and 香取郡 together
     code %in% c(12236, 12342, 12347, 12349) == TRUE ~ 12342,
-    code %in% c(12403, 12409) == TRUE ~ 12403,
+    code %in% c(12403) == TRUE ~ 12403,
+    code %in% c(12409) == TRUE ~ 12409,
     code %in% c(12410) == TRUE ~ 12410,
-    code %in% c(12441) == TRUE ~ 12441,
-    code %in% c(12443) == TRUE ~ 12443 )) %>%
+    # Merge いすみ市 and 夷隅郡 together
+    code %in% c(12238, 12441, 12443) == TRUE ~ 12441)) %>%
   dplyr::group_by(gun_block) %>%
   dplyr::summarise(code = dplyr::first(gun_code),
-                   # use `last()` to assign `gun_code` of 香取郡
+                   # use `last()` to assign `gun_code` of 香取郡 and 夷隅郡
                    gun_code = dplyr::last(gun_code),
                    pop = sum(pop),
                    geometry = sf::st_union(geometry))
@@ -75,6 +76,8 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
+# To calculate area, switch off the `geometry (s2)``
+sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -83,11 +86,18 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+  # order by size of the area
+  new_rows <- new_rows %>%
+    dplyr::mutate(area = sf::st_area(geometry)) %>%
+    dplyr::arrange(desc(area)) %>%
+    dplyr::select(-area)
+  # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
-
+# To calculate area,switch on the `geometry (s2)``
+sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
 
 # Make adjacency list
@@ -135,14 +145,14 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$code)
-#constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 1, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 4, admin = pref_map$code)
 
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
-  runs = 2L,
+  runs = 4L,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
@@ -190,7 +200,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims * 2),
+                            as.character(nsims * 4),
                             ".Rds",
                             sep = ""))
 

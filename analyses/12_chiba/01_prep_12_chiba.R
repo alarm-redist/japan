@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 50000 # Set so that the number of valid plans > 5,000
+nsims <- 30000 # Set so that the number of valid plans > 5,000
 pref_code <- 12
 pref_name <- "chiba"
 lakes_removed <- c()
@@ -42,9 +42,10 @@ pop_tol <- 0.20
 # we will set those gun as `gun_exception` to use in the `02_sim` process.
 gun_exception <- c(12320, # Inba (12322, 12329)
                    12340, # Katori (12342, 12347, 12349)
-                   12236, ##mehtod for Chiba: merge with Katori-gun##
+                   12236, ##mehtod for Chiba: Katori-shi -- merge with Katori-gun##
                    12400, # Sanbu  (12403, 12409, 12410)
-                   12440 # Kodama (12441, 12443)
+                   12440, # Isumi (12441, 12443)
+                   12238 ##mehtod for Chiba: Isumi-shi -- merge with Isumi-gun##
 )
 
 # Change time limit
@@ -282,8 +283,8 @@ pref_noda_yotsukaido_mutual <- rbind(pref_noda_yotsukaido_mutual, pref_geom_only
 pref_noda_yotsukaido_geom_only <- pref_noda_yotsukaido_geom_only %>%
     filter(code.y %in% geom_only_code == FALSE)
 
-# Assign なみき (pop) to 次木 (mutual), and merge six blocks (次木 親野井 古布内) together.
-# This is because なみき is newly created in 2016 by combining parts of those three blocks.
+# Assign なみき (pop) to 次木 (mutual), and merge three blocks (次木 親野井 古布内) together.
+# This is because なみき was newly created in 2016 by combining parts of those three blocks.
 pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080630",]$pop <-
     pref_noda_yotsukaido_mutual[pref_noda_yotsukaido_mutual$code.y == "122080630",]$pop +
     pref_noda_yotsukaido_pop_only[pref_noda_yotsukaido_pop_only$code.x == "122080810",]$pop
@@ -608,7 +609,7 @@ pref_mutual[pref_mutual$code == "122100700",]$pop <-
     pref_pop_only[pref_pop_only$code == "122100830",]$pop
 
 # Assign 佐倉市 寺崎北 to 寺崎, and merge two blocks (六崎 寺崎) together.
-# This is because 佐倉市 寺崎北 is newly created in 2015 by combining parts of those two blocks.
+# This is because 佐倉市 寺崎北 was newly created in 2015 by combining parts of those two blocks.
 pref_mutual[pref_mutual$code == "122120980",]$pop <-
     pref_mutual[pref_mutual$code == "122120980",]$pop +
     pref_pop_only[pref_pop_only$code == "122120981",]$pop
@@ -640,7 +641,7 @@ pref_mutual[pref_mutual$code == "122130150",]$pop <-
     pref_pop_only[pref_pop_only$code == "122130720",]$pop
 
 # Assign 柏市 柏インター東 and 柏インター南 in to 大青田, and merge four blocks (大青田 船戸 新十余二 ⻘⽥新⽥⾶地) together.
-# This is because 柏市 柏インター東 and 柏インター南 is newly created in 2016 and 2018  by combining parts of four blocks.
+# This is because 柏市 柏インター東 and 柏インター南 was newly created in 2016 and 2018  by combining parts of four blocks.
 pref_mutual[pref_mutual$code == "122170140",]$pop <-
     pref_mutual[pref_mutual$code == "122170140",]$pop +
     pref_pop_only[pref_pop_only$code == "122171360",]$pop +
@@ -684,7 +685,7 @@ pref_mutual[pref_mutual$code == "122191100",]$pop <-
 # 西初石, 市野谷 大字大畔 大字三輪野山 野々下, 美田) together.
 # Moreover, since おおたかの森北 is assigned to 美原 in the `pref_mutual` ,
 # we will assigned the population of おおたかの森北 together
-# This is because おおたかの森 is newly created in 2019 by combining parts of those blocks.
+# This is because おおたかの森 was newly created in 2019 by combining parts of those blocks.
 geom_only_code <- c("122200560")
 pref_geom_only_1 <- pref_geom_only %>%
   filter(code %in% geom_only_code)
@@ -744,7 +745,7 @@ pref_mutual[pref_mutual$code == "122200650",]$pop <-
     pref_pop_only[pref_pop_only$code == "122200200",]$pop
 
 # Assign 袖ケ浦市 袖ケ浦駅前 to 坂戸市場, and merge two blocks (坂戸市場 奈良輪) together.
-# This is because 袖ケ浦市 袖ケ浦駅前 is newly created in 2019 by combining parts of two blocks.
+# This is because 袖ケ浦市 袖ケ浦駅前 was newly created in 2019 by combining parts of two blocks.
 pref_mutual[pref_mutual$code == "122290010",]$pop <-
     pref_mutual[pref_mutual$code == "122290010",]$pop +
     pref_pop_only[pref_pop_only$code == "122290069",]$pop

@@ -32,7 +32,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims * 2),
+                              as.character(nsims * 4),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
@@ -81,8 +81,11 @@ results$index <- 1:nrow(wgt_smc)
 
 # Confirm that the gun boundaries that are respected under the enacted plan
 # are respected under the simulated plans
-
-# Define the codes of the gun that must be kept together in the same district
+# For Chiba, we will assign `gun_exception` here that allows splits.
+# This is because we assigned `gun_exception` in `01_prep_12_chiba` uniquely,
+# in order to deal with discontiguous 郡
+# Code of 郡 that are split under the status quo
+gun_exception <- c(12400) # Sanbu
 respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
 
 # Evaluate whether the gun that must be kept together in the same district are
@@ -102,7 +105,9 @@ results$respect_gun <- colSums(respect_gun_matrix)
 # Filter out plans with multi-splits
 # as well as plans that split gun that should have been respected
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code), multi == 0)
+  filter(respect_gun == length(respect_gun_code),
+         multi == 0,
+         mun_split <= sq_mun_splits)
 
 # Sample 5,000 plans
 set.seed(2020)
