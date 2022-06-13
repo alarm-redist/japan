@@ -91,12 +91,13 @@ run_simulations <- function(pref_n, prefadj_n){
                                    total_pop = pop,
                                    adj = prefadj_n)
 
+  #set random seed
+  set.seed(Sys.time())
   # Run simulation
-  set.seed(2020)
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
-    runs = 2L,
+    runs = 4L,
     pop_temper = 0.05
   )
 
@@ -137,7 +138,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims * 2),
+                                as.character(nsims * 4),
                                 "_",
                                 as.character(i),
                                 ".Rds",
