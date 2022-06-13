@@ -52,7 +52,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -344,7 +344,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims * 2),
+                              as.character(nsims * 4),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
