@@ -45,7 +45,7 @@
 * [衆議院議員選挙の小選挙区のポリゴンデータ (東京大学空間情報科学研究センター 西沢明）](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/)
 
 ## データの処理
-TODO: set.seed()
+### TODO: set.seed()
 
 ## ファイル内容
 * `25_shiga_hr_2020_map_0.rds`, `25_shiga_hr_2020_map_1.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。
