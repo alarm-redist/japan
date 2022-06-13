@@ -1,7 +1,7 @@
 ---
 title: "広島県 (議員定数：7 → 6)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: April 23, 2022
+date: June 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -197,8 +197,12 @@ ggplot() +
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
+## Reorder color Palette
+PAL <- c('#6D9537', '#DCAD35', '#364B7F', '#9A9BB9', '#2A4E45', '#7F4E28')
+
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
-  labs(title = element_blank())+
+  labs(title = element_blank()) +
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -208,7 +212,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               nudge_x = c(-6000, 0, 10000), # adjust the position of the labels
               nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
-              color = c("white", "black", "white"),
+              color = c("black", "white", "white"),
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -222,7 +226,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 
 ```{r optimal plan (1split)}
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
-  labs(title = element_blank())+
+  labs(title = element_blank()) +
+  scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = 0.4) +
@@ -231,9 +236,9 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              nudge_x = c(0, 0, 10000), # adjust the position of the labels
-              nudge_y = c(8000, 7000, 2000), # adjust the position of the labels
-              color = c("white", "white", "white"),
+              nudge_x = c(0, -13000, 10000), # adjust the position of the labels
+              nudge_y = c(8000, 0, 2000), # adjust the position of the labels
+              color = c("black", "white", "white"),
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -261,7 +266,7 @@ if(ndists_new > 6){
 }
 
 ## Reorder Color Palette
-PAL <- c('#6D9537', '#364B7F',  '#9A9BB9', '#DCAD35','#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#9A9BB9', '#7F4E28', '#DCAD35', '#2A4E45', '#7F4E28')
 
 # Co-occurrence plot
 ggplot() +
@@ -277,7 +282,7 @@ ggplot() +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               nudge_x = c(-6000, 0, 10000), # adjust the position of the labels
               nudge_y = c(9000, 7000, 2000), # adjust the position of the labels
-              color = c("white", "black", "white"),
+              color = c("black", "black", "white"),
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -293,7 +298,7 @@ ggplot() +
   + 旧市区町村単位の人口（総人口-外国人人口）は、合併後の市区町村の人口（総人口-外国人人口）と旧市区町村単位の日本人人口を元に推計
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(nsims, big.mark = ",")`作成 
+* 逐次モンテカルロ法(SMC)による2つの独立したシミュレーションにより、市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(nsims * 2, big.mark = ",", scientific = FALSE)`作成
 * 以下の案を棄却し有効な案を選定
   + 飛び地が生じる案
   + 市区町村が3つ以上の選挙区に分割される案

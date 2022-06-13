@@ -223,6 +223,8 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
+# to calculate area size, switch off the `geometry (s2)`
+sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -231,11 +233,19 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+  # order by size of the area
+  new_rows <- new_rows %>%
+    dplyr::mutate(area = sf::st_area(geometry)) %>%
+    dplyr::arrange(desc(area)) %>%
+    dplyr::select(-area)
+  # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
 
+# switch on `geometry (s2)`
+sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
 
 # Make adjacency list

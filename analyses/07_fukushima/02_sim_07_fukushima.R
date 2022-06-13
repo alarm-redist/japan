@@ -1,6 +1,6 @@
 ###############################################################################
 # Simulations for `07_fukushima`
-# © ALARM Project, April 2022
+# © ALARM Project, June 2022
 ###############################################################################
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -61,9 +61,11 @@ run_simulations <- function(pref_n, prefadj_n){
                                    adj = prefadj_n)
 
   # Run simulation
+  set.seed(2020)
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
+    runs = 2L,
     pop_temper = 0.05
   )
 
@@ -104,7 +106,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims),
+                                as.character(nsims * 2),
                                 "_",
                                 as.character(i),
                                 ".Rds",
@@ -135,6 +137,10 @@ run_simulations <- function(pref_n, prefadj_n){
 # The last time any municipality was merged into いわき市 was 1966.
 # Thus, we only run a 0_split model
 run_simulations(pref_0, prefadj_0)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref_0)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
