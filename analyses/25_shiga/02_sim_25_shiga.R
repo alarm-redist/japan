@@ -91,7 +91,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                    total_pop = pop,
                                    adj = prefadj_n)
 
-  #set random seed
+  #set random seed, and try until SMC runs without error
   set.seed(Sys.time())
   # Run simulation
   sim_smc_pref_n <- redist::redist_smc(
