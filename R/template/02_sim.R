@@ -96,7 +96,7 @@ run_simulations <- function(pref_n, prefadj_n){
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
-    runs = 2L,
+    runs = 4L,
     pop_temper = 0.05
   )
 
@@ -137,7 +137,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims * 2),
+                                as.character(nsims * 4),
                                 "_",
                                 as.character(i),
                                 ".Rds",
@@ -291,7 +291,7 @@ set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
-  runs = 2L,
+  runs = 4L,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
@@ -339,7 +339,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims * 2),
+                            as.character(nsims * 4),
                             ".Rds",
                             sep = ""))
 
