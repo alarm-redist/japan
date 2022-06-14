@@ -417,10 +417,11 @@ for(i in 1:length(respect_gun_code)){
 # Store result
 results$respect_gun <- colSums(respect_gun_matrix)
 
-# Filter out plans with multi-splits
-# as well as plans that split gun that should have been respected
+# Discard plans with multi-splits, plans that split gun that are not split
+# under the enacted plan, and plans that result in more municipality
+# splits than the number of municipality splits under the enacted plan.
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code), 
+  filter(respect_gun == length(respect_gun_code),
          multi == 0,
          mun_split <= sq_mun_splits)
 
