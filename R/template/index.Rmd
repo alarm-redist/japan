@@ -193,6 +193,11 @@ ggplot() +
 # アルゴリズムの提案
 アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
+<!-- # When plan diversity is low -->
+<!-- 注: シミュレーション結果の区割り案の多様性が、理想より低い。 -->
+<!-- # When resampling efficiency is less than 5% -->
+<!-- 注:リサンプリング時の効率が理想より悪い。 -->
+
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
