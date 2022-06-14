@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `23_aichi` analysis
-# © ALARM Project, May 2021
+# © ALARM Project, June 2021
 ###############################################################################
 
 suppressMessages({
@@ -16,8 +16,6 @@ suppressMessages({
     devtools::load_all() # load utilities
 })
 
-set.seed(12345)
-
 # Pull functions
 setwd("R")
 files.sources = list.files()
@@ -26,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 1000 # Set so that the number of valid plans > 5,000
 pref_code <- 23
 pref_name <- "aichi"
 lakes_removed <- c()
@@ -37,7 +35,7 @@ sq_max_to_tottori2 <- 2.012
 sq_mun_splits <- 3
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
-pop_tol <- 0.20
+pop_tol <- 0.30
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
@@ -219,7 +217,6 @@ pref_mutual <- pref_mutual %>%
   filter(code %in% c("232132050", "232132060", "232132070") == FALSE)
 
 pref_mutual <- bind_rows(pref_mutual, toyama)
-
 
 # Assign 常滑市虹の丘 to 常滑市大鳥町・大和町・森西町・錦町
 nijinooka <- pref_mutual %>%

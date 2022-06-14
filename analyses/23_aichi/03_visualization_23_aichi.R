@@ -1,12 +1,12 @@
 ###############################################################################
 # Data visualization for `23_aichi`
-# © ALARM Project, May 2021
+# © ALARM Project, June 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-# Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
-# For urban prefectures, define using gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c(23210, 23225, 23227, 23440)  #23440　知多郡東浦町
 
 pref_map <- readRDS(paste("data-out/maps/",
@@ -30,7 +30,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims),
+                              as.character(nsims * 2),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
@@ -48,17 +48,24 @@ koiki_1[!koiki_1 %in% 1] <-
 
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
-mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split <- mun_split[,1]
 
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
   seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
-gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
+gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split <- gun_split[,1]
 
 # Count number of koiki renkei splits
 koiki_split <- redist::redist.splits(pref_smc_plans, koiki_1)
+koiki_split <- koiki_split %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split <- koiki_split[,1]
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
@@ -97,6 +104,7 @@ functioning_results <- results %>%
   filter(respect_gun == length(respect_gun_code), multi == 0)
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
 sim_smc_pref_sample <- sim_smc_pref %>%
   filter(draw %in% valid_sample_pref)
@@ -238,10 +246,10 @@ write_rds(sim_smc_pref_sample,
 # Export `redist_plans` summary statistics to a csv file
 as_tibble(sim_smc_pref_sample) %>%
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+    select("draw", "district", "total_pop") %>%
     write_csv(paste("data-out/plans/",
                     as.character(pref_code),
                     "_",
                     as.character(pref_name),
                     "_hr_2020_stats.csv",
                     sep = ""))
-
