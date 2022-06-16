@@ -69,6 +69,9 @@ new_rows <- data.frame(code = pref[1, ]$code,
 )
 new_rows[1, ]$pop <- pref[1, ]$pop
 pref_sep <- new_rows
+
+# To calculate area, switch off the `geometry (s2)``
+sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -77,10 +80,20 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+  # order by size of the area
+  new_rows <- new_rows %>%
+    dplyr::mutate(area = sf::st_area(geometry)) %>%
+    dplyr::arrange(desc(area)) %>%
+    dplyr::select(-area)
+  # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
+
   pref_sep <- rbind(pref_sep, new_rows)
 }
+# switch on the `geometry (s2)``
+sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
+
 # Make adjacency list
 prefadj <- redist::redist.adjacency(pref)
 
@@ -116,15 +129,15 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 6, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
-  runs = 2L,
+  runs = 4L,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
@@ -172,7 +185,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims * 2),
+                            as.character(nsims * 4),
                             ".Rds",
                             sep = ""))
 

@@ -1,7 +1,7 @@
 ---
 title: "埼玉県 (議員定数：15 →16)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: June 6, 2022
+date: June 16, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -65,7 +65,7 @@ table_summary <- dplyr::tribble(
   "県内較差", sq_max_to_min, optimal_max_to_min, 
   "改善率", NA, (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split - 1, #gun_split is counted in the Urban template 
+  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split, 
   "郡の分割", sq_gun_splits, results_sample[which(results_sample$index == optimal),]$gun_split, 
   "広域連携地域の分割", sq_koiki_splits, results_sample[which(results_sample$index == optimal),]$koiki_split
 ) 
@@ -200,7 +200,7 @@ ggplot() +
    
    geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
    geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "black", "black"),
+              color = c("black", "black", "black", "black"),
               nudge_x = c(-1500, 0, 0, 0), # adjust the position of the labels
               nudge_y = c(-5000, -4000, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
@@ -213,7 +213,7 @@ ggplot() +
 
 # 共起分析
 * 有効な案のうち一票の格差が下位10％の案を抽出
-* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを、k = 22 設定
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを、k = 35 設定
 * 読み取り方  
 地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
@@ -242,7 +242,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "white", "black", "black"),
+              color = c("black", "black", "black", "black"),
               nudge_x = c(0, 0, 0, 0), # adjust the position of the labels
               nudge_y = c(3000, -3000, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
@@ -267,8 +267,11 @@ if(ndists_new > 6){
 * * 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 逐次モンテカルロ法(SMC)による2つの独立したシミュレーションにより、区割り改定案を`r format(2 * nsims, big.mark = ",")`作成
-* 市区町村が3つ以上の選挙区に分割される案を棄却し有効な案を選定
+* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、区割り改定案を`r format(4 * nsims, big.mark = ",")`作成
+* 以下の案を棄却し有効な案を選定
+  + 飛び地が生じる案
+  + 市区町村が3つ以上の選挙区に分割される案
+  + 市区町村の分割が現状よりも多い案
 * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定  

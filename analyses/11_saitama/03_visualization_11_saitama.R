@@ -34,7 +34,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims * 2),
+                              as.character(nsims * 4),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
@@ -80,7 +80,7 @@ results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
 results$gun_split <- gun_split
 results$num_mun_split <- num_mun_split
-results$mun_split <- mun_split
+results$mun_split <- mun_split - gun_split #For Saitama, since we allow the `gun` to be split, the split is double counted for `gun`.
 results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
@@ -114,7 +114,9 @@ results$respect_gun <- colSums(respect_gun_matrix)
 # Filter out plans with multi-splits
 # as well as plans that split gun that should have been respected
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code), multi == 0)
+  filter(respect_gun == length(respect_gun_code),
+         multi == 0,
+         mun_split <= sq_mun_splits)
 
 # Sample 5,000 plans
 valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
@@ -183,10 +185,10 @@ cl_co = cluster::agnes(m_co)
 
 # Analyze the dendrogram and pick an appropriate number of clusters
 plot(as.dendrogram(cl_co))
-abline(h = 4, col = "red") # explore different depths
+abline(h = 6, col = "red") # explore different depths
 abline(h = 3, col = "blue")
 
-prec_clusters = cutree(cl_co, 22)  # change ndists_new to an appropriate number
+prec_clusters = cutree(cl_co, 35)  # change ndists_new to an appropriate number
 
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"

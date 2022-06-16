@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 75000 # Set so that the number of valid plans > 5,000
+nsims <- 30000 # Set so that the number of valid plans > 5,000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c()
@@ -103,7 +103,7 @@ pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 
 # Match or combine areas so that each area in `pref_pop_only` (n=24) is matched with an existing area
 # Assign さいたま市 西区 西大宮 to 大字指扇, and merge six blocks (西区大字指扇、清河寺、高木、中釘、宮前町、三橋) together.
-# This is because さいたま市 西区 西大宮 is newly created in 2016 by combining parts of those six blocks.
+# This is because さいたま市 西区 西大宮 was newly created in 2016 by combining parts of those six blocks.
 pref_mutual[pref_mutual$code == "111010030",]$pop <- # 大字指扇
   pref_mutual[pref_mutual$code == "111010030",]$pop + # 大字指扇
   pref_pop_only[pref_pop_only$code == "111010310",]$pop # 西大宮
@@ -138,7 +138,7 @@ pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
 # Assign さいたま市 緑区 美園 to 大字上野田, and merge nine blocks (緑区大字上野田、玄蕃新田、下野田、大門、高畑、寺山、中野田、南部領辻、大崎) together.
-# This is because さいたま市 緑区 美園 is newly created in 2017 by combining parts of those nine blocks.
+# This is because さいたま市 緑区 美園 was newly created in 2017 by combining parts of those nine blocks.
 pref_mutual[pref_mutual$code == "111090160",]$pop <- # 大字上野田
   pref_mutual[pref_mutual$code == "111090160",]$pop + # 大字上野田
   pref_pop_only[pref_pop_only$code == "111090350",]$pop # 美園
@@ -184,7 +184,7 @@ pref_mutual[pref_mutual$code == "111090050",]$pop <- # 大字大間木
   pref_pop_only[pref_pop_only$code == "111090360",]$pop #大間木
 
 # Assign さいたま市 岩槻区 美園東 to 大字尾ヶ崎, and merge four blocks (岩槻区大字尾ヶ崎、尾ヶ崎新田、釣上、釣上新田) together.
-# This is because さいたま市 岩槻区 美園 is newly created in 2017 by combining parts of those four blocks.
+# This is because さいたま市 岩槻区 美園 was newly created in 2017 by combining parts of those four blocks.
 pref_mutual[pref_mutual$code == "111100360",]$pop <- # 大字尾ヶ崎
   pref_mutual[pref_mutual$code == "111100360",]$pop + # 大字尾ヶ崎
   pref_pop_only[pref_pop_only$code == "111100700",]$pop # 美園東
@@ -225,9 +225,10 @@ pref_geom_only_1[pref_geom_only_1$code == "112011080"]$pop <-
 pref_geom_only_1$sub_code = 1080
 # bind it with. mutual data frame
 pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
-# Then, combine 藤倉 with  大袋新田, 大袋, 山城, 増形, 豊田本, 小室, 野田, and 池辺
+# Then, combine 大字藤倉 with  大袋新田, 大袋, 山城, 増形, 豊田本, 小室, 野田, and 池辺
 pref_mutual_new_address <- pref_mutual %>%
-  dplyr::filter(code %in% c("112011040",
+  dplyr::filter(code %in% c("112011080",
+                            "112011040",
                             "112011030",
                             "112011110",
                             "112011092",
@@ -247,7 +248,8 @@ pref_mutual_new_address <- pref_mutual %>%
                    geometry = sf::st_union(geometry))
 # Data frame expect those six blocks
 pref_mutual_without_new_address <- pref_mutual %>%
-  dplyr::filter(!code %in% c("112011040",
+  dplyr::filter(!code %in% c("112011080",
+                             "112011040",
                              "112011030",
                              "112011110",
                              "112011092",
@@ -263,7 +265,7 @@ pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
 
 # Assign 川口市 本前川 to 前川町, and merge three blocks (前川町, 大字安行領根岸, 大字伊刈) together.
-# This is because 川口市 本前川 is newly created in 2016 by combining parts of those three blocks.
+# This is because 川口市 本前川 was newly created in 2016 by combining parts of those three blocks.
 pref_mutual[pref_mutual$code == "112030260",]$pop <- # 前川町
   pref_mutual[pref_mutual$code == "112030260",]$pop + # 前川町
   pref_pop_only[pref_pop_only$code == "112031190",]$pop # 本前川
@@ -292,7 +294,7 @@ pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
 # Assign 加須市 三俣 to 上三俣, and merge three blocks (上三俣 下三俣 不動岡) together.
-# This is because 加須市 三俣 is newly created in 2016 by combining parts of those three blocks.
+# This is because 加須市 三俣 was newly created in 2016 by combining parts of those three blocks.
 pref_mutual[pref_mutual$code == "112100180",]$pop <- # 上三俣
   pref_mutual[pref_mutual$code == "112100180",]$pop + # 上三俣
   pref_pop_only[pref_pop_only$code == "112100191",]$pop # 三俣
@@ -323,7 +325,7 @@ pref_mutual <- pref_mutual_new_address %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
 # Assign 加須市 旗井(new) and 北下新井 (new) to 旗井, and merge three blocks (旗井 北下新井 琴寄) together.
-# This is because 加須市 旗井(new) and 北下新井 (new) is newly created in 2016 by combining parts of those three blocks.
+# This is because 加須市 旗井(new) and 北下新井 (new) was newly created in 2016 by combining parts of those three blocks.
 pref_mutual[pref_mutual$code == "112100900",]$pop <- # 旗井
   pref_mutual[pref_mutual$code == "112100900",]$pop + # 旗井
   pref_pop_only[pref_pop_only$code == "112100901",]$pop + # 旗井(new)
@@ -410,7 +412,7 @@ pref_mutual[pref_mutual$code == "112240180",]$pop <- # 笹目
   pref_pop_only[pref_pop_only$code == "112240190",]$pop # 大字下笹目
 
 # Assign 入間市 狭山台 to 宮寺, and merge six blocks (宮寺 大字新久 大字狭山ケ原 大字狭山台 大字根岸 大字中神) together.
-# This is because 入間市 狭山台 is newly created in 2018 by combining parts of those six blocks.
+# This is because 入間市 狭山台 was newly created in 2018 by combining parts of those six blocks.
 pref_mutual[pref_mutual$code == "112250320",]$pop <- # 宮寺
  pref_mutual[pref_mutual$code == "112250320",]$pop + # 宮寺
  pref_pop_only[pref_pop_only$code == "112250430",]$pop # 狭山台
@@ -475,7 +477,7 @@ pref_mutual <- rbind(pref_mutual, pref_geom_only_1)
 pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
 
-# 北本市 下石戸 is newly created in 2016, by combining parts of 大字北本宿, 下石戸上, and 下石戸下,
+# 北本市 下石戸 was newly created in 2016, by combining parts of 大字北本宿, 下石戸上, and 下石戸下,
 # Then from those 3 old blocks, remaining part was assigned to 緑
 # Assign 北本市 下石戸 to 大字北本宿 of `pop_geom_only`
 geom_only_code <- c("112330220")
@@ -518,7 +520,7 @@ pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
 
 # Assign 蓮田市 藤ノ木 to 大字黒浜
-# This is because 蓮田市 藤ノ木 is newly created from parts of 大字黒浜
+# This is because 蓮田市 藤ノ木 was newly created from parts of 大字黒浜
 pref_mutual[pref_mutual$code == "112380120",]$pop <-
   pref_mutual[pref_mutual$code == "112380120",]$pop +
   pref_pop_only[pref_pop_only$code == "112380320",]$pop
@@ -530,7 +532,7 @@ pref_mutual[pref_mutual$code == "112430160",]$pop <-
   pref_pop_only[pref_pop_only$code == "112430161",]$pop
 
 # Assign 宮代町 道佛 to 字道佛, and merge with 宮代 together.
-# This is because 宮代町 道佛 is newly created in 2017 from parts of 字道佛.
+# This is because 宮代町 道佛 was newly created in 2017 from parts of 字道佛.
 # A part of remaining was assigned to 宮代
 pref_mutual[pref_mutual$code == "114420110",]$pop <-
  pref_mutual[pref_mutual$code == "114420110",]$pop +
