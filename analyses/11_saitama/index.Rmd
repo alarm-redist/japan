@@ -38,7 +38,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "さいたま市見沼区、熊谷市、 川口市、春日部市、鴻巣市、 越谷市、久喜市、ふじみ野市" 
 sq_gun_splits_name <- "入間郡"
 sq_koiki_splits_name <- ""
-optimal_splits_name <- "さいたま市岩槻区、さいたま市北区、川越市、川口市、富士見市、鴻巣市、熊谷市"
+optimal_splits_name <- "さいたま市岩槻区、さいたま市北区、川口市、上尾市、狭山市、入間市、熊谷市、行田市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -201,8 +201,8 @@ ggplot() +
    geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
    geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black", "black"),
-              nudge_x = c(-1500, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(-5000, -4000, -5000, -2000), # adjust the position of the labels
+              nudge_x = c(2000, 0, 0, 0), # adjust the position of the labels
+              nudge_y = c(-2000, -4000, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
   
@@ -243,22 +243,12 @@ ggplot() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black", "black"),
-              nudge_x = c(0, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(3000, -3000, -5000, -2000), # adjust the position of the labels
+              nudge_x = c(0, -4500, 0, 0), # adjust the position of the labels
+              nudge_y = c(2000, -2500, -5000, -2000), # adjust the position of the labels
               #"さいたま市", "川越市", "川口市", "越谷市"
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
-
-
-# Match membership data with map object
-if(ndists_new > 6){
-  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
-    mutate(color = redist:::color_graph(.$adj, as.integer(.$membership)))
-} else{
-  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
-    mutate(color = .$membership)
-}
 ```
 
 # アルゴリズム設定

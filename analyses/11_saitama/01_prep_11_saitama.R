@@ -37,10 +37,8 @@ sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.20
 
-# Code of 郡 that are split under the status quo
-# Code of 郡 that are split under the status quo
-# For Saitama, which has many discontinuity of gun,
-# we will set those gun as `gun_exception` to use in the `02_sim` process.
+# Out of 8 total gun in Saitama, 5 guns are discontinued.
+# Thus, e will set gun with discontinuity as `gun_exception` to preocess in the `02_sim` process.
 gun_exception <- c(11320, # Iruma (11324, 11326, 11327)
                    11340, # Hiki (11341, 11342, 11343, 11346, 11347, 11348, 11349)
                    11360, # Chichibu (11361, 11362,11363, 11365, 11369)

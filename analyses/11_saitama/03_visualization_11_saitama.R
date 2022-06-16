@@ -90,10 +90,8 @@ results$index <- 1:nrow(wgt_smc)
 # are respected under the simulated plans
 
 # Define the codes of the gun that must be kept together in the same district
-# For Saitama, we will assign `gun_exception` here that allows splits.
-# This is because we assigned `gun_exception` in `01_prep_11_saitama` uniquely,
-# in order to deal with discontiguous 郡
-# Code of 郡 that are split under the status quo
+# For Saitama, as we set `gun_exception` in `01_prep` for discontinuity,
+# we will re-assign `gun_exception` here with  the code of 郡 that are split under the status quo
 gun_exception <- c(11320) # Iruma (11324, 11326, 11327)
 respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
 
