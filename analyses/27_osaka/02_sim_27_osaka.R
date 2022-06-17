@@ -119,14 +119,14 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 10, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 16, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 1, admin = pref_map$code)
 
 # Run simulation
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
-  nsims = 1000,
+  nsims = 100,
   runs = 4L,
   counties = pref$code,
   constraints = constr,

@@ -42,16 +42,6 @@ pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
 # Calculate max:min ratio
 wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
 
-# Assign koiki_renkei area codes
-koiki_1 <- pref$code
-koiki_1[koiki_1 %in% koiki_1_codes] <- 1
-koiki_1[!koiki_1 %in% 1] <-
-  seq(1000, 1000 +length(koiki_1[!koiki_1 %in% c(koiki_1_codes, 1)]) - 1, by = 1)
-koiki_2 <- pref$code
-koiki_2[koiki_2 %in% koiki_2_codes] <- 2
-koiki_2[!koiki_2 %in% 2] <-
-  seq(1000, 1000 +length(koiki_2[!koiki_2 %in% c(koiki_2_codes, 2)]) - 1, by = 1)
-
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
 mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
