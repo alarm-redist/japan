@@ -182,34 +182,36 @@ hist(plans_diversity(sim_smc_pref_1))
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Obtain codes of 郡 to merge
 pref <- merge_gun(pref)
-gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-# Filter out exceptions
-gun_codes <- setdiff(gun_codes, gun_exception)
+# Define pref_0
 
-# Set aside non-郡 municipalities
-pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
+pref <- merge_gun(pref)
+# Define pref_0
 
-# Merge together 郡
-pref_gun <- NULL
-for(i in 1:length(gun_codes)){
-  # filter out gun
-  gun <- pref %>%
-    dplyr::filter(gun_code == gun_codes[i])
+pref <-  sf::st_as_sf(
+  dplyr::bind_rows(
 
-  # merge together gun
-  gun$code <- gun_codes[i]
-  gun <- gun %>%
-    dplyr::group_by(code) %>%
-    dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
+    # Municipality that are not respected under the status quo
+    pref %>%
+      dplyr::filter(code %in% as.numeric(mun_not_freeze)),
 
-  # merge back together
-  gun$sub_code <- 0
-  gun$gun_code <- gun_codes[i]
-  pref_gun <- dplyr::bind_rows(pref_gun, gun)
-}
+    # Set aside gun that are not respected under the status quo,
+    # and merge them by the municipality
+    pref %>%
+      dplyr::filter(gun_code %in% as.numeric(gun_exception)) %>%
+      dplyr::group_by(code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       gun_code = gun_code[1]),
 
-# Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
+    # Merge the rest of municipality and gun
+    pref %>%
+      dplyr::filter(gun_code %in% c(gun_exception, mun_not_freeze) == FALSE) %>%
+      dplyr::group_by(gun_code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       code = gun_code[1])
+  )
+)
 
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -218,12 +220,10 @@ new_rows <- data.frame(code = pref[1, ]$code,
                        pop = 0,
                        gun_code = pref[1, ]$gun_code
 )
-
 new_rows[1, ]$pop <- pref[1, ]$pop
-
 pref_sep <- new_rows
 
-# to calculate area size, switch off the `geometry (s2)`
+# To calculate area, switch off the `geometry (s2)``
 sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
@@ -243,8 +243,7 @@ for (i in 2:nrow(pref))
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
-
-# switch on `geometry (s2)`
+# switch on the `geometry (s2)``
 sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
 

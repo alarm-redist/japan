@@ -37,6 +37,8 @@ sq_gun_splits <- 0
 sq_koiki_splits <- 0
 pop_tol <- 0.10
 
+# Code of minicipalities that are split under the status quo
+mun_not_freeze <- c()
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
 
@@ -102,28 +104,49 @@ pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE)
 
 # Match 2015 shapefile (`pref_shp_cleaned`) with 2020 Census data (`pref_pop_2020`)
 # Combine municipality code with sub-code
-pref_shp_cleaned <- mutate(pref_shp_cleaned, code = str_c(code, KIHON1))
+pref_shp_cleaned <- mutate(pref_shp_cleaned, mun_code = code, code = str_c(code, KIHON1))
 # Combine municipality code with sub-code
 pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
+### Municipalities without splits (freeze) ###
+pop <- pref_pop_2020 %>%
+  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+  dplyr::group_by(mun_code) %>%
+  dplyr::summarise(pop = sum(pop)) %>%
+  dplyr::rename(code = mun_code)
+
+geom <- pref_shp_cleaned %>%
+  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+  dplyr::group_by(code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::select(code, geometry)
+
+# Combine data frames
+pref_freeze <- merge(pop, geom, by = "code")
+
 # TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
 # 1. Areas that are accounted for in both dataframes
-pref_mutual <- merge(pref_pop_2020, pref_shp_cleaned, by = "code")
+pref_mutual <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                     dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                     by = "code")
 
 # 2. Areas that exist only in 2015 shapefile (`pref_shp_cleaned`)
-pref_geom_only <- merge(pref_shp_cleaned, pref_pop_2020, by = "code", all.x = TRUE)
+pref_geom_only <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                        dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                        by = "code", all.x = TRUE)
 pref_geom_only <- setdiff(pref_geom_only, pref_mutual)
 
 # 3. Areas that exist only in 2020 Census data (`pref_pop_2020`)
-pref_pop_only <- merge(pref_pop_2020, pref_shp_cleaned, by = "code", all.x = TRUE)
+pref_pop_only <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                       dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                       by = "code", all.x = TRUE)
 pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
-    filter(pop > 0)
+  filter(pop > 0)
 
 # Match or combine data so that every single census block is taken into account
 # Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
 pref_geom_only$pop <- 0
 pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
-
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
 "Example
 # Assign 港区 to 港区台場
