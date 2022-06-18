@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 30000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 11
 pref_name <- "saitama"
 lakes_removed <- c()
@@ -36,17 +36,18 @@ sq_mun_splits <- 8
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.20
-
+# Code of minicipalities that are split under the status quo
+mun_not_freeze <- c(11104,
+                    11202,
+                    11203,
+                    11214,
+                    11217,
+                    11222,
+                    11232,
+                    11245)
 # Code of 郡 that are split under the status quo
-# Code of 郡 that are split under the status quo
-# For Saitama, which has many discontinuity of gun,
-# we will set those gun as `gun_exception` to use in the `02_sim` process.
-gun_exception <- c(11320, # Iruma (11324, 11326, 11327)
-                   11340, # Hiki (11341, 11342, 11343, 11346, 11347, 11348, 11349)
-                   11360, # Chichibu (11361, 11362,11363, 11365, 11369)
-                   11380, # Kodama (11381, 11383, 11385)
-                   11460 # Kitakatsushika (11464, 11465)
-)
+gun_exception <- c(11320 # Iruma (11324, 11326, 11327)
+                   )
 
 # Change time limit
 options(timeout = 300)

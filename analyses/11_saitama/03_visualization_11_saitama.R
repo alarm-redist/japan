@@ -80,7 +80,7 @@ results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
 results$gun_split <- gun_split
 results$num_mun_split <- num_mun_split
-results$mun_split <- mun_split - gun_split #For Saitama, since we allow the `gun` to be split, the split is double counted for `gun`.
+results$mun_split <- mun_split
 results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)

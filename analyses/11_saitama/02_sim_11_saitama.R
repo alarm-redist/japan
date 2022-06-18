@@ -6,59 +6,36 @@
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Obtain codes of 郡 to merge
 pref <- merge_gun(pref)
-gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-# Filter out exceptions
-gun_codes <- setdiff(gun_codes, gun_exception)
-# Set aside non-郡 municipalities
-pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
-# Merge together 郡
-pref_gun <- NULL
-for(i in 1:length(gun_codes)){
-  # filter out gun
-  gun <- pref %>%
-    dplyr::filter(gun_code == gun_codes[i])
-  # merge together gun
-  gun$code <- gun_codes[i]
-  gun <- gun %>%
-    dplyr::group_by(code) %>%
-    dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
-  # merge back together
-  gun$sub_code <- 0
-  gun$gun_code <- gun_codes[i]
-  pref_gun <- dplyr::bind_rows(pref_gun, gun)
-}
+# Define pref_0
 
-##########################
-### Method for Saitama ###
-##########################
-# For Saitama with many discontinuity of gun,
-# we will merge geometry into multiple contiguous unit of gun.
-# set aside guns from pref_non_gun
-pref_gun_discontinuity <- pref_non_gun %>%
-  dplyr::filter(gun_code %in% c(gun_exception) == TRUE) %>%
-  dplyr::mutate(gun_block = case_when(
-    code %in% c(11324) == TRUE ~ 11324,
-    code %in% c(11326, 11327) == TRUE ~ 11326,
-    code %in% c(11346, 11347) == TRUE ~ 11346,
-    code %in% c(11341, 11342, 11343, 11348, 11349) == TRUE ~ 11341,
-    code %in% c(11361) == TRUE ~ 11361,
-    code %in% c(11365) == TRUE ~ 11365,
-    code %in% c(11362,11363, 11369) == TRUE ~ 11362,
-    code %in% c(11381) == TRUE ~ 11381,
-    code %in% c(11383, 11385) == TRUE ~ 11383,
-    code %in% c(11464) == TRUE ~ 11464,
-    code %in% c(11465) == TRUE ~ 11465)) %>%
-  dplyr::group_by(gun_block) %>%
-  dplyr::summarise(code = dplyr::first(gun_code),
-                   gun_code = dplyr::first(gun_code),
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
+pref <- merge_gun(pref)
+# Define pref_0
 
-pref_non_gun <- pref_non_gun %>%
-  dplyr::filter(gun_code %in% c(gun_exception) == FALSE)
+pref <-  sf::st_as_sf(
+  dplyr::bind_rows(
 
-# Bind together 郡 and non-郡 municipalities
-pref <- dplyr::bind_rows(pref_non_gun, pref_gun, pref_gun_discontinuity)
+    # Municipality that are not respected under the status quo
+    pref %>%
+      dplyr::filter(code %in% as.numeric(mun_not_freeze)),
+
+    # Set aside gun that are not respected under the status quo,
+    # and merge them by the municipality
+    pref %>%
+      dplyr::filter(gun_code %in% as.numeric(gun_exception)) %>%
+      dplyr::group_by(code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       gun_code = gun_code[1]),
+
+    # Merge the rest of municipality and gun
+    pref %>%
+      dplyr::filter(gun_code %in% c(gun_exception, mun_not_freeze) == FALSE) %>%
+      dplyr::group_by(gun_code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       code = gun_code[1])
+  )
+)
 
 # Converet MULTIPOLYGON to several POLYGONs
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -129,8 +106,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 3, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
