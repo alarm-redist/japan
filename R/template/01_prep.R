@@ -183,12 +183,14 @@ pref_mutual[pref_mutual$code == "132090112",]$geometry <-
                  filter(pref_geom_only, code == "132090114")$geometry)"
 
 # Finalize pref object
-pref <- pref %>%
+pref <- bind_rows(
+  pref_mutual %>%
     select(mun_code, sub_code, pop, geometry) %>%
     rename(code = mun_code) %>%
     mutate(code = as.numeric(code)) %>%
-    arrange(code) %>%
-    sf::st_as_sf()
+    arrange(code),
+  pref_freeze)  %>%
+  sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
