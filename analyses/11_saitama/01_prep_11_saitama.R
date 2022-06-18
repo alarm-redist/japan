@@ -36,6 +36,7 @@ sq_mun_splits <- 8
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.20
+
 # Code of minicipalities that are split under the status quo
 mun_not_freeze <- c(11104,
                     11202,
@@ -48,7 +49,6 @@ mun_not_freeze <- c(11104,
 # Code of 郡 that are split under the status quo
 gun_exception <- c(11320 # Iruma (11324, 11326, 11327)
                    )
-
 # Change time limit
 options(timeout = 300)
 
