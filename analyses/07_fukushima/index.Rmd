@@ -1,7 +1,7 @@
 ---
 title: "福島県 (議員定数：5 → 4)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: June 4, 2022
+date: June 14, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
