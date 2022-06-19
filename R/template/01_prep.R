@@ -37,8 +37,9 @@ sq_gun_splits <- 0
 sq_koiki_splits <- 0
 pop_tol <- 0.10
 
-# Code of minicipalities that are split under the status quo
+# Codes of municipalities that are split under the status quo
 mun_not_freeze <- c()
+
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
 
@@ -118,9 +119,10 @@ pop <- pref_pop_2020 %>%
 
 geom <- pref_shp_cleaned %>%
   dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
-  dplyr::group_by(code) %>%
+  dplyr::group_by(mun_code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::select(code, geometry)
+  dplyr::select(mun_code, geometry) %>%
+  dplyr::rename(code = mun_code)
 
 # Combine data frames
 pref_freeze <- merge(pop, geom, by = "code")
@@ -189,11 +191,24 @@ pref_mutual[pref_mutual$code == "132090112",]$geometry <-
 # Finalize pref object
 pref <- bind_rows(
   pref_mutual %>%
-    select(mun_code, sub_code, pop, geometry) %>%
+    select(mun_code.x, sub_code, pop, geometry) %>%
+    rename(code = mun_code.x) %>%
+    mutate(code = as.numeric(code)),
+
+  pref_freeze,
+
+  # `pref_geom_only`
+  "pref_geom_only_1 %>%
+    select(mun_code, sub_code, pop) %>%
     rename(code = mun_code) %>%
-    mutate(code = as.numeric(code)) %>%
-    arrange(code),
-  pref_freeze)  %>%
+    mutate(code = as.numeric(code)),
+
+  pref_geom_only_2 %>%
+    select(mun_code, sub_code, pop) %>%
+    rename(code = mun_code) %>%
+    mutate(code = as.numeric(code))"
+) %>%
+  arrange(code, sub_code) %>%
   sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly

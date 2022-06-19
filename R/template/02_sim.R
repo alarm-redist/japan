@@ -180,37 +180,37 @@ hist(plans_diversity(sim_smc_pref_1))
 
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
-# Obtain codes of 郡 to merge
+# Assign 郡 codes
 pref <- merge_gun(pref)
 
-pref <-  sf::st_as_sf(
-  dplyr::bind_rows(
+# Choose 郡 to merge
+gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
+gun_codes <- setdiff(gun_codes, gun_exception) # Filter out exceptions
 
-    # For municipalities that are split under the status quo,
-    # treat 小地域 as the basic unit
-    pref %>%
-      dplyr::filter(code %in% as.numeric(mun_not_freeze)),
+# Set aside non-郡 municipalities
+pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
 
-    # "Freeze" gun (i.e. treat each gun as one unit)
-    # except for the ones that are split under the status quo
+# Merge together 郡
+pref_gun <- NULL
+for(i in 1:length(gun_codes)){
+  # filter out gun
+  gun <- pref %>%
+    dplyr::filter(gun_code == gun_codes[i])
 
-    pref %>%
-      dplyr::filter(gun_code %in% as.numeric(gun_exception)) %>%
-      dplyr::group_by(code) %>%
-      dplyr::summarize(geometry = sf::st_union(geometry),
-                       pop = sum(pop),
-                       gun_code = gun_code[1]),
+  # merge together gun
+  gun$code <- gun_codes[i]
+  gun <- gun %>%
+    dplyr::group_by(code) %>%
+    dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
-    # "Freeze" municipalities (i.e. treat each municipality as one unit)
-    # except for the ones that are split under the status quo
-    pref %>%
-      dplyr::filter(gun_code %in% c(gun_exception, mun_not_freeze) == FALSE) %>%
-      dplyr::group_by(gun_code) %>%
-      dplyr::summarize(geometry = sf::st_union(geometry),
-                       pop = sum(pop),
-                       code = gun_code[1])
-  )
-)
+  # merge back together
+  gun$sub_code <- NA
+  gun$gun_code <- gun_codes[i]
+  pref_gun <- dplyr::bind_rows(pref_gun, gun)
+}
+
+# Bind together 郡 and non-郡 municipalities
+pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
 # Convert multi-polygons into polygons
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -234,6 +234,7 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+
   # order by size
   new_rows <- new_rows %>%
     dplyr::mutate(area = sf::st_area(geometry)) %>%

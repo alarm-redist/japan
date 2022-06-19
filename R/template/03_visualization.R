@@ -542,7 +542,8 @@ rm(cl_co,
    functioning_results,
    results,
    respect_gun_matrix,
-   pref_sep
+   pref_sep,
+   pref_freeze
 )
 
 save.image(paste("data-out/pref/",
