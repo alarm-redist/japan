@@ -108,7 +108,8 @@ pref_shp_cleaned <- mutate(pref_shp_cleaned, mun_code = code, code = str_c(code,
 # Combine municipality code with sub-code
 pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
-### Municipalities without splits (freeze) ###
+### Municipalities that not split under the status quo ###
+# Match at the municipality level
 pop <- pref_pop_2020 %>%
   dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
   dplyr::group_by(mun_code) %>%
@@ -124,8 +125,10 @@ geom <- pref_shp_cleaned %>%
 # Combine data frames
 pref_freeze <- merge(pop, geom, by = "code")
 
+### Municipalities that split under the status quo ###
+# Match at the 小地域 level
 # TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
-# 1. Areas that are accounted for in both dataframes
+# 1. Areas that are accounted for in both data frames
 pref_mutual <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
                      dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
                      by = "code")
