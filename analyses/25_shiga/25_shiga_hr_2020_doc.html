@@ -411,7 +411,10 @@ pre code {
 </ul>
 <div id="滋賀県特有の設定" class="section level3">
 <h3>滋賀県特有の設定</h3>
-<p>特になし</p>
+<p><code>02_sim_25_shiga.R</code>にてシュミレーション（<code>redist_smc()</code>）を執行する際に、乱数のシードをランダムに設定した。これは、4つの独立したSMC
+(<code>runs = 4L</code>)
+を執行する際にランダムに発生するプログラムのエラーに対応するためである。なお、1つ
+(<code>1L</code>)と2つ(<code>2L</code>)の独立したSMCによって発生する結果や分布と比較することで、チェリーピッキングを回避した。</p>
 </div>
 </div>
 <div id="データの出典" class="section level2">
@@ -430,10 +433,7 @@ pre code {
 </div>
 <div id="データの処理" class="section level2">
 <h2>データの処理</h2>
-<p><code>02_sim_25_shiga.R</code>にてシュミレーション（<code>redist_smc()</code>）を執行する際に、乱数のシードをランダムに設定した。これは、4つの独立したSMC
-(<code>runs = 4L</code>)
-を執行する際にランダムに発生するプログラムのエラーに対応するためである。なお、1つ
-(<code>1L</code>)と2つ(<code>2L</code>)の独立したSMCによって発生する結果や分布と比較することで、チェリーピッキングを回避した。</p>
+<p>特になし</p>
 </div>
 <div id="ファイル内容" class="section level2">
 <h2>ファイル内容</h2>
