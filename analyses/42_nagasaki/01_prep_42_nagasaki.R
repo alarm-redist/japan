@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 10000  # Set so that the number of valid plans > 5,000
+nsims <- 5000  # Set so that the number of valid plans > 5,000
 pref_code <- 42
 pref_name <- "nagasaki"
 lakes_removed <- c()
