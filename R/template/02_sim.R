@@ -92,9 +92,11 @@ run_simulations <- function(pref_n, prefadj_n){
                                    adj = prefadj_n)
 
   # Run simulation
+  set.seed(2020)
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
+    runs = 2L,
     pop_temper = 0.05
   )
 
@@ -135,7 +137,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims),
+                                as.character(nsims * 2),
                                 "_",
                                 as.character(i),
                                 ".Rds",
@@ -162,6 +164,11 @@ run_simulations <- function(pref_n, prefadj_n){
 run_simulations(pref_0, prefadj_0)
 run_simulations(pref_1, prefadj_1)
 
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref_0)
+summary(sim_smc_pref_1)
+
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
 # we would not see a large spike at 0.
@@ -170,6 +177,7 @@ run_simulations(pref_1, prefadj_1)
 
 hist(plans_diversity(sim_smc_pref_0))
 hist(plans_diversity(sim_smc_pref_1))
+
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Obtain codes of 郡 to merge
@@ -215,6 +223,8 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
+# to calculate area size, switch off the `geometry (s2)`
+sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -223,11 +233,19 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+  # order by size of the area
+  new_rows <- new_rows %>%
+    dplyr::mutate(area = sf::st_area(geometry)) %>%
+    dplyr::arrange(desc(area)) %>%
+    dplyr::select(-area)
+  # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
 
+# switch on `geometry (s2)`
+sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)
 
 # Make adjacency list
@@ -269,12 +287,18 @@ constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
 constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
 
 # Run simulation
+set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
   nsims = nsims,
+  runs = 2L,
   counties = pref$code,
   constraints = constr,
   pop_temper = 0.05)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_pref)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
@@ -315,7 +339,7 @@ saveRDS(sim_smc_pref, paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims),
+                            as.character(nsims * 2),
                             ".Rds",
                             sep = ""))
 

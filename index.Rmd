@@ -116,6 +116,7 @@ cat('</div><br />\n\n')
 
 ## 謝辞 {.appendix}
 本プロジェクトの一部は、[ハーバード大学エドウィン・O・ライシャワー日本研究所 (RIJS)](https://rijs.fas.harvard.edu/ja)の援助を受けました。
+また、Harvard Data Science InitiativeとMicrosoft社より、計算機リソース（Azure）の援助を受けました。
 
 ## データについて {.appendix}
 
