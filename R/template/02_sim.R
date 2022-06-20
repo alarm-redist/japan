@@ -280,7 +280,7 @@ prefadj <- geomander::add_edge(prefadj,
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
                                ndists = ndists_new,
-                               pop_tol= 0.10,
+                               pop_tol= pop_tol,
                                total_pop = pop,
                                adj = prefadj)
 
