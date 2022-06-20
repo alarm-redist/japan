@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 12
 pref_name <- "chiba"
 lakes_removed <- c()
@@ -37,16 +37,16 @@ sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.20
 
+# Code of minicipalities that are split under the status quo
+mun_not_freeze <- c(12203,
+                    12204,
+                    12207,
+                    12217,
+                    12410)
+
 # Code of 郡 that are split under the status quo
-# For Chiba, which has many discontinuity of gun,
-# we will set those gun as `gun_exception` to use in the `02_sim` process.
-gun_exception <- c(12320, # Inba (12322, 12329)
-                   12340, # Katori (12342, 12347, 12349)
-                   12236, ##mehtod for Chiba: Katori-shi -- merge with Katori-gun##
-                   12400, # Sanbu  (12403, 12409, 12410)
-                   12440, # Isumi (12441, 12443)
-                   12238 ##mehtod for Chiba: Isumi-shi -- merge with Isumi-gun##
-)
+gun_exception <- c(12400 # Sanbu  (12403, 12409, 12410)
+                   )
 
 # Change time limit
 options(timeout = 300)
