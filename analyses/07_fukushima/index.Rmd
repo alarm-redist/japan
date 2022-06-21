@@ -40,6 +40,10 @@ sq_mun_splits_name <- ""
 sq_gun_splits_name <- "西白河郡"
 sq_koiki_splits_name <- "こおりやま広域連携中枢都市圏、しらかわ地域定住自立圏"
 split_1_name <- "いわき市"
+new_max_to_min <- 1.311
+new_mun_splits <- 0
+new_gun_split <- 
+new_koiki_split <- 
 
 ## Color Palette
 PAL <- c('#6D9537','#DCAD35', '#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
@@ -60,13 +64,13 @@ load(here::here(paste("data-out/pref/",
 sim_gun_split <- ifelse(is.null(results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split), 0, (results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split))
 
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~split_0, 
-  "県内較差", sq_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
-  "改善率", NA, (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
-  "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, 0, 
-  "郡の分割", sq_gun_splits, sim_gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
+  ~category, ~status_quo, ~new_enacted, ~split_0, 
+  "県内較差", sq_max_to_min, new_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
+  "改善率", NA, (sq_max_to_min - new_max_to_min/(sq_max_to_min - 1)), (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits, 0, 
+  "郡の分割", sq_gun_splits, new_gun_split, sim_gun_split, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_split,  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
 ) 
 
 table_summary %>% 
@@ -162,8 +166,8 @@ ggplot() +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
@@ -189,8 +193,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
   scale_fill_manual(values = PAL, guide = "none") + 
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
@@ -233,8 +237,8 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), 
