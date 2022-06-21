@@ -125,8 +125,10 @@ pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
 
 # Match or combine data so that every single census block is taken into account
 # Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
-pref_geom_only$pop <- 0
-pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
+# For Saitama, every 2015 geometry is assigned to 2020 census population data.
+#pref_geom_only$pop <- 0
+#pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
+
 # Assign 川口市 本前川 to 前川町, and merge three blocks (前川町, 大字安行領根岸, 大字伊刈) together.
 # This is because 川口市 本前川 was newly created in 2016 by combining parts of those three blocks.
 pref_mutual[pref_mutual$code == "112030260",]$pop <- # 前川町
@@ -138,7 +140,7 @@ pref_mutual_new_address <- pref_mutual %>%
                             "112030490",
                             "112030650")) %>%
   dplyr::summarise(code = first(code),
-                   mun_code = first(mun_code),
+                   mun_code.x = first(mun_code.x),
                    sub_code = first(sub_code),
                    sub_name = "combined",
                    pop = sum(pop),
