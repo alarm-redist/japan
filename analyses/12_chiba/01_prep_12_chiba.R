@@ -147,7 +147,7 @@ pref_mutual_new_address <- pref_mutual %>%
                               "122170420",
                               "122170010")) %>%
     dplyr::summarise(code = first(code),
-                     mun_code = first(mun_code),
+                     mun_code.x = first(mun_code.x),
                      sub_code = first(sub_code),
                      sub_name = "combined",
                      pop = sum(pop),
