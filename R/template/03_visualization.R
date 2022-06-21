@@ -557,6 +557,7 @@ rm(cl_co,
    functioning_results,
    results,
    respect_gun_matrix,
+   respect_mun_matrix,
    pref_sep,
    pref_freeze
 )
@@ -567,7 +568,8 @@ save.image(paste("data-out/pref/",
                  as.character(pref_name),
                  "_data",
                  ".Rdata",
-                 sep = ""))
+                 sep = ""),
+           compress = "xz")
 
 # Save relevant files to upload to Dataverse
 # `redist_plans` object
