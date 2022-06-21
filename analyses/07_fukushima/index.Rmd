@@ -36,14 +36,17 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
+new_max_to_min <- 1.311
+new_mun_splits <- 0
+new_gun_splits <- 0
+new_koiki_splits <- 1
 sq_mun_splits_name <- "" 
 sq_gun_splits_name <- "西白河郡"
 sq_koiki_splits_name <- "こおりやま広域連携中枢都市圏、しらかわ地域定住自立圏"
+new_mun_splits_name <- "" 
+new_gun_splits_name <- ""
+new_koiki_splits_name <- "こおりやま広域連携中枢都市圏"
 split_1_name <- "いわき市"
-new_max_to_min <- 1.311
-new_mun_splits <- 0
-new_gun_split <- 
-new_koiki_split <- 
 
 ## Color Palette
 PAL <- c('#6D9537','#DCAD35', '#7F4E28', '#364B7F', '#2A4E45', '#9A9BB9')
@@ -66,11 +69,11 @@ sim_gun_split <- ifelse(is.null(results_0_sample[which(results_0_sample$index ==
 table_summary <- dplyr::tribble(
   ~category, ~status_quo, ~new_enacted, ~split_0, 
   "県内較差", sq_max_to_min, new_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
-  "改善率", NA, (sq_max_to_min - new_max_to_min/(sq_max_to_min - 1)), (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1), (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
   "選挙区数", ndists_old, ndists_new, ndists_new,
   "市区町村の分割", sq_mun_splits, new_mun_splits, 0, 
-  "郡の分割", sq_gun_splits, new_gun_split, sim_gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, new_koiki_split,  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
+  "郡の分割", sq_gun_splits, new_gun_splits, sim_gun_split, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
 ) 
 
 table_summary %>% 
@@ -103,20 +106,26 @@ table_summary %>%
     columns = status_quo
   ) %>% 
   tab_spanner(
+    label = "新しい区割り",
+    columns = new_enacted
+  ) %>% 
+  tab_spanner(
     label = "アルゴリズムの提案",
     columns = c(split_0)
   ) %>% 
   cols_label(
     status_quo = "",
+    new_enacted = "",
     split_0 = "市区町村の分割無し"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:3
+    columns = 2:4
   ) %>% 
   cols_width(
-    status_quo ~ pct(37.5),
-    split_0 ~ pct(37.5)
+    status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    split_0 ~ pct(25)
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
@@ -132,17 +141,24 @@ table_summary %>%
  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
-      columns = 2:3,
+      columns = c(2, 4),
       rows = 6
     ) 
-  ) %>% 
+  ) %>%
+  tab_footnote(
+    footnote = new_koiki_splits_name,
+    locations = cells_body(
+      columns = 3,
+      rows = 6
+    ) 
+  ) %>%
   opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:3,
+      columns = 2:4,
       rows = 1
     ) 
   ) 
