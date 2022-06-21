@@ -378,6 +378,7 @@ gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
 gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 gun_split <- gun_split[,1]
+
 # Count number of koiki renkei splits
 koiki_split <-
   redist::redist.splits(pref_smc_plans, koiki_1) +
@@ -476,7 +477,7 @@ gun$type <- "郡の境界"
 # Municipality/Gun boundary
 boundary <- rbind(mun, gun)
 
-# District Boundary of Optimal Plan
+# District boundary of optimal plan
 matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
