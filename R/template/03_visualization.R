@@ -378,6 +378,7 @@ gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
 gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 gun_split <- gun_split[,1]
+
 # Count number of koiki renkei splits
 koiki_split <-
   redist::redist.splits(pref_smc_plans, koiki_1) +
@@ -396,14 +397,13 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
+# Confirm that the 郡 that are kept together in the same district under the enacted plan
+# are not split in the simulated plans
 
-# Confirm that the gun boundaries that are respected under the enacted plan
-# are respected under the simulated plans
-
-# Define the codes of the gun that must be kept together in the same district
+# Define the codes of the 郡 that must be kept together in the same district
 respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
 
-# Evaluate whether the gun that must be kept together in the same district are
+# Evaluate whether the 郡 that must be kept together in the same district are
 # in the same district in the simulated plans
 respect_gun_matrix <- matrix(0, nrow = length(respect_gun_code), ncol = ncol(pref_smc_plans))
 for(i in 1:length(respect_gun_code)){
@@ -414,16 +414,32 @@ for(i in 1:length(respect_gun_code)){
   }
 }
 
-# Store result
-results$respect_gun <- colSums(respect_gun_matrix)
+# Store results
+results$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
 
-# Discard plans with multi-splits, plans that split gun that are not split
-# under the enacted plan, and plans that result in more municipality
-# splits than the number of municipality splits under the enacted plan.
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(pref$code), mun_not_freeze)
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
+  }
+}
+
+# Store results
+results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code),
-         multi == 0,
-         mun_split <= sq_mun_splits)
+  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
 
 # Sample 5,000 plans
 set.seed(2020)
@@ -461,7 +477,7 @@ gun$type <- "郡の境界"
 # Municipality/Gun boundary
 boundary <- rbind(mun, gun)
 
-# District Boundary of Optimal Plan
+# District boundary of optimal plan
 matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
@@ -542,7 +558,9 @@ rm(cl_co,
    functioning_results,
    results,
    respect_gun_matrix,
-   pref_sep
+   respect_mun_matrix,
+   pref_sep,
+   pref_freeze
 )
 
 save.image(paste("data-out/pref/",
@@ -551,7 +569,8 @@ save.image(paste("data-out/pref/",
                  as.character(pref_name),
                  "_data",
                  ".Rdata",
-                 sep = ""))
+                 sep = ""),
+           compress = "xz")
 
 # Save relevant files to upload to Dataverse
 # `redist_plans` object
