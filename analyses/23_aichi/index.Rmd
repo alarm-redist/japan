@@ -1,7 +1,7 @@
 ---
 title: "愛知県 (議員定数：15 → 16)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: June 21, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -38,7 +38,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
 sq_mun_splits_name <- "一宮市、瀬戸市、豊田市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- "衣浦定住自立圏"
-optimal_splits_name <- "名古屋市中村区、名古屋市熱田区、名古屋市港区"
+optimal_splits_name <- "一宮市、瀬戸市、豊田市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -200,9 +200,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "black", "white", "black"),
+              color = c("black", "black", "black", "black", "black"),
               nudge_x = c(0, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
+              nudge_y = c(3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
               #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
               family = "HiraginoSans-W3") +
   
@@ -242,9 +242,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "white", "black", "black"),
-              nudge_x = c(8000, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
+              color = c("black", "white", "black", "black", "black"),
+              nudge_x = c(0, 7000, 0, 0, 0), # adjust the position of the labels
+              nudge_y = c(3000, 0, -3000, 3000, 3000), # adjust the position of the labels
               #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
               family = "HiraginoSans-W3") +
 
@@ -253,20 +253,41 @@ ggplot() +
 ```
 
 # アルゴリズム設定
-* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ± 20%
-* 国勢調査における小地域を基本の単位として扱う
+* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ±`r 100*pop_tol`%
+* 市区町村を基本の単位として扱う 
+  * ただし、現状の区割りにおいて分割されている市区町村については、シミュレーションにおいても分割を許容し、国勢調査における小地域を基本の単位として扱う
+  * 現状の区割りにおいて分割されている市区町村は、一宮市、瀬戸市、豊田市
 * 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 区割り改定案を25,000作成 
-* 市区町村が3つ以上の選挙区に分割される案を棄却し有効な案を選定
-* 有効な案の中から5,000の案を無作為に抽出 
+* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、区割り改定案を`r format(4 * nsims, big.mark = ",")`作成
+* 以下の案を棄却し有効な案を選定
+  * 市区町村が3つ以上の選挙区に分割される案
+  * 現状の区割りにおいて分割されていない郡・市区町村が分割される案
+* 有効な案の中から5,000の案を無作為に抽出
+
 
 ### 県特有の設定  
-* 以下の地域は隣接するものとして扱った
-  * 西尾市東幡豆町(本土)と西尾市東幡豆町前島
-  * 西尾市東幡豆町(本土)と西尾市東幡豆町沖島
-  * 知多郡と知多郡の島嶼部
+* 島嶼部に関しては、以下の地域と隣接するものとして扱った
+  * 西尾市島嶼部: 西尾市東幡豆町(本土)
+  * 知多郡島嶼部: 知多郡(本土)
+  * 小島(蒲郡市): 三河大島(蒲郡市)
+  * 姫島(田原市) :田原市(本土)
+  * 中部国際空港: 常滑市(本土)
+
+* 以下の市区町村は、河川等によって隔てられているため、複数のポリゴンに分かれているが、橋や道路によってつながっているポリゴンは、互いに隣接しているものとして扱った
+  * 名古屋市熱田区
+  * 名古屋市中川区
+  * 名古屋市港区
+
+* 以下の市区町村は、河川等によって隔てられているものの、橋や道路によってつながっているため、互いに隣接しているものとして扱った
+  * 名古屋市中川区と名古屋市中区
+  * 名古屋市中村区と名古屋市中区
+  * 名古屋市熱田区と名古屋市南区
+  * 名古屋市熱田区と名古屋市瑞穂区
+  * 名古屋市熱田区と名古屋市昭和区
+  * 名古屋市港区と東海市
+  * 名古屋市南区と東海市
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
