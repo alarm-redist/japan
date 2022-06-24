@@ -34,6 +34,28 @@ for(i in 1:length(gun_codes)){
 # Bind together 郡 and non-郡 municipalities
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
+### Method for Chiba ###
+# In order to make sure 香取郡 (discontinuous) not to be split,
+# we will merge it together with 香取市,
+# because this is the only option to make the valid plan.
+katori_code <- c(12236,
+                 12340)
+
+pref <- dplyr::bind_rows(
+  pref %>%
+    dplyr::filter(code %in% katori_code == FALSE),
+
+  pref %>%
+    dplyr::filter(code %in% katori_code) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code))
+)%>%
+  sf::st_as_sf()
+
+
 # Convert multi-polygons into polygons
 new_rows <- data.frame(code = pref[1, ]$code,
                        sub_code = pref[1, ]$sub_code,
@@ -113,8 +135,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 4, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 5, admin = pref_map$gun_code)
+constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
@@ -123,7 +145,7 @@ sim_smc_pref <- redist::redist_smc(
   nsims = nsims,
   runs = 4L,
   counties = pref$code,
-  #  constraints = constr,
+  constraints = constr,
   pop_temper = 0.05)
 
 # Check to see whether there are SMC convergence warnings
