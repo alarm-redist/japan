@@ -34,6 +34,27 @@ for(i in 1:length(gun_codes)){
 # Bind together 郡 and non-郡 municipalities
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
+### Method for Saitama ###
+# In order to make sure 秩父郡 (discontinuous) not to be split,
+# we will merge it together with 秩父市,
+# because this is the only option to make the valid plan.
+chichibu_code <- c(11207,
+                   11360)
+
+pref <- dplyr::bind_rows(
+  pref %>%
+    dplyr::filter(code %in% chichibu_code == FALSE),
+
+  pref %>%
+    dplyr::filter(code %in% chichibu_code) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code))
+  )%>%
+  sf::st_as_sf()
+
 # Convert multi-polygons into polygons
 new_rows <- data.frame(code = pref[1, ]$code,
                        sub_code = pref[1, ]$sub_code,
@@ -107,7 +128,7 @@ pref_map <- redist::redist_map(pref,
 # Define constraints
 constr = redist::redist_constr(pref_map)
 constr = redist::add_constr_splits(constr, strength = 3, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 4, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
