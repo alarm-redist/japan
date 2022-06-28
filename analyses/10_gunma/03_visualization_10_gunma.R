@@ -1,6 +1,6 @@
 ###############################################################################
-# Data visualization for `00_pref`
-# © ALARM Project, April 2021
+# Data visualization for `10_gunma`
+# © ALARM Project, June 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -8,8 +8,11 @@
 # Define using the codes in the column `pref$code`
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
-koiki_1_codes <- c()
-koiki_2_codes <- c()
+koiki_1_codes <- c(10206,
+                   10443,
+                   10444,
+                   10448,
+                   10449)
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
@@ -71,18 +74,16 @@ wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
 # Assign koiki_renkei area codes for simulation with 0 split
 koiki_1_0 <- pref_0$code
 koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$code
-koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
 
 # Assign koiki_renkei area codes for simulation with 1 split
 # When a municipality that belongs to a koiki-renkei area is split:
 koiki_1_1 <- pref_1$pre_gappei_code
-koiki_1_1[koiki_1_1 %in% c(koiki_1_codes,
-                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 1
-koiki_2_1 <- pref_1$pre_gappei_code
-koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
+koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 
 # Count number of municipality splits
+mun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split_0 <- mun_split_0[,1]
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
 mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code) %>%
   matrix(ncol = ndists_new, byrow = TRUE)
@@ -98,20 +99,19 @@ gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
-  redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
-  redist::redist.splits(pref_smc_plans_0, koiki_2_0)
+  redist::redist.splits(pref_smc_plans_0, koiki_1_0)
 koiki_split_0 <- koiki_split_0 %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 koiki_split_0 <- koiki_split_0[,1]
 koiki_split_1 <-
-  redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
-  redist::redist.splits(pref_smc_plans_1, koiki_2_1)
+  redist::redist.splits(pref_smc_plans_1, koiki_1_1)
 koiki_split_1 <- koiki_split_1 %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 koiki_split_1 <- koiki_split_1[,1]
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
+results_0$mun_split <- mun_split_0
 results_0$gun_split <- gun_split_0
 results_0$koiki_split <- koiki_split_0
 results_0$index <- 1:nrow(wgt_smc_0)
@@ -133,7 +133,7 @@ bridges_1 <- c()
 results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # TODO: filter out plans with discontiguities
-functioning_results_0 <- results_0 %>% dplyr::filter(valid)
+functioning_results_0 <- results_0 %>% dplyr::filter(mun_split == 0 & valid)
 functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 
 # nrow(functioning_results_0) and nrow(functioning_results_1) must be over 5,000.
