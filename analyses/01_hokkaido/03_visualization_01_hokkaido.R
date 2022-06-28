@@ -1,6 +1,6 @@
 ###############################################################################
-# Data visualization for `00_pref`
-# © ALARM Project, April 2021
+# Data visualization for `01_hokkaido`
+# © ALARM Project, June 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
