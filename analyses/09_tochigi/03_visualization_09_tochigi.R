@@ -151,27 +151,27 @@ results_1$index <- 1:nrow(wgt_smc_1)
 # 佐野市仙波町(09204) is made up of discontiguous parts.
 # However, in practice, 佐野市仙波町 is treated as a contiguous unit under the enacted plan.
 # Thus, for the purpose of checking whether plans are contiguous or not,
-# we remove 佐野市 as well as its neighboring municipality, 栃木市 (09203) and 鹿沼市(09205),  from the analysis.
+# we remove 佐野市 as well as its neighboring municipality, 足利市(09202),  from the analysis.
 
 # Filter out discontiguous area in 佐野市(09204)
 discont_geom <- data.frame(unit = 1,
-                           geometry = sf::st_cast(pref_0[which(pref_0$code == 09204),]$geometry,
+                           geometry = sf::st_cast(pref_0[which(pref_0$code == 9204),]$geometry,
                                                   "POLYGON"))
 discont_geom <- sf::st_as_sf(discont_geom[2,])
 
 # Edit pref_0 object by removing discontiguous area in 佐野市 (i.e. 佐野市仙波町)
 pref_0_without_discont <- pref_0
-pref_0_without_discont[which(pref_0_without_discont$code == 09204),]$geometry <- discont_geom$geometry
-# Remove 栃木市 (09203) and 鹿沼市(09205) from the analysis
-pref_0_without_discont <- pref_0_without_discont %>% filter(code %in% c(09023, 09025) == FALSE)
-pref_smc_plans_0_without_discont <- pref_smc_plans_0[-c(which(pref_0$code == 09023),which(pref_0$code == 09025)),]
+pref_0_without_discont[which(pref_0_without_discont$code == 9204),]$geometry <- discont_geom$geometry
+# Remove 足利市(09202) from the analysis
+pref_0_without_discont <- pref_0_without_discont %>% filter(code %in% 9202 == FALSE)
+pref_smc_plans_0_without_discont <- pref_smc_plans_0[-which(pref_0$code == 9202),]
 
 # Edit pref_1 object by removing discontiguous area in 佐野市 (i.e. 佐野市仙波町)
 pref_1_without_discont <- pref_1
-pref_1_without_discont[which(pref_1_without_discont$code == 09204),]$geometry <- discont_geom$geometry
-# Remove 七ヶ浜町(4404) from the analysis
-pref_1_without_discont <- pref_1_without_discont %>% filter(code %in% c(09023, 09025) == FALSE)
-pref_smc_plans_1_without_discont <- pref_smc_plans_1[-c(which(pref_1$code == 09023),which(pref_1$code == 09025)),]
+pref_1_without_discont[which(pref_1_without_discont$code == 9204),]$geometry <- discont_geom$geometry
+# Remove 足利市(09202) from the analysis
+pref_1_without_discont <- pref_1_without_discont %>% filter(code %in% 9202 == FALSE)
+pref_smc_plans_1_without_discont <- pref_smc_plans_1[-which(pref_1$code == 9202),]
 
 # Add bridges and check if valid
 bridges_0 <- c()
