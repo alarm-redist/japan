@@ -7,6 +7,11 @@
 # Add information about 郡
 pref <- merge_gun(pref)
 
+# To avoid 飛地, we merge みどり市 and 桐生市 together,
+# because a part of みどり市大間々町大間々 is surrounded by 桐生市.
+# Assign 桐生市 code into みどり市's gun_code
+pref[which(pref$code == 10212), ]$gun_code <- 10203
+
 # Define pref_0
 pref_0 <-  sf::st_as_sf(
   dplyr::bind_rows(
@@ -23,42 +28,6 @@ pref_0 <-  sf::st_as_sf(
                        code = code[1])
   )
 )
-
-# For 高崎市, we convert multi-polygons into polygons to deal with 飛地
-new_rows <- data.frame(code = pref_0[1, ]$code,
-                       geometry = sf::st_cast(pref_0[1, ]$geometry, "POLYGON"),
-                       pop = 0,
-                       gun_code = pref_0[1, ]$gun_code
-)
-new_rows[1, ]$pop <- pref_0[1, ]$pop
-
-pref_sep <- new_rows
-
-# to calculate area size, switch off `geometry (s2)`
-sf_use_s2(FALSE)
-for (i in 2:nrow(pref_0)){
-  if(pref_0[i,]$code == 10202){
-    new_rows <- data.frame(code = pref_0[i, ]$code,
-                           geometry = sf::st_cast(pref_0[i, ]$geometry, "POLYGON"),
-                           pop = 0,
-                           gun_code = pref_0[i, ]$gun_code
-    )
-    # order by size
-    new_rows <- new_rows %>%
-      dplyr::mutate(area = sf::st_area(geometry)) %>%
-      dplyr::arrange(desc(area)) %>%
-      dplyr::select(-area)
-
-    # assign population to the largest area
-    new_rows[1, ]$pop <- pref_0[i, ]$pop
-  } else {
-    new_rows <- pref_0[i, ]
-  }
-  pref_sep <- rbind(pref_sep, new_rows)
-}
-# switch on the `geometry (s2)``
-sf_use_s2(TRUE)
-pref_0 <- sf::st_as_sf(pref_sep)
 
 # Define pref_1: Split largest municipality
 # Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
@@ -213,3 +182,4 @@ summary(sim_smc_pref_1)
 
 hist(plans_diversity(sim_smc_pref_0))
 hist(plans_diversity(sim_smc_pref_1))
+
