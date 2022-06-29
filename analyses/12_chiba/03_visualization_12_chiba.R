@@ -79,6 +79,13 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
+### Method for Chiba ###
+# Check the POLYGON of the plan is contiguous or not.
+# We need this additional process, because we kept 我孫子市 as MULTIPOLYGON.
+# Add bridges and check if valid
+bridges <- c()
+results$valid <- check_valid(pref, pref_smc_plans, bridges)
+
 # Confirm that the 郡 that are kept together in the same district under the enacted plan
 # are not split in the simulated plans
 
@@ -121,7 +128,10 @@ results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
 # Discard plans with multi-splits as well as plans that split 郡/municipalities that
 # should not be split
 functioning_results <- results %>%
-  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
+  filter(respect_gun == TRUE,
+         respect_mun == TRUE,
+         multi == 0,
+         valid == TRUE)
 
 # Sample 5,000 plans
 set.seed(2020)

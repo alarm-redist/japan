@@ -38,7 +38,10 @@ pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 # In order to make sure 香取郡 (discontinuous) not to be split,
 # we will merge it together with 香取市,
 # because this is the only option to make the valid plan.
-katori_code <- c(12236,
+# Moreover, since 香取郡 多古町 has 飛地 in 成田市,
+# we will also merge 成田市 together.
+katori_code <- c(12211,
+                 12236,
                  12340)
 
 pref <- dplyr::bind_rows(
@@ -69,24 +72,29 @@ pref_sep <- new_rows
 
 # to calculate area size, switch off `geometry (s2)`
 sf_use_s2(FALSE)
-for (i in 2:nrow(pref))
-{
-  new_rows <- data.frame(code = pref[i, ]$code,
-                         sub_code = pref[i, ]$sub_code,
-                         geometry = sf::st_cast(pref[i, ]$geometry, "POLYGON"),
-                         pop = 0,
-                         gun_code = pref[i, ]$gun_code
-  )
-  # order by size
-  new_rows <- new_rows %>%
-    dplyr::mutate(area = sf::st_area(geometry)) %>%
-    dplyr::arrange(desc(area)) %>%
-    dplyr::select(-area)
+for (i in 2:nrow(pref)){
+  # For Chiba, we will keep 我孫子市 as a MULTIPOLYGON to deal with its 飛地 to get valid plan.
+  # This is because with the default methods with POLYGON,
+  # algorithm splits 我孫子市, which is invalid plan.
+  if(pref[i,]$code == 12222){
+    new_rows <- pref[i, ]
+  } else {
+    new_rows <- data.frame(code = pref[i, ]$code,
+                           sub_code = pref[i, ]$sub_code,
+                           geometry = sf::st_cast(pref[i, ]$geometry, "POLYGON"),
+                           pop = 0,
+                           gun_code = pref[i, ]$gun_code
+    )
+    # order by size
+    new_rows <- new_rows %>%
+      dplyr::mutate(area = sf::st_area(geometry)) %>%
+      dplyr::arrange(desc(area)) %>%
+      dplyr::select(-area)
 
-  # assign population to the largest area
-  new_rows[1, ]$pop <- pref[i, ]$pop
-
-  pref_sep <- rbind(pref_sep, new_rows)
+    # assign population to the largest area
+    new_rows[1, ]$pop <- pref[i, ]$pop
+  }
+    pref_sep <- rbind(pref_sep, new_rows)
 }
 # switch on the `geometry (s2)``
 sf_use_s2(TRUE)
@@ -136,8 +144,8 @@ pref_map <- redist::redist_map(pref,
 # Define constraints
 constr = redist::redist_constr(pref_map)
 #constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$gun_code)
-#constr = redist::add_constr_multisplits(constr, strength = 6, admin = pref_map$gun_code)
-constr = redist::add_constr_total_splits(constr, strength = 7, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$gun_code)
+constr = redist::add_constr_total_splits(constr, strength = 5, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
