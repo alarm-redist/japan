@@ -36,7 +36,6 @@
 ### 群馬県特有の設定
 0split model -> pop_tol
 みどり市と桐生市飛地 -> merge
-桐生市と太田市の飛地 -> 厳密には、、
 
 ## データの出典
 * [「地図で見る統計(統計GIS)  境界データダウンロード」(政府統計の総合窓口(e-Stat)）](https://www.e-stat.go.jp/gis/statmap-search?page=1&type=2&aggregateUnitForBoundary=A&toukeiCode=00200521)
