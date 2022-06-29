@@ -122,33 +122,11 @@ results_1$gun_split <- gun_split_1
 results_1$koiki_split <- koiki_split_1
 results_1$index <- 1:nrow(wgt_smc_1)
 
-# Filter out discontiguous plans
-# 桐生市広沢町 (10203) is made up of discontiguous parts.
-# However, in practice, 桐生市広沢町 is treated as a contiguous unit under the enacted plan.
-# Thus, for the purpose of checking whether plans are contiguous or not,
-# we remove 桐生市 as well as its neighboring municipality, みどり市(10212), from the analysis.
-# However, since we have already merged those two municipalities and assigned the code
-# of 桐生市, we only need to filter out the code of 桐生市 (10203)
-
-# Filter out discontiguous area in 桐生市(10203)
-discont_geom <- data.frame(unit = 1,
-                           geometry = sf::st_cast(pref_0[which(pref_0$code == 10203),]$geometry,
-                                                  "POLYGON"))
-discont_geom <- sf::st_as_sf(discont_geom[2,])
-
-# Edit pref_0 object by removing discontiguous area in 桐生市 (i.e. 桐生市広沢町)
-pref_0_without_discont <- pref_0
-pref_0_without_discont[which(pref_0_without_discont$code == 10203),]$geometry <- discont_geom$geometry
-
-# Edit pref_1 object by removing discontiguous area in 桐生市 (i.e. 桐生市広沢町)
-pref_1_without_discont <- pref_1
-pref_1_without_discont[which(pref_1_without_discont$code == 10203),]$geometry <- discont_geom$geometry
-
 # Add bridges and check if valid
 bridges_0 <- c()
-results_0$valid <- check_valid(pref_0_without_discont, pref_smc_plans, bridges_0)
+results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
 bridges_1 <- c()
-results_1$valid <- check_valid(pref_1_without_discont, pref_smc_plans, bridges_1)
+results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
 
 # TODO: filter out plans with discontiguities
 functioning_results_0 <- results_0 %>% dplyr::filter(valid)
