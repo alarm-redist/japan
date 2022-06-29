@@ -3,11 +3,12 @@
 # © ALARM Project, June 2021
 ###############################################################################
 
-# Obtain codes of 郡 to merge
+# Assign 郡 codes
 pref <- merge_gun(pref)
+
+# Choose 郡 to merge
 gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-# Filter out exceptions
-gun_codes <- setdiff(gun_codes, gun_exception)
+gun_codes <- setdiff(gun_codes, gun_exception) # Filter out exceptions
 
 # Set aside non-郡 municipalities
 pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
@@ -26,7 +27,7 @@ for(i in 1:length(gun_codes)){
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
 
   # merge back together
-  gun$sub_code <- 0
+  gun$sub_code <- NA
   gun$gun_code <- gun_codes[i]
   pref_gun <- dplyr::bind_rows(pref_gun, gun)
 }
@@ -34,7 +35,7 @@ for(i in 1:length(gun_codes)){
 # Bind together 郡 and non-郡 municipalities
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
-# Converet MULTIPOLYGON to several POLYGONs
+# Convert multi-polygons into polygons
 new_rows <- data.frame(code = pref[1, ]$code,
                        sub_code = pref[1, ]$sub_code,
                        geometry = sf::st_cast(pref[1, ]$geometry, "POLYGON"),
@@ -46,7 +47,7 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
-# to calculate area size, switch off the `geometry (s2)`
+# to calculate area size, switch off `geometry (s2)`
 sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
@@ -56,11 +57,13 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
-  # order by size of the area
+
+  # order by size
   new_rows <- new_rows %>%
     dplyr::mutate(area = sf::st_area(geometry)) %>%
     dplyr::arrange(desc(area)) %>%
     dplyr::select(-area)
+
   # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
 
@@ -84,31 +87,21 @@ if(check_ferries(pref_code) == TRUE){
                                  zero = TRUE)
 }
 
+####################################
+
+
 # Optional: Suggest connection between disconnected groups
-suggest <-  geomander::suggest_component_connection(shp = pref,
+"suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
-
-# The function judged incorrectly that 此花区北港白津(sub_code: 160)
-# is connected to 此花区梅町(sub_code: 140).
-# Thus, we remove this adjacency
-suggest <- suggest %>%
-  filter(x != which(pref$code == 27104 & pref$sub_code == 140) &
-         y != which(pref$code == 27104 & pref$sub_code == 160))
-
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
-                               zero = TRUE)
+                               zero = TRUE)"
 
 # TODO Repair adjacencies if necessary, and document these changes.
-# Connect 此花区北港白津(sub_code: 160) with 常吉(sub_code: 120)
-prefadj <- geomander::add_edge(prefadj,
-                which(pref$code == 27104 & pref$sub_code == "160"),
-                which(pref$code == 27104 & pref$sub_code == "120"))
-# Connect 此花区北港白津(sub_code: 160) with 北港(sub_code: 130)
-prefadj <- geomander::add_edge(prefadj,
-            which(pref$code == 27104 & pref$sub_code == "160"),
-            which(pref$code == 27104 & pref$sub_code == "130"))
+# prefadj <- geomander::add_edge(prefadj,
+# which(pref$code == xxxxx & pref$sub_code == "xxxx"),
+# which(pref$code == xxxxx & pref$sub_code == "xxxx"))
 
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
@@ -119,14 +112,14 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 16, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 1, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
 
 # Run simulation
 set.seed(2020)
 sim_smc_pref <- redist::redist_smc(
   map = pref_map,
-  nsims = 100,
+  nsims = nsims,
   runs = 4L,
   counties = pref$code,
   constraints = constr,
