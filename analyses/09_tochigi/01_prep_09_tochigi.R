@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.887
 sq_mun_splits <- 3
 sq_gun_splits <- 0
 sq_koiki_splits <- 1
-pop_tol <- 0.30
+pop_tol <- 0.10
 
 # Codes of municipalities that are split under the status quo
 mun_not_freeze <- c()

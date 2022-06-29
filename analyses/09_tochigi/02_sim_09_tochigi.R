@@ -16,6 +16,13 @@ pref_0 <-  sf::st_as_sf(
 
     # Merge gun
     pref %>%
+
+      # Filter out Utsunomiya-shi, whose population is larger than the target population
+      # We set aside Utsunomiya-shi and treat it as one district
+      # because when the population of a municipality is larger than the target population,
+      # redistricting is impossible.
+      dplyr::filter(code %in% pref$code[which(pref$pop > sum(pref$pop)/ndists_new)] == FALSE) %>%
+
       dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
       dplyr::group_by(gun_code) %>%
       dplyr::summarize(geometry = sf::st_union(geometry),
@@ -24,18 +31,43 @@ pref_0 <-  sf::st_as_sf(
   )
 )
 
+# Also make object with Utsunomiya-shi
+pref_0_with_utsunomiya <- sf::st_as_sf(
+  dplyr::bind_rows(
+
+    # Set aside gun that are not respected under the status quo
+    pref %>% filter(gun_code %in% as.numeric(gun_exception)),
+
+    # Merge gun
+    pref %>%
+      dplyr::filter(gun_code %in% gun_exception == FALSE) %>%
+      dplyr::group_by(gun_code) %>%
+      dplyr::summarize(geometry = sf::st_union(geometry),
+                       pop = sum(pop),
+                       code = code[1])
+  )
+)
+
+
 # Define pref_1: Split largest municipality
 # Select the municipalities with the largest population (excluding the 区 of 政令指定都市)
 split_code <- (pref %>%
-                dplyr::filter(code >=
-                               (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
-                                                                        dplyr::filter(code >=
-                                                                                      (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
+                 dplyr::filter(code >=
+                                 (pref$code[1]%/%1000)*1000+200))[order(-(pref %>%
+                                                                            dplyr::filter(code >=
+                                                                                            (pref$code[1]%/%1000)*1000+200))$pop), ]$code[1]
 new_1 <- as.character(split_code)
 # Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
 # reflect_old_boundaries() automatically estimates the size of the Japanese population
 # based on the official definition (total population - foreign population)
-pref_1 <- reflect_old_boundaries(pref_0, old_mun, census_mun_old_2020, new_1)
+pref_1_with_utsunomiya <- reflect_old_boundaries(pref_0_with_utsunomiya, old_mun,
+                                                census_mun_old_2020, new_1)
+
+# We set aside 旧宇都宮市, because its population is larger than the target population
+# When the population of a municipality is larger than the target population, we set it aside
+# and treat it as one district. Otherwise, redistricting is impossible.
+pref_1 <- pref_1_with_utsunomiya %>%
+  dplyr::filter(pre_gappei_code %in% 09201 == FALSE)
 
 # Add adjacency
 add_adjacency <- function(pref_n){
@@ -71,8 +103,8 @@ prefadj_n <- geomander::add_edge(prefadj_n,
 
 # TODO Repair adjacencies if necessary, and document these changes.
 # prefadj_x <- geomander::add_edge(prefadj_x,
-                                 # which(pref_x$pre_gappei_code == xxxxx),
-                                 # which(pref_x$pre_gappei_code == xxxxx))
+# which(pref_x$pre_gappei_code == xxxxx),
+# which(pref_x$pre_gappei_code == xxxxx))
 
 # Run simulations
 run_simulations <- function(pref_n, prefadj_n){
@@ -86,7 +118,7 @@ run_simulations <- function(pref_n, prefadj_n){
 
   # Create redist.map object
   pref_map_n <- redist::redist_map(pref_n,
-                                   ndists = ndists_new,
+                                   ndists = ndists_new - 1, # we set aside 宇都宮市/旧宇都宮市
                                    pop_tol= pop_tol,
                                    total_pop = pop,
                                    adj = prefadj_n)
@@ -128,7 +160,7 @@ run_simulations <- function(pref_n, prefadj_n){
                               as.character(i),
                               ".rds",
                               sep = ""),
-                              compress = "xz")
+            compress = "xz")
 
   saveRDS(sim_smc_pref_n, paste("data-out/plans/",
                                 as.character(pref_code),
