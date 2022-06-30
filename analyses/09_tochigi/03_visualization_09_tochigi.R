@@ -70,8 +70,8 @@ for(i in 1:as.integer(nsims*4)){
   with_utsunomiya <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_0 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
-                                district = as.integer(3),
-                                total_pop = pref$pop[which(pref$code == 09201)]))
+                                district = as.integer(5),
+                                total_pop = pref$pop[which(pref$code == 9201)]))
   sim_smc_pref_0_with_utsunomiya <- rbind(sim_smc_pref_0_with_utsunomiya, with_utsunomiya)
 }
 
@@ -81,8 +81,8 @@ for(i in 1:as.integer(nsims*4)){
   with_utsunomiya <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_1 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
-                                district = as.integer(3),
-                                total_pop = pref_1_with_utsunomiya$pop[which(pref_1_with_utsunomiya$pre_gappei_code == 09201)]))
+                                district = as.integer(5),
+                                total_pop = pref_1_with_utsunomiya$pop[which(pref_1_with_utsunomiya$pre_gappei_code == 9201)]))
   sim_smc_pref_1_with_utsunomiya <- rbind(sim_smc_pref_1_with_utsunomiya, with_utsunomiya)
 }
 
