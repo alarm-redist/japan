@@ -56,13 +56,9 @@ gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
 gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 gun_split <- gun_split[,1]
+
 # Count number of koiki renkei splits
-koiki_split <-
-  redist::redist.splits(pref_smc_plans, koiki_1) +
-  redist::redist.splits(pref_smc_plans, koiki_2)
-koiki_split <- koiki_split %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-koiki_split <- koiki_split[,1]
+koiki_split <- 0 # There are no koiki renkei areas in Osaka
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
@@ -74,14 +70,13 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
+# Confirm that the 郡 that are kept together in the same district under the enacted plan
+# are not split in the simulated plans
 
-# Confirm that the gun boundaries that are respected under the enacted plan
-# are respected under the simulated plans
-
-# Define the codes of the gun that must be kept together in the same district
+# Define the codes of the 郡 that must be kept together in the same district
 respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
 
-# Evaluate whether the gun that must be kept together in the same district are
+# Evaluate whether the 郡 that must be kept together in the same district are
 # in the same district in the simulated plans
 respect_gun_matrix <- matrix(0, nrow = length(respect_gun_code), ncol = ncol(pref_smc_plans))
 for(i in 1:length(respect_gun_code)){
@@ -92,13 +87,47 @@ for(i in 1:length(respect_gun_code)){
   }
 }
 
-# Store result
-results$respect_gun <- colSums(respect_gun_matrix)
+# Store results
+results$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
 
-# Filter out plans with multi-splits
-# as well as plans that split gun that should have been respected
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+
+# Under the enacted plan, there are districts that are strictly speaking discontiguous
+# because of the presence of small enclaves. We allow those small areas to be enclaved by
+# another municipality in the simulated plans too.
+allow_enclave <-
+  c(27203, # 豊中市石橋麻田町
+    27211, # 茨木市小坪井
+    27215, # 寝屋川市打上元町
+    27143, # 堺市東区丈六
+    27222  # 羽曳野市埴生野
+    )
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(pref$code), c(mun_not_freeze, allow_enclave))
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
+  }
+}
+
+# Store results
+results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
 functioning_results <- results %>%
-  filter(respect_gun == length(respect_gun_code), multi == 0)
+  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
+
+# Disregard enclaves that exist under the status quo
+functioning_results$num_mun_split <- 0
+functioning_results$mun_split <- 0
 
 # Sample 5,000 plans
 set.seed(2020)
@@ -143,7 +172,7 @@ optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
-good_num <-  results_sample %>%
+good_num <- results_sample %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
   select(index)
@@ -159,8 +188,8 @@ cl_co = cluster::agnes(m_co)
 
 # Analyze the dendrogram and pick an appropriate number of clusters
 plot(as.dendrogram(cl_co))
-abline(h = 2, col = "red") # explore different depths
-abline(h = 3, col = "blue")
+abline(h = 1, col = "red") # explore different depths
+abline(h = 2, col = "blue")
 
 prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number
 
@@ -217,7 +246,9 @@ rm(cl_co,
    functioning_results,
    results,
    respect_gun_matrix,
-   pref_sep
+   respect_mun_matrix,
+   pref_sep,
+   pref_freeze
 )
 
 save.image(paste("data-out/pref/",

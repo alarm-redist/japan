@@ -87,21 +87,34 @@ if(check_ferries(pref_code) == TRUE){
                                  zero = TRUE)
 }
 
-####################################
-
-
 # Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref,
+suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
+# remove incorrect suggestion
+suggest <- suggest %>%
+  filter(x != which(pref$code == 27202)[2] &
+         y != which(pref$code == 27340))
+# add edge
 prefadj <- geomander::add_edge(prefadj,
                                suggest$x,
                                suggest$y,
-                               zero = TRUE)"
+                               zero = TRUE)
 
 # TODO Repair adjacencies if necessary, and document these changes.
-# prefadj <- geomander::add_edge(prefadj,
-# which(pref$code == xxxxx & pref$sub_code == "xxxx"),
-# which(pref$code == xxxxx & pref$sub_code == "xxxx"))
+# Connect 此花区北港白津 with mainland 此花区
+prefadj <- geomander::add_edge(prefadj,
+                               which(pref$code == 27104)[3],
+                               which(pref$code == 27104)[1])
+
+# Connect 岸和田市岸之浦町 with mainland 岸和田市
+prefadj <- geomander::add_edge(prefadj,
+                               which(pref$code == 27202)[2],
+                               which(pref$code == 27202)[1])
+
+# Connect 高石市高砂 with mainland mainland 高石市
+prefadj <- geomander::add_edge(prefadj,
+                               which(pref$code == 27225)[2],
+                               which(pref$code == 27225)[1])
 
 # Define pref_map object
 pref_map <- redist::redist_map(pref,
@@ -113,7 +126,7 @@ pref_map <- redist::redist_map(pref,
 # Define constraints
 constr = redist::redist_constr(pref_map)
 constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
 
 # Run simulation
 set.seed(2020)
@@ -135,7 +148,6 @@ summary(sim_smc_pref)
 # However, for some prefectures, it is impossible to get a diverse set of plans
 # because there are fewer possible plans.
 hist(plans_diversity(sim_smc_pref))
-
 
 # Save pref object, pref_map object, adjacency list, and simulation data
 saveRDS(pref, paste("data-out/pref/",

@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 5000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 27
 pref_name <- "osaka"
 lakes_removed <- c()
@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 2.005
 sq_mun_splits <- 0
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
-pop_tol <- 0.20
+pop_tol <- 0.25
 
 # Codes of municipalities that are split under the status quo
 mun_not_freeze <- c()
@@ -88,6 +88,16 @@ pop <- pref_pop_2020 %>%
 
 geom <- pref_shp_cleaned %>%
   dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+
+  # Discard the data for Kansai International Airport (pop:0)
+  dplyr::slice(-c(which(pref_shp_cleaned$mun_code == 27213 &
+                          pref_shp_cleaned$KIHON1 == "0680"), #泉佐野市泉州空港北
+                  which(pref_shp_cleaned$mun_code == 27362 &
+                          pref_shp_cleaned$KIHON1 == "0030"), #田尻町泉州空港中
+                  which(pref_shp_cleaned$mun_code == 27228 &
+                          pref_shp_cleaned$KIHON1 == "0230") #泉南市泉州空港南
+                  )) %>%
+
   dplyr::group_by(mun_code) %>%
   dplyr::summarise(geometry = sf::st_union(geometry)) %>%
   dplyr::select(mun_code, geometry) %>%
