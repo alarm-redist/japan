@@ -120,14 +120,16 @@ for(i in 1:length(respect_mun_code)){
 # Store results
 results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
 
+# Count the true number of municipality splits by evaluating whether each municipality
+# in `mun_not_freeze` is split
+# i.e. disregard splits caused by enclaves that are ignored under the status quo
+results$num_mun_split <- 0
+results$mun_split <- 0
+
 # Discard plans with multi-splits as well as plans that split 郡/municipalities that
 # should not be split
 functioning_results <- results %>%
   filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
-
-# Disregard enclaves that exist under the status quo
-functioning_results$num_mun_split <- 0
-functioning_results$mun_split <- 0
 
 # Sample 5,000 plans
 set.seed(2020)
