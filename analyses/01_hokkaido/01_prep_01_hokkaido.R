@@ -34,7 +34,7 @@ sq_max_to_min <- 1.871
 sq_max_to_tottori2 <- 1.989
 sq_mun_splits <- 2
 sq_gun_splits <- 0
-sq_shinkokyoku_splits <- 0
+sq_koiki_splits <- 0
 pop_tol <- 0.10
 
 # Codes of municipalities that are split under the status quo
