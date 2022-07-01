@@ -104,9 +104,8 @@ pref <- pref %>%
                 01363,
                 01364,
                 01367,
-                01371,
+                01370,
                 01371) ~ "hiyama",
-    #旭川市 ／士別市 ／名寄市 ／富良野市 ／鷹栖町 ／東神楽町 ／当麻町 ／比布町 ／愛別町 ／上川町 ／東川町 ／美瑛町 ／上富良野町 ／中富良野町 ／南富良野町 ／占冠村 ／和寒町 ／剣淵町 ／下川町 ／美深町 ／音威子府村 ／中川町 ／幌加内町
     code %in% c(01204,
                 01220,
                 01221,
@@ -148,7 +147,6 @@ pref <- pref %>%
                 01518,
                 01519,
                 01520) ~ "soya",
-    #北見市 ／網走市 ／紋別市 ／美幌町 ／津別町 ／斜里町 ／清里町 ／小清水町 ／訓子府町 ／置戸町 ／佐呂間町 ／遠軽町 ／湧別町 ／滝上町 ／興部町 ／西興部村 ／雄武町 ／大空町
     code %in% c(01208,
                 01211,
                 01219,
@@ -200,12 +198,16 @@ pref <- pref %>%
                 01693,
                 01694) ~ "nemuro"))
 
-# Choose 郡 to merge
-gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-gun_codes <- setdiff(gun_codes, gun_exception) # Filter out exceptions
-
-# Set aside non-郡 municipalities
-pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
+# Set aside 石狩振興局 (pop == 2,381,374) and assign proportional seats (6) to it.
+# This is because in Hokkaido, the boundaries of 振興局 must be respected,
+# and only 石狩振興局 needs to be split into multiple districts.
+pref_ishikari <- pref %>%
+  dplyr::filter(gun_code %in% c("ishikari"))
+pref_else <- pref %>%
+  dplyr::filter(gun_code %in% c("ishikari") == FALSE)
+ndists_ishikari <- round(
+  sum(pref_ishikari$pop) / (sum(pref$pop)/ndists_new))
+ndists_else <- ndists_new - ndists_ishikari
 
 # Merge together 郡
 pref_gun <- NULL
