@@ -449,7 +449,7 @@ functioning_results <- results %>%
 # because of the presence of small enclaves. We allow those small areas to be enclaved by
 # another municipality in the simulated plans too.
 allow_enclave <- c()  # Codes of municipalities that have areas enclaved by another municipality under the status quo
-                      # i.e. if 茨木市(27211)小坪井 is an enclave under the status quo, the input will be 27211
+                      # i.e. 茨木市(27211)小坪井 is an enclave under the status quo, so the input will be 27211
 
 # Define the codes of the municipalities that must not be split
 respect_mun_code <- setdiff(unique(pref$code), c(mun_not_freeze, allow_enclave))
