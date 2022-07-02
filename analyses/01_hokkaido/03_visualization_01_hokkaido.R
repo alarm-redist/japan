@@ -8,230 +8,227 @@
 # Define using the codes in the column `pref$code`
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
-koiki_1_codes <- c()
-koiki_2_codes <- c()
 
-####-------------- 1. Method for Rural Prefectures-------------------------####
-# Load data
-for (i in 0:1)
-{
-  pref_map_n <- readRDS(paste("data-out/maps/",
-                              as.character(pref_code),
-                              "_",
-                              as.character(pref_name),
-                              "_hr_2020_map_",
-                              as.character(i),
-                              ".rds",
-                              sep = ""))
-  assign(paste("pref_map_", i, sep = ""), pref_map_n)
+# さっぽろ連携中枢都市圈 is split in every simulations because of the 振興局 boundaries
 
-  pref_n <- readRDS(paste("data-out/pref/",
+# 北しべりし定住自立圈, 上川中部定住自立圈, 西いぶり定住自立圈, 釧路定住自立圈,
+# 北見地域定住自立圈, 十勝定住自立圈, 網走市大空町定住自立圈, 東胆振定住自立圈,
+# 宗谷定住自立圈, 中空知定住自立圈, 北空知定住自立港, and 富良野地区定住自立圈
+# are not split, because it is in the 振興局.
+
+# 南北海道定住自立圈
+koiki_1_codes <- c(01202,
+                   01236,
+                   01331,
+                   01332,
+                   01333,
+                   01334,
+                   01337,
+                   01343,
+                   01345,
+                   01346,
+                   01347,
+                   01361,
+                   01362,
+                   01363,
+                   01364,
+                   01367,
+                   01370,
+                   01371)
+# 北・北海道中央圈域定住自立圈
+koiki_2_codes <- c(01220,
+                   01221,
+                   01464,
+                   01465,
+                   01468,
+                   01469,
+                   01470,
+                   01471,
+                   01472,
+                   01512,
+                   01513,
+                   01514,
+                   01562)
+
+####-------------- 2. Method for Urban Prefectures-------------------------####
+####-------------- Non-Ishikari -------------------------####
+non_ishikari_map <- readRDS(paste("data-out/maps/",
                           as.character(pref_code),
                           "_",
                           as.character(pref_name),
-                          "_",
-                          as.character(i),
-                          ".Rds",
-                          sep = ""))
-  assign(paste("pref_", i, sep = ""), pref_n)
+                          "_non_ishikari_hr_2020_map.rds",
+                           sep = ""))
 
-  prefadj_n <-readRDS(paste("data-out/pref/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_adj_",
-                            as.character(i),
-                            ".Rds",
-                            sep = ""))
-  assign(paste("prefadj_", i, sep = ""), prefadj_n)
+non_ishikariadj <- readRDS(paste("data-out/pref/",
+                         as.character(pref_code),
+                         "_",
+                         as.character(pref_name),
+                         "_non_ishikari_adj.Rds",
+                         sep = ""))
 
-  sim_smc_pref_n <- readRDS(paste("data-out/plans/",
-                                  as.character(pref_code),
-                                  "_",
-                                  as.character(pref_name),
-                                  "_",
-                                  as.character(sim_type),
-                                  "_",
-                                  as.character(nsims * 4),
-                                  "_",
-                                  as.character(i),
-                                  ".Rds",
-                                  sep = ""), refhook = NULL)
-  assign(paste("sim_smc_pref_", i, sep = ""), sim_smc_pref_n)
+sim_smc_non_ishikari <- readRDS(paste("data-out/plans/",
+                              as.character(pref_code),
+                              "_",
+                              as.character(pref_name),
+                              "_",
+                              as.character(sim_type),
+                              "_",
+                              as.character(nsims * 4),
+                              "_non_ishikari.Rds",
+                              sep = ""), refhook = NULL)
 
-  # Get plans matrix
-  pref_smc_plans_n <- redist::get_plans_matrix(sim_smc_pref_n)
-  assign(paste("pref_smc_plans_", i, sep = ""), pref_smc_plans_n)
-}
+# Get plans matrix
+non_ishikari_smc_plans <- redist::get_plans_matrix(sim_smc_non_ishikari)
 
 # Calculate max:min ratio
-wgt_smc_0 <- simulation_weight_disparity_table(sim_smc_pref_0)
-wgt_smc_1 <- simulation_weight_disparity_table(sim_smc_pref_1)
+wgt_smc <- simulation_weight_disparity_table(sim_smc_non_ishikari)
 
-# Assign koiki_renkei area codes for simulation with 0 split
-koiki_1_0 <- pref_0$code
-koiki_1_0[koiki_1_0 %in% koiki_1_codes] <- 1
-koiki_2_0 <- pref_0$code
-koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
+# Assign koiki_renkei area codes
+koiki_1 <- non_ishikari$code
+koiki_1[koiki_1 %in% koiki_1_codes] <- 1
+koiki_2 <- non_ishikari$code
+koiki_2[koiki_2 %in% koiki_2_codes] <- 2
 
-# Assign koiki_renkei area codes for simulation with 1 split
-# When a municipality that belongs to a koiki-renkei area is split:
-koiki_1_1 <- pref_1$pre_gappei_code
-koiki_1_1[koiki_1_1 %in% c(koiki_1_codes,
-                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 1
-koiki_2_1 <- pref_1$pre_gappei_code
-koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
 # Count number of municipality splits
-num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
-mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-mun_split_1 <- mun_split_1[,1]
+num_mun_split <- count_splits(non_ishikari_smc_plans, non_ishikari_map$code)
+mun_split <- redist::redist.splits(non_ishikari_smc_plans, non_ishikari_map$code) %>%
+  matrix(ncol = ndists_non_ishikari, byrow = TRUE)
+mun_split <- mun_split[,1]
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-gun_split_0 <- gun_split_0[,1]
-gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-gun_split_1 <- gun_split_1[,1]
+gun_split <- redist::redist.splits(non_ishikari_smc_plans, non_ishikari_map$gun_code) %>%
+  matrix(ncol = ndists_non_ishikari, byrow = TRUE)
+gun_split <- gun_split[,1]
 
 # Count number of koiki renkei splits
-koiki_split_0 <-
-  redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
-  redist::redist.splits(pref_smc_plans_0, koiki_2_0)
-koiki_split_0 <- koiki_split_0 %>%
+koiki_split <-
+  redist::redist.splits(non_ishikari_smc_plans, koiki_1) +
+  redist::redist.splits(non_ishikari_smc_plans, koiki_2)
+koiki_split <- koiki_split %>%
   matrix(ncol = ndists_new, byrow = TRUE)
-koiki_split_0 <- koiki_split_0[,1]
-koiki_split_1 <-
-  redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
-  redist::redist.splits(pref_smc_plans_1, koiki_2_1)
-koiki_split_1 <- koiki_split_1 %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-koiki_split_1 <- koiki_split_1[,1]
-# Compile results: 0 split
-results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
-results_0$max_to_min <- wgt_smc_0$max_to_min
-results_0$gun_split <- gun_split_0
-results_0$koiki_split <- koiki_split_0
-results_0$index <- 1:nrow(wgt_smc_0)
+koiki_split <- koiki_split[,1]
 
-# Compile results: 1 split
-results_1 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_1)))
-results_1$max_to_min <- wgt_smc_1$max_to_min
-results_1$num_mun_split <- num_mun_split_1
-results_1$mun_split <- mun_split_1
-results_1$multi <-  num_mun_split_1 - mun_split_1
-results_1$gun_split <- gun_split_1
-results_1$koiki_split <- koiki_split_1
-results_1$index <- 1:nrow(wgt_smc_1)
+# Compile results
+results_non_ishikari <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results_non_ishikari$max_to_min <- wgt_smc$max_to_min
+results_non_ishikari$gun_split <- gun_split
+results_non_ishikari$num_mun_split <- num_mun_split
+results_non_ishikari$mun_split <- mun_split
+results_non_ishikari$multi <-  num_mun_split - mun_split
+results_non_ishikari$koiki_split <- koiki_split
+results_non_ishikari$index <- 1:nrow(wgt_smc)
+
+# Confirm that the 郡 that are kept together in the same district under the enacted plan
+# are not split in the simulated plans
 
 # Add bridges and check if valid
-bridges_0 <- c()
-results_0$valid <- check_valid(pref_0, pref_smc_plans_0, bridges_0)
-bridges_1 <- c()
-results_1$valid <- check_valid(pref_1, pref_smc_plans_1, bridges_1)
+bridges <- c()
+results_non_ishikari$valid <- check_valid(non_ishikari, non_ishikari_smc_plans, bridges)
 
-# TODO: filter out plans with discontiguities
-functioning_results_0 <- results_0 %>% dplyr::filter(valid)
-functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
-
-# nrow(functioning_results_0) and nrow(functioning_results_1) must be over 5,000.
-# If not, increase nsims and run more simulations.
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
+functioning_results_non_ishikari <- results_non_ishikari %>%
+  filter(valid & multi == 0)
 
 # Sample 5,000 plans
 set.seed(2020)
-valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
-sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
-  filter(draw %in% valid_sample_0)
-
-valid_sample_1 <- sample(functioning_results_1$index, 5000, replace = FALSE)
-sim_smc_pref_1_sample <- sim_smc_pref_1 %>%
-  filter(draw %in% valid_sample_1)
+valid_sample_non_ishikari <- sample(functioning_results_non_ishikari$index, 5000, replace = FALSE)
+sim_smc_non_ishikari_sample <- sim_smc_non_ishikari %>%
+  filter(draw %in% valid_sample_non_ishikari)
 
 # Filter out sampled plans
-results_0_sample <- functioning_results_0 %>%
-  filter(index %in% valid_sample_0)
-results_1_sample <- functioning_results_1 %>%
-  filter(index %in% valid_sample_1)
+results_sample_non_ishikari <- functioning_results_non_ishikari %>%
+  filter(index %in% valid_sample_non_ishikari)
 
 # Find Optimal Plan
-optimal_0 <- results_0_sample$index[which(results_0_sample$max_to_min ==
-                                            min(results_0_sample$max_to_min))][1]
-results_0_sample[which(results_0_sample$index == optimal_0),]
-optimal_1 <- results_1_sample$index[which(results_1_sample$max_to_min ==
-                                              min(results_1_sample$max_to_min))][1]
-results_1_sample[which(results_1_sample$index == optimal_1),]
+optimal_non_ishikari <- results_sample_non_ishikari$index[which(
+  results_sample_non_ishikari$max_to_min ==
+    min(results_sample_non_ishikari$max_to_min))][1]
+results_sample_non_ishikari[which(results_sample_non_ishikari$index == optimal_non_ishikari),]
 
-# Optimal Plan: 0 split
-matrix_optimal_0 <- redist::get_plans_matrix(sim_smc_pref_0 %>% filter(draw == optimal_0))
-colnames(matrix_optimal_0) <- "district"
-optimal_boundary_0 <- cbind(pref_map_0, as_tibble(matrix_optimal_0))
-
-# Match district numbers
-optimal_split <- dplyr::inner_join(as.data.frame(pref_1), as.data.frame(optimal_boundary_0),
-                                   by = "code")
-sim_smc_pref_1_sample <- redist::match_numbers(sim_smc_pref_1_sample,
-                                               optimal_split$district,
-                                               col = "pop_overlap")
-
-# Gun/Municipality/Koiki-renkei boundaries
-mun_boundary <- pref %>%
+# Gun/Municipality boundaries
+mun_boundary_non_ishikari <- pref_shp_cleaned %>%
+  mutate(code = as.numeric(substr(code, 1, 5))) %>%
+  filter(code %in% c(01101,
+                     01102,
+                     01103,
+                     01104,
+                     01105,
+                     01106,
+                     01107,
+                     01108,
+                     01109,
+                     01110,
+                     01217,
+                     01224,
+                     01231,
+                     01234,
+                     01235,
+                     01303,
+                     01304) == FALSE) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref %>%
-  filter(gun_code >= (pref_map_0$code[1]%/%1000)* 1000 + 300) %>%
+gun_boundary_non_ishikari <- pref %>%
+  filter(code %in% c(01101,
+                     01102,
+                     01103,
+                     01104,
+                     01105,
+                     01106,
+                     01107,
+                     01108,
+                     01109,
+                     01110,
+                     01217,
+                     01224,
+                     01231,
+                     01234,
+                     01235,
+                     01303,
+                     01304) == FALSE) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
-# Optimal Plan: 1 split
-matrix_optimal_1 <- redist::get_plans_matrix(sim_smc_pref_1 %>% filter(draw == optimal_1))
-colnames(matrix_optimal_1) <- "district"
-optimal_boundary_1 <- cbind(pref_map_1, as_tibble(matrix_optimal_1))
-
 # Combine municipality boundary data
-mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-mun$type <- "市区町村の境界"
+mun_non_ishikari <- mun_boundary_non_ishikari %>%
+  summarise(geometry = sf::st_combine(geometry))
+mun_non_ishikari$type <- "市区町村の境界"
 # Combine gun boundary data
-gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-gun$type <- "郡の境界"
+gun_non_ishikari <- gun_boundary_non_ishikari %>%
+  summarise(geometry = sf::st_combine(geometry))
+gun_non_ishikari$type <- "郡の境界"
 
-# Boundary for plot with 0 split
-boundary_0 <- rbind(mun, gun)
+# Municipality/Gun boundary
+boundary_non_ishikari <- rbind(mun_non_ishikari, gun_non_ishikari)
 
-# Boundary for split municipality
-old_boundary <- optimal_boundary_1 %>%
-                  filter(code == split_code) %>%
-                  summarise(geometry = sf::st_combine(geometry))
-old_boundary$type <- "合併前の市町村の境界"
-
-# Match CRS
-old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
-
-# Boundary for plot with 1 split
-boundary_1 <- rbind(old_boundary, mun, gun)
+# District boundary of optimal plan
+matrix_optimal_non_ishikari <- redist::get_plans_matrix(sim_smc_non_ishikari %>%
+                                                          filter(draw == optimal_non_ishikari))
+colnames(matrix_optimal_non_ishikari) <- "district"
+optimal_boundary_non_ishikari <- cbind(non_ishikari_map, as_tibble(matrix_optimal_non_ishikari))
 
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
-good_num_0 <- results_0_sample %>%
+good_num_non_ishikari <- results_sample_non_ishikari %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(results_0_sample$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_sample_non_ishikari$index)*0.1)) %>%
   select(index)
-good_num_0 <- as.vector(t(good_num_0))
-sim_smc_pref_0_good <- sim_smc_pref_0 %>%
-  filter(draw %in% good_num_0)
+good_num_non_ishikari <- as.vector(t(good_num_non_ishikari))
+sim_smc_non_ishikari_good <- sim_smc_non_ishikari %>%
+  filter(draw %in% good_num_non_ishikari)
 
 # Obtain co-occurrence matrix
-m_co_0 = redist::prec_cooccurrence(sim_smc_pref_0_good, sampled_only=TRUE)
+m_co_0 = redist::prec_cooccurrence(sim_smc_non_ishikari_good, sampled_only=TRUE)
 
 # Create clusters
 cl_co_0 = cluster::agnes(m_co_0)
-prec_clusters_0 = cutree(cl_co_0, ndists_new)
-pref_membership_0 <- as_tibble(as.data.frame(prec_clusters_0))
-names(pref_membership_0) <- "membership"
+prec_clusters_non_ishikari = cutree(cl_co_0, ndists_non_ishikari)
+pref_membership_non_ishikari <- as_tibble(as.data.frame(prec_clusters_non_ishikari))
+names(pref_membership_non_ishikari) <- "membership"
 
 # Obtain co-occurrenc ratio
-cooc_ratio <- vector(length = length(pref_0$code))
+cooc_ratio <- vector(length = length(non_ishikari$code))
 relcomp <- function(a, b) {
   comp <- vector()
   for (i in a) {
@@ -242,258 +239,194 @@ relcomp <- function(a, b) {
   return(comp)
 }
 
-for (i in 1:length(pref_0$code))
+for (i in 1:length(non_ishikari$code))
 {
   cooc_ratio[i] <- 1 -
-    sum(pref_0$pop[relcomp(prefadj_0[[i]]+1,
-                           which(prec_clusters_0 == prec_clusters_0[i]))] * m_co_0[i, relcomp(prefadj_0[[i]]+1,
-                                                                                              which(prec_clusters_0 == prec_clusters_0[i]))])/
-    sum(pref_0$pop[prefadj_0[[i]]+1] * m_co_0[i, prefadj_0[[i]]+1])
+    sum(non_ishikari$pop[relcomp(non_ishikariadj[[i]]+1,
+                           which(prec_clusters_non_ishikari == prec_clusters_non_ishikari[i]))] * m_co_0[i, relcomp(non_ishikariadj[[i]]+1,
+                                                                                              which(prec_clusters_non_ishikari == prec_clusters_non_ishikari[i]))])/
+    sum(non_ishikari$pop[non_ishikariadj[[i]]+1] * m_co_0[i, non_ishikariadj[[i]]+1])
 }
 
-# Save files
-rm(pref_smc_plans_0,
-   pref_smc_plans_1,
-   pref_smc_plans_n,
-   sim_smc_pref_n,
-   sim_smc_pref_0,
-   sim_smc_pref_1,
-   sim_smc_pref_0_good,
-   wgt_smc_0,
-   wgt_smc_1,
-   num_mun_split_1,
-   mun_split_1,
-   gun_split_0,
-   gun_split_1,
-   koiki_split_0,
-   koiki_split_1,
-   matrix_optimal_0,
-   matrix_optimal_1,
-   census_mun_old_2020,
-   geom,
-   pop,
-   pref_pop_2020,
-   pref_shp_2015,
-   pref_shp_cleaned,
-   old_mun,
-   functioning_results_0,
-   functioning_results_1,
-   results_0,
-   results_1
-   )
-save.image(paste("data-out/pref/",
-                 as.character(pref_code),
-                 "_",
-                 as.character(pref_name),
-                 "_data",
-                 ".Rdata",
-                 sep = ""))
+####-------------- Ishikari Shinko-kyoku -------------------------####
+ishikari_map <- readRDS(paste("data-out/maps/",
+                                  as.character(pref_code),
+                                  "_",
+                                  as.character(pref_name),
+                                  "_ishikari_hr_2020_map.rds",
+                                  sep = ""))
 
-# Save relevant files to upload to Dataverse
-for (i in 0:1){
-  # `redist_plans` object
-  write_rds(paste("sim_smc_pref_", as.character(i), "_sample", sep = ""),
-            paste("data-out/plans/",
-                  as.character(pref_code),
-                  "_",
-                  as.character(pref_name),
-                  "_hr_2020_plans_",
-                  as.character(i),
-                  ".rds",
-                  sep = ""),
-            compress = "xz")
+ishikariadj <- readRDS(paste("data-out/pref/",
+                                 as.character(pref_code),
+                                 "_",
+                                 as.character(pref_name),
+                                 "_ishikari_adj.Rds",
+                                 sep = ""))
 
-  # Export `redist_plans` summary statistics to a csv file
-  as_tibble(eval(parse(text = paste("sim_smc_pref_",
-                                    as.character(i),
-                                    "_sample", sep = "")))) %>%
-     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
-
-    # Remove the column "pop_overlap" that was created when renumbering the district numbers
-    select("draw", "district", "total_pop") %>%
-
-     write_csv(paste("data-out/plans/",
-                     as.character(pref_code),
-                     "_",
-                     as.character(pref_name),
-                     "_hr_2020_stats_",
-                     as.character(i),
-                     ".csv",
-                     sep = ""))
-}
-
-####-------------- 2. Method for Urban Prefectures-------------------------####
-pref_map <- readRDS(paste("data-out/maps/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_hr_2020_map.rds",
-                           sep = ""))
-
-prefadj <- readRDS(paste("data-out/pref/",
-                         as.character(pref_code),
-                         "_",
-                         as.character(pref_name),
-                         "_adj.Rds",
-                         sep = ""))
-
-sim_smc_pref <- readRDS(paste("data-out/plans/",
-                              as.character(pref_code),
-                              "_",
-                              as.character(pref_name),
-                              "_",
-                              as.character(sim_type),
-                              "_",
-                              as.character(nsims * 4),
-                              ".Rds",
-                              sep = ""), refhook = NULL)
+sim_smc_ishikari <- readRDS(paste("data-out/plans/",
+                                      as.character(pref_code),
+                                      "_",
+                                      as.character(pref_name),
+                                      "_",
+                                      as.character(sim_type),
+                                      "_",
+                                      as.character(nsims * 4),
+                                      "_ishikari.Rds",
+                                      sep = ""), refhook = NULL)
 
 # Get plans matrix
-pref_smc_plans <- redist::get_plans_matrix(sim_smc_pref)
+ishikari_smc_plans <- redist::get_plans_matrix(sim_smc_ishikari)
 
 # Calculate max:min ratio
-wgt_smc <- simulation_weight_disparity_table(sim_smc_pref)
-
-# Assign koiki_renkei area codes
-koiki_1 <- pref$code
-koiki_1[koiki_1 %in% koiki_1_codes] <- 1
-koiki_1[!koiki_1 %in% 1] <-
-  seq(1000, 1000 +length(koiki_1[!koiki_1 %in% c(koiki_1_codes, 1)]) - 1, by = 1)
-koiki_2 <- pref$code
-koiki_2[koiki_2 %in% koiki_2_codes] <- 2
-koiki_2[!koiki_2 %in% 2] <-
-  seq(1000, 1000 +length(koiki_2[!koiki_2 %in% c(koiki_2_codes, 2)]) - 1, by = 1)
+wgt_smc <- simulation_weight_disparity_table(sim_smc_ishikari)
 
 # Count number of municipality splits
-num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
-mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
+num_mun_split <- count_splits(ishikari_smc_plans, ishikari_map$code)
+mun_split <- redist::redist.splits(ishikari_smc_plans, ishikari_map$code) %>%
+  matrix(ncol = ndists_ishikari, byrow = TRUE)
 mun_split <- mun_split[,1]
 
 # Count number of gun splits
-gun_index <- pref$gun_code
-gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
-  seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
+gun_index <- ishikari$gun_code
+gun_index[gun_index < (ishikari_map$code[1]%/%1000)*1000+300] <-
+  seq(100000, 100000 + length(gun_index[gun_index < (ishikari_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
-gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split <- redist::redist.splits(ishikari_smc_plans, gun_index) %>%
+  matrix(ncol = ndists_ishikari, byrow = TRUE)
 gun_split <- gun_split[,1]
 
 # Count number of koiki renkei splits
-koiki_split <-
-  redist::redist.splits(pref_smc_plans, koiki_1) +
-  redist::redist.splits(pref_smc_plans, koiki_2)
-koiki_split <- koiki_split %>%
-  matrix(ncol = ndists_new, byrow = TRUE)
-koiki_split <- koiki_split[,1]
+# さっぽろ連携中枢都市圈 is split in every simulations because of the 振興局 boundaries
+# Thus, we assign 1 for `koiki_split`
+koiki_split <- 1
 
 # Compile results
-results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
-results$max_to_min <- wgt_smc$max_to_min
-results$gun_split <- gun_split
-results$num_mun_split <- num_mun_split
-results$mun_split <- mun_split
-results$multi <-  num_mun_split - mun_split
-results$koiki_split <- koiki_split
-results$index <- 1:nrow(wgt_smc)
+results_ishikari <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
+results_ishikari$max_to_min <- wgt_smc$max_to_min
+results_ishikari$gun_split <- gun_split
+results_ishikari$num_mun_split <- num_mun_split
+results_ishikari$mun_split <- mun_split
+results_ishikari$multi <-  num_mun_split - mun_split
+results_ishikari$koiki_split <- koiki_split
+results_ishikari$index <- 1:nrow(wgt_smc)
 
 # Confirm that the 郡 that are kept together in the same district under the enacted plan
 # are not split in the simulated plans
-
-# Define the codes of the 郡 that must be kept together in the same district
-respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
-
-# Evaluate whether the 郡 that must be kept together in the same district are
-# in the same district in the simulated plans
-respect_gun_matrix <- matrix(0, nrow = length(respect_gun_code), ncol = ncol(pref_smc_plans))
-for(i in 1:length(respect_gun_code)){
-  for(j in 1:ncol(pref_smc_plans)){
-    respect_gun_matrix[i, j] <-
-      length(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]) -1 ==
-      sum(duplicated(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]))
-  }
-}
-
-# Store results
-results$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
+# For Hokkaido, no 郡 should be split.
 
 # Confirm that the municipalities that are not split under the enacted plan
 # are not split in the simulated plans
 
 # Define the codes of the municipalities that must not be split
-respect_mun_code <- setdiff(unique(pref$code), mun_not_freeze)
+respect_mun_code <- setdiff(unique(ishikari$code), mun_not_freeze)
 
 # Evaluate whether the municipalities that must be not be split are split in the simulated plans
-respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(ishikari_smc_plans))
 for(i in 1:length(respect_mun_code)){
-  for(j in 1:ncol(pref_smc_plans)){
+  for(j in 1:ncol(ishikari_smc_plans)){
     respect_mun_matrix[i, j] <-
-      length(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]) -1 ==
-      sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
+      length(ishikari_smc_plans[which(ishikari$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(ishikari_smc_plans[which(ishikari$code == respect_mun_code[i]),j]))
   }
 }
 
 # Store results
-results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+results_ishikari$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
 
 # Discard plans with multi-splits as well as plans that split 郡/municipalities that
 # should not be split
-functioning_results <- results %>%
-  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
+functioning_results_ishikari <- results_ishikari %>%
+  filter(respect_mun == TRUE, gun_split == 0, multi == 0)
 
 # Sample 5,000 plans
 set.seed(2020)
-valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
-sim_smc_pref_sample <- sim_smc_pref %>%
-  filter(draw %in% valid_sample_pref)
+valid_sample_ishikari <- sample(functioning_results_ishikari$index, 5000, replace = FALSE)
+sim_smc_ishikari_sample <- sim_smc_ishikari %>%
+  filter(draw %in% valid_sample_ishikari)
 
 # Filter out sampled plans
-results_sample <- functioning_results %>%
-  filter(index %in% valid_sample_pref)
+results_sample_ishikari <- functioning_results_ishikari %>%
+  filter(index %in% valid_sample_ishikari)
 
 # Find Optimal Plan
-optimal <- results_sample$index[which(
-  results_sample$max_to_min ==
-    min(results_sample$max_to_min))][1]
-results_sample[which(results_sample$index == optimal),]
+optimal_ishikari <- results_sample_ishikari$index[which(
+  results_sample_ishikari$max_to_min ==
+    min(results_sample_ishikari$max_to_min))][1]
+results_sample_ishikari[which(results_sample_ishikari$index == optimal_ishikari),]
 
 # Gun/Municipality boundaries
-mun_boundary <- pref_shp_cleaned %>%
+mun_boundary_ishikari <- pref_shp_cleaned %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
+  filter(code %in% c(01101,
+                     01102,
+                     01103,
+                     01104,
+                     01105,
+                     01106,
+                     01107,
+                     01108,
+                     01109,
+                     01110,
+                     01217,
+                     01224,
+                     01231,
+                     01234,
+                     01235,
+                     01303,
+                     01304)) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref %>%
-  filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
+gun_boundary_ishikari <- pref %>%
+  filter(code %in% c(01101,
+                     01102,
+                     01103,
+                     01104,
+                     01105,
+                     01106,
+                     01107,
+                     01108,
+                     01109,
+                     01110,
+                     01217,
+                     01224,
+                     01231,
+                     01234,
+                     01235,
+                     01303,
+                     01304)) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
 # Combine municipality boundary data
-mun <- mun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-mun$type <- "市区町村の境界"
+mun_ishikari <- mun_boundary_ishikari %>%
+  summarise(geometry = sf::st_combine(geometry))
+mun_ishikari$type <- "市区町村の境界"
 # Combine gun boundary data
-gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
-gun$type <- "郡の境界"
+gun_ishikari <- gun_boundary_ishikari %>%
+  summarise(geometry = sf::st_combine(geometry))
+gun_ishikari$type <- "郡の境界"
 
 # Municipality/Gun boundary
-boundary <- rbind(mun, gun)
+boundary_ishikari <- rbind(mun_ishikari, gun_ishikari)
 
 # District boundary of optimal plan
-matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
-colnames(matrix_optimal) <- "district"
-optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
+matrix_optimal_ishikari <- redist::get_plans_matrix(sim_smc_ishikari %>%
+                                                          filter(draw == optimal_ishikari))
+colnames(matrix_optimal_ishikari) <- "district"
+optimal_boundary_ishikari <- cbind(ishikari_map, as_tibble(matrix_optimal_ishikari))
 
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
-good_num <-  results_sample %>%
+good_num_ishikari <-  results_sample_ishikari %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_sample_ishikari$index)*0.1)) %>%
   select(index)
-good_num <- as.vector(t(good_num))
-sim_smc_pref_good <- sim_smc_pref_sample %>%
-  filter(draw %in% good_num)
+good_num_ishikari <- as.vector(t(good_num_ishikari))
+sim_smc_ishikari_good <- sim_smc_ishikari_sample %>%
+  filter(draw %in% good_num_ishikari)
 
 # Obtain co-occurrence matrix
-m_co = redist::prec_cooccurrence(sim_smc_pref_good, sampled_only=TRUE)
+m_co = redist::prec_cooccurrence(sim_smc_ishikari_good, sampled_only=TRUE)
 
 # Compute clustering
 cl_co = cluster::agnes(m_co)
@@ -503,13 +436,13 @@ plot(as.dendrogram(cl_co))
 abline(h = 2, col = "red") # explore different depths
 abline(h = 3, col = "blue")
 
-prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number
+prec_clusters_ishikari = cutree(cl_co, ndists_ishikari)  # change ndists_new to an appropriate number
 
-pref_membership <- as_tibble(as.data.frame(prec_clusters))
-names(pref_membership) <- "membership"
+ishikari_membership <- as_tibble(as.data.frame(prec_clusters_ishikari))
+names(ishikari_membership) <- "membership"
 
 # Obtain co-occurrenc ratio
-cooc_ratio <- vector(length = length(pref$code))
+cooc_ratio_ishikari <- vector(length = length(ishikari$code))
 relcomp <- function(a, b) {
   comp <- vector()
   for (i in a) {
@@ -520,14 +453,20 @@ relcomp <- function(a, b) {
   return(comp)
 }
 
-for (i in 1:length(pref$code))
+for (i in 1:length(ishikari$code))
 {
-  cooc_ratio[i] <- 1 -
-    sum(pref$pop[relcomp(prefadj[[i]]+1,
-                         which(prec_clusters == prec_clusters[i]))] * m_co[i, relcomp(prefadj[[i]]+1,
-                                                                   which(prec_clusters == prec_clusters[i]))])/
-    sum(pref$pop[prefadj[[i]]+1] * m_co[i, prefadj[[i]]+1])
+  cooc_ratio_ishikari[i] <- 1 -
+    sum(ishikari$pop[relcomp(ishikariadj[[i]]+1,
+                                 which(prec_clusters_ishikari == prec_clusters_ishikari[i]))] * m_co[i, relcomp(ishikariadj[[i]]+1,
+                                                                                                                        which(prec_clusters_ishikari == prec_clusters_ishikari[i]))])/
+    sum(ishikari$pop[ishikariadj[[i]]+1] * m_co[i, ishikariadj[[i]]+1])
 }
+
+
+
+
+
+
 
 
 # Save files
