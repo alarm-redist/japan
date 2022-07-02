@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `33_Okayama` analysis
-# © ALARM Project, April 2021
+# © ALARM Project, June 2021
 ###############################################################################
 
 suppressMessages({
@@ -16,8 +16,6 @@ suppressMessages({
   devtools::load_all() # load utilities
 })
 
-set.seed(12345)
-
 # Pull functions
 setwd("R")
 files.sources = list.files()
@@ -26,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 33
 pref_name <- "okayama"
 lakes_removed <- c()
@@ -37,7 +35,7 @@ sq_max_to_tottori2 <- 1.666
 sq_mun_splits <- 6
 sq_gun_splits <- 1
 sq_koiki_splits <- 2
-pop_tol <- 0.15 # Set so that re-sampling efficiencies are > 90% at each stage
+pop_tol <- 0.20
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c(33680)

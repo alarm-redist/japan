@@ -110,17 +110,21 @@ girafe(ggobj=p, width_svg=9, height_svg=6, options=list(
 
 ```{r links, results='asis'}
 cat('<div class="state-links">')
-filter(japan, available) %>%
-    arrange(pref_japanese) %>%
-    mutate(html = str_glue('<p><a href="{href}">{pref_english}</a></p>')) %>%
-    pull() %>%
-    cat(collapse="\n")
+japan %>% 
+  select(-geometry, -centroid) %>%
+  as_tibble() %>%
+  filter(available) %>%
+  arrange(pref_code) %>%
+  mutate(html = str_glue('<p><a href="{href}">{pref_english}</a></p>')) %>%
+  pull() %>%
+  cat(collapse="\n")
 cat('</div><br />\n\n')
 ```
 
 ## Acknowledgement {.appendix}
-
 We acknowledge the partial support from the [Edwin O. Reischauer Institute of Japanese Studies (RIJS)](https://rijs.fas.harvard.edu) at Harvard University.
+We also thank Harvard Data Science Initiative and Microsoft for computational support.
+
 
 ## Data Sources and Availability {.appendix}
 

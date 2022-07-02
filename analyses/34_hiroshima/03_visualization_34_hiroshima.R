@@ -1,11 +1,12 @@
 ###############################################################################
 # Data visualization for `34_Hiroshima`
-# © ALARM Project, April 2021
+# © ALARM Project, June 2021
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
-# Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <-  c(34101, 34102, 34103, 34104, 34105, 34106, 34107, 34108,
                     34202, 34203, 34204, 34211, 34212, 34213, 34214, 34215,
                     34302, 34304, 34307, 34309, 34368, 34369, 34431, 34462)
@@ -54,7 +55,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims),
+                                  as.character(nsims * 2),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -89,21 +90,33 @@ koiki_3_1[koiki_3_1 %in% koiki_3_codes] <- 3
 
 # Count number of municipality splits
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
-mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split_1 <- mun_split_1[,1]
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_2_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_3_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
 koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_3_1)
+koiki_split_1 <- koiki_split_1 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_1 <- koiki_split_1[,1]
 
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
@@ -160,6 +173,7 @@ functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
@@ -333,7 +347,7 @@ for (i in 0:1){
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
     # Remove the column "pop_overlap" that was created when renumbering the district numbers
-    select(1:3) %>%
+    select("draw", "district", "total_pop") %>%
 
     write_csv(paste("data-out/plans/",
                     as.character(pref_code),

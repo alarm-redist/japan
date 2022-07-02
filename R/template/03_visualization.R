@@ -5,7 +5,9 @@
 
 # TODO Define the koiki-renkei areas (広域連携)
 # Define which municipality/gun belongs to which koiki renkei area
-# Define using the municipality codes, not the gun codes
+# Define using the codes in the column `pref$code`
+# i.e. For rural prefectures, define using the municipality codes, not the gun codes
+# i.e. For urban prefectures, define using gun codes if gun was merged
 koiki_1_codes <- c()
 koiki_2_codes <- c()
 
@@ -50,7 +52,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -82,20 +84,31 @@ koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
 # Count number of municipality splits
 num_mun_split_1 <- count_splits(pref_smc_plans_1, pref_map_1$code)
-mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code)
+mun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split_1 <- mun_split_1[,1]
 
 # Count number of gun splits
-gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code)
-gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code)
+gun_split_0 <- redist::redist.splits(pref_smc_plans_0, pref_map_0$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_0 <- gun_split_0[,1]
+gun_split_1 <- redist::redist.splits(pref_smc_plans_1, pref_map_1$gun_code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
   redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_2_0)
+koiki_split_0 <- koiki_split_0 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_0 <- koiki_split_0[,1]
 koiki_split_1 <-
   redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1)
-
+koiki_split_1 <- koiki_split_1 %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split_1 <- koiki_split_1[,1]
 # Compile results: 0 split
 results_0 <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_0)))
 results_0$max_to_min <- wgt_smc_0$max_to_min
@@ -127,6 +140,7 @@ functioning_results_1 <- results_1 %>% dplyr::filter(multi == 0 & valid)
 # If not, increase nsims and run more simulations.
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_0 <- sample(functioning_results_0$index, 5000, replace = FALSE)
 sim_smc_pref_0_sample <- sim_smc_pref_0 %>%
   filter(draw %in% valid_sample_0)
@@ -198,7 +212,7 @@ old_boundary <- sf::st_transform(old_boundary, crs = sf::st_crs(4612))
 boundary_1 <- rbind(old_boundary, mun, gun)
 
 # Co-occurrence
-# Filter out plans with top 10% koiki-renkei areas
+# Filter out plans with top 10% maxmin ratio
 good_num_0 <- results_0_sample %>%
   arrange(max_to_min) %>%
   slice(1: as.numeric(length(results_0_sample$index)*0.1)) %>%
@@ -295,8 +309,8 @@ for (i in 0:1){
                                     "_sample", sep = "")))) %>%
      mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
 
-     # Remove the column "pop_overlap" that was created when renumbering the district numbers
-     select(1:3) %>%
+    # Remove the column "pop_overlap" that was created when renumbering the district numbers
+    select("draw", "district", "total_pop") %>%
 
      write_csv(paste("data-out/plans/",
                      as.character(pref_code),
@@ -310,22 +324,17 @@ for (i in 0:1){
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 pref_map <- readRDS(paste("data-out/maps/",
-                           as.character(pref_code),
-                           "_",
-                           as.character(pref_name),
-                           "_map_",
-                           as.character(nsims),
-                           ".Rds",
+                          as.character(pref_code),
+                          "_",
+                          as.character(pref_name),
+                          "_hr_2020_map.rds",
                            sep = ""))
 
 prefadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         "_",
-                         as.character(nsims),
-                         "_adj",
-                         ".Rds",
+                         "_adj.Rds",
                          sep = ""))
 
 sim_smc_pref <- readRDS(paste("data-out/plans/",
@@ -335,7 +344,7 @@ sim_smc_pref <- readRDS(paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims),
+                              as.character(nsims * 4),
                               ".Rds",
                               sep = ""), refhook = NULL)
 
@@ -357,19 +366,26 @@ koiki_2[!koiki_2 %in% 2] <-
 
 # Count number of municipality splits
 num_mun_split <- count_splits(pref_smc_plans, pref_map$code)
-mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code)
+mun_split <- redist::redist.splits(pref_smc_plans, pref_map$code) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+mun_split <- mun_split[,1]
 
 # Count number of gun splits
 gun_index <- pref$gun_code
 gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300] <-
   seq(100000, 100000 + length(gun_index[gun_index < (pref_map$code[1]%/%1000)*1000+300])-1, by = 1)
 
-gun_split <- redist::redist.splits(pref_smc_plans, gun_index)
+gun_split <- redist::redist.splits(pref_smc_plans, gun_index) %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+gun_split <- gun_split[,1]
 
 # Count number of koiki renkei splits
 koiki_split <-
   redist::redist.splits(pref_smc_plans, koiki_1) +
   redist::redist.splits(pref_smc_plans, koiki_2)
+koiki_split <- koiki_split %>%
+  matrix(ncol = ndists_new, byrow = TRUE)
+koiki_split <- koiki_split[,1]
 
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
@@ -381,20 +397,114 @@ results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
 
-# Add bridges and check if valid
-bridges <- c()
-results$valid <- check_valid(pref, pref_smc_plans, bridges)
+# Confirm that the 郡 that are kept together in the same district under the enacted plan
+# are not split in the simulated plans
 
-# To-do: filter out plans with discontiguities/multi-splits
-functioning_results <- results %>% dplyr::filter(multi == 0 && valid)
+# Define the codes of the 郡 that must be kept together in the same district
+respect_gun_code <- setdiff(unique(gun_index[which(gun_index < 100000)]), gun_exception)
+
+# Evaluate whether the 郡 that must be kept together in the same district are
+# in the same district in the simulated plans
+respect_gun_matrix <- matrix(0, nrow = length(respect_gun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_gun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_gun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_gun_code[i]),j]))
+  }
+}
+
+# Store results
+results$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
+
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(pref$code), mun_not_freeze)
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
+  }
+}
+
+# Store results
+results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
+functioning_results <- results %>%
+  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
+
+"# Allow enclaves
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+
+# Under the enacted plan, there are districts that are strictly speaking discontiguous
+# because of the presence of small enclaves. We allow those small areas to be enclaved by
+# another municipality in the simulated plans too.
+allow_enclave <- c()  # Codes of municipalities that have areas enclaved by another municipality under the status quo
+                      # i.e. 茨木市(27211)小坪井 is an enclave under the status quo, so the input will be 27211
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(pref$code), c(mun_not_freeze, allow_enclave))
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(pref_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
+  }
+}
+
+# Store results
+results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Count the true number of municipality splits by evaluating whether each municipality
+# in `mun_not_freeze` is split
+# i.e. disregard enclaves that are ignored under the status quo
+
+count_split_matrix <- matrix(0, nrow = length(mun_not_freeze), ncol = ncol(pref_smc_plans))
+for(i in 1:length(mun_not_freeze)){
+  for(j in 1:ncol(pref_smc_plans)){
+    count_split_matrix[i, j] <-
+      length(unique(pref_smc_plans[which(pref$code == mun_not_freeze[i]),j])) != 1
+  }
+}
+
+results$mun_split <- colSums(count_split_matrix)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
+functioning_results <- results %>%
+  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)"
+
+# Sample 5,000 plans
+set.seed(2020)
+valid_sample_pref <- sample(functioning_results$index, 5000, replace = FALSE)
+sim_smc_pref_sample <- sim_smc_pref %>%
+  filter(draw %in% valid_sample_pref)
+
+# Filter out sampled plans
+results_sample <- functioning_results %>%
+  filter(index %in% valid_sample_pref)
 
 # Find Optimal Plan
-optimal <- functioning_results$index[which(functioning_results$max_to_min ==
-                                           min(functioning_results$max_to_min))][1]
-results[optimal,]
+optimal <- results_sample$index[which(
+  results_sample$max_to_min ==
+    min(results_sample$max_to_min))][1]
+results_sample[which(results_sample$index == optimal),]
 
 # Gun/Municipality boundaries
-mun_boundary <- pref %>%
+mun_boundary <- pref_shp_cleaned %>%
+  mutate(code = as.numeric(substr(code, 1, 5))) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
 gun_boundary <- pref %>%
@@ -409,30 +519,37 @@ mun$type <- "市区町村の境界"
 gun <- gun_boundary %>% summarise(geometry = sf::st_combine(geometry))
 gun$type <- "郡の境界"
 
-# Boundary for plot with 0 split
+# Municipality/Gun boundary
 boundary <- rbind(mun, gun)
 
-# District Boundary of Optimal Plan
+# District boundary of optimal plan
 matrix_optimal <- redist::get_plans_matrix(sim_smc_pref %>% filter(draw == optimal))
 colnames(matrix_optimal) <- "district"
 optimal_boundary <- cbind(pref_map, as_tibble(matrix_optimal))
 
 # Co-occurrence
-# Filter out plans with top 10% koiki-renkei areas
-good_num <-  functioning_results %>%
+# Filter out plans with top 10% maxmin ratio
+good_num <-  results_sample %>%
   arrange(max_to_min) %>%
-  slice(1: as.numeric(length(functioning_results$index)*0.1)) %>%
+  slice(1: as.numeric(length(results_sample$index)*0.1)) %>%
   select(index)
 good_num <- as.vector(t(good_num))
-sim_smc_pref_good <- sim_smc_pref %>%
+sim_smc_pref_good <- sim_smc_pref_sample %>%
   filter(draw %in% good_num)
 
 # Obtain co-occurrence matrix
 m_co = redist::prec_cooccurrence(sim_smc_pref_good, sampled_only=TRUE)
 
-# Create clusters
+# Compute clustering
 cl_co = cluster::agnes(m_co)
-prec_clusters = cutree(cl_co, ndists_new)
+
+# Analyze the dendrogram and pick an appropriate number of clusters
+plot(as.dendrogram(cl_co))
+abline(h = 2, col = "red") # explore different depths
+abline(h = 3, col = "blue")
+
+prec_clusters = cutree(cl_co, ndists_new)  # change ndists_new to an appropriate number
+
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
 
@@ -459,29 +576,36 @@ for (i in 1:length(pref$code))
 
 
 # Save files
-rm(census2020,
-   census2020_current_municipalities,
-   cl_co,
+rm(cl_co,
    constr,
-   dem_pops,
    m_co,
    mun,
    gun,
    mun_boundary,
    gun_boundary,
-   pref_cleaned,
+   pref_shp_cleaned,
    pref_gun,
-   pref_map,
    pref_non_gun,
-   pref_raw,
+   pref_pop_2020,
+   pref_shp_2015,
+   pref_mutual,
+   pref_pop_only,
+   pref_geom_only,
    pref_smc_plans,
    sim_smc_pref_good,
+   sim_smc_pref,
    wgt_smc,
    num_mun_split,
    mun_split,
    gun_split,
    koiki_split,
-   matrix_optimal
+   matrix_optimal,
+   functioning_results,
+   results,
+   respect_gun_matrix,
+   respect_mun_matrix,
+   pref_sep,
+   pref_freeze
 )
 
 save.image(paste("data-out/pref/",
@@ -490,4 +614,28 @@ save.image(paste("data-out/pref/",
                  as.character(pref_name),
                  "_data",
                  ".Rdata",
-                 sep = ""))
+                 sep = ""),
+           compress = "xz")
+
+# Save relevant files to upload to Dataverse
+# `redist_plans` object
+write_rds(sim_smc_pref_sample,
+          paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_hr_2020_plans.rds",
+                  sep = ""),
+            compress = "xz")
+
+# Export `redist_plans` summary statistics to a csv file
+as_tibble(sim_smc_pref_sample) %>%
+    mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+    select("draw", "district", "total_pop") %>%
+    write_csv(paste("data-out/plans/",
+                    as.character(pref_code),
+                    "_",
+                    as.character(pref_name),
+                    "_hr_2020_stats.csv",
+                    sep = ""))
+

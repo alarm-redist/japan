@@ -103,16 +103,20 @@ girafe(ggobj=p, width_svg=9, height_svg=6, options=list(
 
 ```{r links, results='asis'}
 cat('<div class="state-links">')
-filter(japan, available) %>%
-    arrange(pref_japanese) %>%
-    mutate(html = str_glue('<p><a href="{href}">{pref_japanese}</a></p>')) %>%
-    pull() %>%
-    cat(collapse="\n")
+japan %>% 
+  select(-geometry, -centroid) %>%
+  as_tibble() %>%
+  filter(available) %>%
+  arrange(pref_code) %>%
+  mutate(html = str_glue('<p><a href="{href}">{pref_japanese}</a></p>')) %>%
+  pull() %>%
+  cat(collapse="\n")
 cat('</div><br />\n\n')
 ```
 
 ## 謝辞 {.appendix}
 本プロジェクトの一部は、[ハーバード大学エドウィン・O・ライシャワー日本研究所 (RIJS)](https://rijs.fas.harvard.edu/ja)の援助を受けました。
+また、Harvard Data Science InitiativeとMicrosoft社より、計算機リソース（Azure）の援助を受けました。
 
 ## データについて {.appendix}
 

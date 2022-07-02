@@ -33,3 +33,5 @@ docs/**/**/*.md
 docs/**/**/*.Rmd
 docs/**/**/*.html
 !docs/**/**/*index.html
+docs/data-raw/*
+docs/data-out/*
