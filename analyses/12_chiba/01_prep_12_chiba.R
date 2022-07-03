@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.994
 sq_mun_splits <- 5
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
-pop_tol <- 0.30
+pop_tol <- 0.20
 
 # Code of minicipalities that are split under the status quo
 mun_not_freeze <- c(12203,
@@ -326,7 +326,6 @@ pref_geom_only <- pref_geom_only %>%
   filter(code %in% geom_only_code == FALSE)
 
 #############################
-# Finalize pref object
 # Finalize pref object
 pref <- bind_rows(
   pref_mutual %>%

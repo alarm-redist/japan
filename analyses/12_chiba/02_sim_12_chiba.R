@@ -1,6 +1,6 @@
 ###############################################################################
-# Simulations for `00_pref`
-# © ALARM Project, April 2021
+# Simulations for `12_chiba`
+# © ALARM Project, June 2022
 ###############################################################################
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
@@ -35,21 +35,100 @@ for(i in 1:length(gun_codes)){
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
 ### Method for Chiba ###
-# In order to make sure 香取郡 (discontinuous) not to be split,
-# we will merge it together with 香取市,
-# because this is the only option to make the valid plan.
-# Moreover, since 香取郡 多古町 has 飛地 in 成田市,
-# we will also merge 成田市 together.
-katori_code <- c(12211,
-                 12236,
-                 12340)
+# In order to make sure that the 飛地 (discontiguous area) is not created if that is not ignored in the status quo,
+# we will merge municipalities (except `mun_not_freeze`) that have 飛地 in their boundaries.
+# In this way, new 飛地 will not be created.
+# Merge 香取郡, 香取市, and 成田市
+tobichi_1 <- c(12211,
+               12236,
+               12340)
+# Merge 千葉市緑区 and 市原市
+tobichi_2 <- c(12105,
+               12219)
+# Merge 茂原市, 東金市, 山武市, 大綱白里市, and 長生郡,
+tobichi_3 <- c(12210,
+               12213,
+               12237,
+               12239,
+               12420)
+# Merge 旭市 and 匝瑳市
+tobichi_4 <- c(12215,
+               12235)
+# Merge 君津市 and 富津市
+tobichi_5 <- c(12225,
+               12226)
+# Merge 印西市 and 印旛郡
+tobichi_6 <- c(12231,
+               12320)
+# Merge 勝浦市 and 夷隅郡
+tobichi_7 <- c(12218,
+               12440)
+# Merge 佐倉市 and 八街市
+tobichi_8 <- c(12212,
+               12230)
 
 pref <- dplyr::bind_rows(
   pref %>%
-    dplyr::filter(code %in% katori_code == FALSE),
+    dplyr::filter(code %in% c(tobichi_1,
+                              tobichi_2,
+                              tobichi_3,
+                              tobichi_4,
+                              tobichi_5,
+                              tobichi_6,
+                              tobichi_7,
+                              tobichi_8) == FALSE),
 
   pref %>%
-    dplyr::filter(code %in% katori_code) %>%
+    dplyr::filter(code %in% tobichi_1) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_2) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_3) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_4) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_5) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_6) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_7) %>%
+    dplyr::summarise(pop = sum(pop),
+                     geometry = sf::st_union(geometry),
+                     code = dplyr::last(code),
+                     gun_code = dplyr::last(gun_code),
+                     sub_code = dplyr::last(sub_code)),
+  pref %>%
+    dplyr::filter(code %in% tobichi_8) %>%
     dplyr::summarise(pop = sum(pop),
                      geometry = sf::st_union(geometry),
                      code = dplyr::last(code),
@@ -57,7 +136,6 @@ pref <- dplyr::bind_rows(
                      sub_code = dplyr::last(sub_code))
 )%>%
   sf::st_as_sf()
-
 
 # Convert multi-polygons into polygons
 new_rows <- data.frame(code = pref[1, ]$code,
@@ -73,18 +151,12 @@ pref_sep <- new_rows
 # to calculate area size, switch off `geometry (s2)`
 sf_use_s2(FALSE)
 for (i in 2:nrow(pref)){
-  # For Chiba, we will keep 我孫子市 as a MULTIPOLYGON to deal with its 飛地 to get valid plan.
-  # This is because with the default methods with POLYGON,
-  # algorithm splits 我孫子市, which is invalid plan.
-  if(pref[i,]$code == 12222){
-    new_rows <- pref[i, ]
-  } else {
-    new_rows <- data.frame(code = pref[i, ]$code,
+  new_rows <- data.frame(code = pref[i, ]$code,
                            sub_code = pref[i, ]$sub_code,
                            geometry = sf::st_cast(pref[i, ]$geometry, "POLYGON"),
                            pop = 0,
-                           gun_code = pref[i, ]$gun_code
-    )
+                           gun_code = pref[i, ]$gun_code)
+
     # order by size
     new_rows <- new_rows %>%
       dplyr::mutate(area = sf::st_area(geometry)) %>%
@@ -93,7 +165,7 @@ for (i in 2:nrow(pref)){
 
     # assign population to the largest area
     new_rows[1, ]$pop <- pref[i, ]$pop
-  }
+
     pref_sep <- rbind(pref_sep, new_rows)
 }
 # switch on the `geometry (s2)``
@@ -144,8 +216,8 @@ pref_map <- redist::redist_map(pref,
 # Define constraints
 constr = redist::redist_constr(pref_map)
 #constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$gun_code)
-constr = redist::add_constr_total_splits(constr, strength = 5, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
+constr = redist::add_constr_total_splits(constr, strength = 3, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
