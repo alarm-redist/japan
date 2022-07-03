@@ -1,6 +1,6 @@
 ###############################################################################
 # Data visualization for `13_tokyo`
-# © ALARM Project, April 2021
+# © ALARM Project, July 2022
 ###############################################################################
 
 # TODO Define the koiki-renkei areas (広域連携)
@@ -36,19 +36,42 @@ sim_smc_special_wards <- readRDS(paste("data-out/plans/",
                                      "_",
                                      as.character(sim_type),
                                      "_",
-                                     as.character(nsims),
+                                     as.character(nsims_special_wards *4),
                                      "_special_wards.Rds",
                                      sep = ""))
 
 # Get plans matrix
 special_wards_smc_plans <- redist::get_plans_matrix(sim_smc_special_wards)
 
-# Calculate max:min ratio
-wgt_smc_special_wards <- simulation_weight_disparity_table(sim_smc_special_wards)
+# Calculate max:min ratio by adding back Koto-ku
+koto_pop <- pref$pop[which(pref$code == 13108)]
+
+# Convert to vectors to save time
+pop_special_wards <- as_tibble(sim_smc_special_wards)$total_pop
+draw_special_wards <- as.numeric(as_tibble(sim_smc_special_wards)$draw)
+
+# Maximum pop. per district
+max_pop_special_wards <- 1:as.numeric(nsims_special_wards*4)
+for(i in 1:as.numeric(nsims_special_wards*4)){
+  max_pop_special_wards[i] <-
+    max(c(pop_special_wards[which(draw_special_wards == i)], koto_pop))
+}
+
+# Minimum pop. per district
+min_pop_special_wards <- 1:as.numeric(nsims_special_wards*4)
+for(i in 1:as.numeric(nsims_special_wards*4)){
+  min_pop_special_wards[i] <-
+    min(c(pop_special_wards[which(draw_special_wards == i)], koto_pop))
+}
+
+# Max:min ratio
+wgt_smc_special_wards <- max_pop_special_wards/min_pop_special_wards
 
 # Count number of municipality splits
 num_mun_split_special_wards <- count_splits(special_wards_smc_plans, special_wards_map$code)
-mun_split_special_wards <- redist::redist.splits(special_wards_smc_plans, special_wards_map$code)
+mun_split_special_wards <- redist::redist.splits(special_wards_smc_plans, special_wards_map$code) %>%
+  matrix(ncol = ndists_new_special_wards, byrow = TRUE)
+mun_split_special_wards <- mun_split_special_wards[,1]
 
 # Count number of gun splits
 gun_split_special_wards <- 0 # There are no 郡 in 東京23区
@@ -57,19 +80,44 @@ gun_split_special_wards <- 0 # There are no 郡 in 東京23区
 koiki_split_special_wards <- 0 # There are no 広域連携 areas in Tokyo
 
 # Compile results
-results_special_wards <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc_special_wards)))
-results_special_wards$max_to_min <- wgt_smc_special_wards$max_to_min
+results_special_wards <- data.frame(matrix(ncol = 0, nrow = length(wgt_smc_special_wards)))
+results_special_wards$max_to_min <- wgt_smc_special_wards
 results_special_wards$gun_split <- gun_split_special_wards
 results_special_wards$num_mun_split <- num_mun_split_special_wards
 results_special_wards$mun_split <- mun_split_special_wards
 results_special_wards$multi <-  num_mun_split_special_wards - mun_split_special_wards
 results_special_wards$koiki_split <- koiki_split_special_wards
-results_special_wards$index <- 1:nrow(wgt_smc_special_wards)
+results_special_wards$index <- 1:length(wgt_smc_special_wards)
 
-# To-do: filter out plans with multi-splits
-functioning_results_special_wards <- filter(results_special_wards, multi == 0)
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+# Note: there are no 郡 in the Special Wards area, so there is no need to check
+# whether 郡 boundaries are respected
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(special_wards$code),
+                            mun_not_freeze[mun_not_freeze <= 13123])
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(special_wards_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(special_wards_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(special_wards_smc_plans[which(special_wards$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(special_wards_smc_plans[which(special_wards$code == respect_mun_code[i]),j]))
+  }
+}
+
+# Store results
+results_special_wards$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
+functioning_results_special_wards <- results_special_wards %>%
+  filter(respect_mun == TRUE, multi == 0)
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_special_wards <- sample(functioning_results_special_wards$index, 5000, replace = FALSE)
 sim_smc_special_wards_sample <- sim_smc_special_wards %>%
   filter(draw %in% valid_sample_special_wards)
@@ -94,7 +142,7 @@ mun_boundary_special_wards <- pref_shp_cleaned %>%
 # Combine municipality boundary data
 mun_special_wards <- mun_boundary_special_wards %>% summarise(geometry = sf::st_combine(geometry))
 mun_special_wards$type <- "市区町村の境界"
-# There are no gun in the special wards area
+# There are no 郡 in the special wards area
 
 # Municipality/Gun boundary
 boundary_special_wards <- rbind(mun_special_wards)
@@ -125,7 +173,7 @@ plot(as.dendrogram(cl_co_special_wards))
 abline(h = 2, col = "red") # explore different depths
 abline(h = 3, col = "blue") # explore different depths
 
-prec_clusters_special_wards = cutree(cl_co_special_wards, 36)
+prec_clusters_special_wards = cutree(cl_co_special_wards, 23)
 special_wards_membership <- as_tibble(as.data.frame(prec_clusters_special_wards))
 names(special_wards_membership) <- "membership"
 
@@ -182,7 +230,7 @@ sim_smc_tama <- readRDS(paste("data-out/plans/",
                             "_",
                             as.character(sim_type),
                             "_",
-                            as.character(nsims),
+                            as.character(nsims_special_tama * 4),
                             "_tama.Rds",
                             sep = ""))
 
@@ -194,7 +242,9 @@ wgt_smc_tama <- simulation_weight_disparity_table(sim_smc_tama)
 
 # Count number of municipality splits
 num_mun_split_tama <- count_splits(tama_smc_plans, tama_map$code)
-mun_split_tama <- redist::redist.splits(tama_smc_plans, tama_map$code)
+mun_split_tama <- redist::redist.splits(tama_smc_plans, tama_map$code) %>%
+  matrix(ncol = ndists_new_tama, byrow = TRUE)
+mun_split_tama <- mun_split_tama[,1]
 
 # Count number of gun splits
 gun_index <- tama$gun_code
@@ -232,15 +282,35 @@ for(i in 1:length(respect_gun_code)){
   }
 }
 
-# Store result
-results_tama$respect_gun <- colSums(respect_gun_matrix)
+# Store results
+results_tama$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
 
-# Filter out plans with multi-splits
-# as well as plans that split gun that should have been respected
+# Confirm that the municipalities that are not split under the enacted plan
+# are not split in the simulated plans
+
+# Define the codes of the municipalities that must not be split
+respect_mun_code <- setdiff(unique(tama$code),
+                            mun_not_freeze[mun_not_freeze > 13123])
+
+# Evaluate whether the municipalities that must be not be split are split in the simulated plans
+respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(tama_smc_plans))
+for(i in 1:length(respect_mun_code)){
+  for(j in 1:ncol(tama_smc_plans)){
+    respect_mun_matrix[i, j] <-
+      length(tama_smc_plans[which(tama$code == respect_mun_code[i]),j]) -1 ==
+      sum(duplicated(tama_smc_plans[which(tama$code == respect_mun_code[i]),j]))
+  }
+}
+
+results_tama$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
+
+# Discard plans with multi-splits as well as plans that split 郡/municipalities that
+# should not be split
 functioning_results_tama <- results_tama %>%
-  filter(respect_gun == length(respect_gun_code), multi == 0)
+  filter(respect_gun == TRUE, respect_mun == TRUE, multi == 0)
 
 # Sample 5,000 plans
+set.seed(2020)
 valid_sample_tama <- sample(functioning_results_tama$index, 5000, replace = FALSE)
 sim_smc_tama_sample <- sim_smc_tama %>%
   filter(draw %in% valid_sample_tama)
@@ -284,7 +354,6 @@ matrix_optimal_tama <- redist::get_plans_matrix(sim_smc_tama %>%
 colnames(matrix_optimal_tama) <- "district"
 optimal_boundary_tama<- cbind(tama_map, as_tibble(matrix_optimal_tama))
 
-
 # Co-occurrence
 # Filter out plans with top 10% maxmin ratio
 good_num_tama <- results_tama_sample %>%
@@ -306,7 +375,7 @@ plot(as.dendrogram(cl_co_tama))
 abline(h = 2, col = "red") # explore different depths
 abline(h = 3, col = "blue")
 
-prec_clusters_tama = cutree(cl_co_tama, 16)
+prec_clusters_tama = cutree(cl_co_tama, 9)
 tama_membership <- as_tibble(as.data.frame(prec_clusters_tama))
 names(tama_membership) <- "membership"
 
@@ -376,12 +445,13 @@ rm(cl_co_special_wards,
    results_special_wards,
    results_tama,
    respect_gun_matrix,
-   pref_sep
+   respect_mun_matrix,
+   pref_sep,
+   pref_freeze
 )
 
 # Further remove files specific to Tokyo
-rm(sq_pref,
-   pref_geom_only_1)
+rm(sq_pref)
 
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
@@ -401,6 +471,7 @@ write_rds(sim_smc_special_wards_sample,
                 "_hr_2020_plans_special_wards.rds",
                 sep = ""),
           compress = "xz")
+
 write_rds(sim_smc_tama_sample,
           paste("data-out/plans/",
                 as.character(pref_code),
@@ -411,7 +482,21 @@ write_rds(sim_smc_tama_sample,
           compress = "xz")
 
 # Export `redist_plans` summary statistics to a csv file
-as_tibble(sim_smc_special_wards_sample) %>%
+csv_special_wards <- as_tibble(sim_smc_special_wards_sample) %>%
+  mutate(draw = as.numeric(levels(draw))[draw])
+
+# Add Koto-ku
+csv_special_wards_with_koto <- NULL
+for(i in valid_sample_special_wards){
+  with_koto <-
+    dplyr::bind_rows(as_tibble(csv_special_wards %>% filter(draw == i)),
+                     data.frame(draw = i,
+                                district = as.integer(21),
+                                total_pop = koto_pop))
+  csv_special_wards_with_koto <- rbind(csv_special_wards_with_koto, with_koto)
+}
+
+csv_special_wards_with_koto %>%
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
   write_csv(paste("data-out/plans/",
                   as.character(pref_code),
@@ -419,6 +504,7 @@ as_tibble(sim_smc_special_wards_sample) %>%
                   as.character(pref_name),
                   "_hr_2020_stats_special_wards.csv",
                   sep = ""))
+
 as_tibble(sim_smc_tama_sample) %>%
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
   write_csv(paste("data-out/plans/",
@@ -427,4 +513,3 @@ as_tibble(sim_smc_tama_sample) %>%
                   as.character(pref_name),
                   "_hr_2020_stats_tama.csv",
                   sep = ""))
-
