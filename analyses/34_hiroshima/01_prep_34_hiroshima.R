@@ -1,5 +1,5 @@
 ###############################################################################
-# Download and prepare data for `34_Hiroshima` analysis
+# Download and prepare data for `34_hiroshima` analysis
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 50000  # Set so that the number of valid plans > 25000
+nsims <- 20000  # Set so that the number of valid plans > 5,000
 pref_code <- 34
 pref_name <- "hiroshima"
 lakes_removed <- c()
