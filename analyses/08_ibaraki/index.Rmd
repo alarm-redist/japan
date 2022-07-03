@@ -22,9 +22,9 @@ library(Rttf2pt1)
 ```
 
 ```{r Manual Entries, include = FALSE}
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+pref_code <- 08
+pref_name <- "ibaraki"
+pref_name_kanji <- "茨城県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
@@ -35,7 +35,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
-new_max_to_min <- 1.311
+new_max_to_min <- 1.910
 new_mun_splits <- 0
 new_gun_splits <- 0
 new_koiki_splits <- 3
