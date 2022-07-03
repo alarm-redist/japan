@@ -356,7 +356,7 @@ pref_sep <- new_rows
 
 # to calculate area size, switch off `geometry (s2)`
 sf_use_s2(FALSE)
-for (i in 2:nrow(pref))
+for (i in 2:nrow(ishikari))
 {
   new_rows <- data.frame(code = ishikari[i, ]$code,
                          sub_code = ishikari[i, ]$sub_code,

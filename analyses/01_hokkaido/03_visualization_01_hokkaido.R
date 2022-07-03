@@ -462,41 +462,43 @@ for (i in 1:length(ishikari$code))
     sum(ishikari$pop[ishikariadj[[i]]+1] * m_co[i, ishikariadj[[i]]+1])
 }
 
-
-
-
-
-
-
-
 # Save files
 rm(cl_co,
    constr,
    m_co,
-   mun,
-   gun,
-   mun_boundary,
-   gun_boundary,
+   mun_ishikari,
+   mun_non_ishikari,
+   gun_ishikari,
+   gun_non_ishikari,
+   mun_boundary_ishikari,
+   mun_boundary_non_ishikari,
+   gun_boundary_ishikari,
+   gun_boundary_non_ishikari,
    pref_shp_cleaned,
-   pref_gun,
-   pref_non_gun,
+   ishikari_gun,
+   ishikari_non_gun,
    pref_pop_2020,
    pref_shp_2015,
    pref_mutual,
    pref_pop_only,
    pref_geom_only,
-   pref_smc_plans,
-   sim_smc_pref_good,
-   sim_smc_pref,
+   ishikari_smc_plans,
+   non_ishikari_smc_plans,
+   sim_smc_ishikari_good,
+   sim_smc_non_ishikari_good,
+   sim_smc_ishikari,
+   sim_smc_non_ishikari,
    wgt_smc,
    num_mun_split,
    mun_split,
    gun_split,
    koiki_split,
-   matrix_optimal,
-   functioning_results,
-   results,
-   respect_gun_matrix,
+   matrix_optimal_ishikari,
+   matrix_optimal_non_ishikari,
+   functioning_results_ishikari,
+   functioning_results_non_ishikari,
+   results_ishikari,
+   results_non_ishikari,
    respect_mun_matrix,
    pref_sep,
    pref_freeze
@@ -513,23 +515,46 @@ save.image(paste("data-out/pref/",
 
 # Save relevant files to upload to Dataverse
 # `redist_plans` object
-write_rds(sim_smc_pref_sample,
+# Ishikari Sinko-kyoku
+write_rds(sim_smc_ishikari_sample,
           paste("data-out/plans/",
                   as.character(pref_code),
                   "_",
                   as.character(pref_name),
-                  "_hr_2020_plans.rds",
+                  "_ishikari_hr_2020_plans.rds",
                   sep = ""),
             compress = "xz")
 
+# Non-Ishikari
+write_rds(sim_smc_non_ishikari_sample,
+          paste("data-out/plans/",
+                as.character(pref_code),
+                "_",
+                as.character(pref_name),
+                "_non_ishikari_hr_2020_plans.rds",
+                sep = ""),
+          compress = "xz")
+
+
 # Export `redist_plans` summary statistics to a csv file
-as_tibble(sim_smc_pref_sample) %>%
+# Ishikari Sinko-kyoku
+as_tibble(sim_smc_ishikari_sample) %>%
     mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
     select("draw", "district", "total_pop") %>%
     write_csv(paste("data-out/plans/",
                     as.character(pref_code),
                     "_",
                     as.character(pref_name),
-                    "_hr_2020_stats.csv",
+                    "_ishikari_hr_2020_stats.csv",
                     sep = ""))
 
+# Non-Ishikari
+as_tibble(sim_smc_non_ishikari_sample) %>%
+  mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
+  select("draw", "district", "total_pop") %>%
+  write_csv(paste("data-out/plans/",
+                  as.character(pref_code),
+                  "_",
+                  as.character(pref_name),
+                  "_non_ishikari_hr_2020_stats.csv",
+                  sep = ""))
