@@ -1,5 +1,5 @@
 ###############################################################################
-# Data visualization for `04_Miyagi`
+# Data visualization for `04_miyagi`
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -51,7 +51,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
