@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 12500 # Set so that the number of valid plans > 5,000
+nsims <- 30000 # Set so that the number of valid plans > 5,000
 pref_code <- 12
 pref_name <- "chiba"
 lakes_removed <- c()
@@ -35,7 +35,7 @@ sq_max_to_tottori2 <- 1.994
 sq_mun_splits <- 5
 sq_gun_splits <- 1
 sq_koiki_splits <- 0
-pop_tol <- 0.20
+pop_tol <- 0.25
 
 # Code of minicipalities that are split under the status quo
 mun_not_freeze <- c(12203,
@@ -49,7 +49,7 @@ gun_exception <- c(12400 # Sanbu  (12403, 12409, 12410)
                    )
 
 # Change time limit
-options(timeout = 300)
+options(timeout = 600)
 
 # Download 2015 Census shapefile
 pref_shp_2015 <- download_shp(pref_code)

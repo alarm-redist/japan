@@ -75,16 +75,9 @@ results$max_to_min <- wgt_smc$max_to_min
 results$gun_split <- gun_split
 results$num_mun_split <- num_mun_split
 results$mun_split <- mun_split
-results$multi <-  num_mun_split - mun_split
+results$multi <- num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
-
-### Method for Chiba ###
-# Check the POLYGON of the plan is contiguous or not.
-# We need this additional process, because we kept 我孫子市 as MULTIPOLYGON.
-# Add bridges and check if valid
-bridges <- c()
-results$valid <- check_valid(pref, pref_smc_plans, bridges)
 
 # Confirm that the 郡 that are kept together in the same district under the enacted plan
 # are not split in the simulated plans
@@ -167,13 +160,10 @@ mun_boundary <- pref_shp_cleaned %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_mutual %>%
-  select(mun_code, sub_code, pop, geometry) %>%
-  rename(code = mun_code) %>%
-  mutate(code = as.numeric(code)) %>%
-  arrange(code) %>%
+gun_boundary <- pref_shp_cleaned %>%
+  mutate(code = as.numeric(substr(code, 1, 5))) %>%
   merge_gun() %>%
-  filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
+  filter(gun_code >= pref_code * 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
@@ -214,10 +204,10 @@ cl_co = cluster::agnes(m_co)
 
 # Analyze the dendrogram and pick an appropriate number of clusters
 plot(as.dendrogram(cl_co))
-abline(h = 6, col = "red") # explore different depths
-abline(h = 3, col = "blue")
+abline(h = 1.5, col = "red") # explore different depths
+abline(h = 2, col = "blue")
 
-prec_clusters = cutree(cl_co, 35)  # change ndists_new to an appropriate number
+prec_clusters = cutree(cl_co, 26)  # change ndists_new to an appropriate number
 
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
@@ -255,7 +245,6 @@ rm(cl_co,
    pref_shp_cleaned,
    pref_gun,
    pref_non_gun,
-   pref_gun_discontinuity,
    pref_pop_2020,
    pref_shp_2015,
    pref_mutual,
