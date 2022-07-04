@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 5000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000
 pref_code <- 40
 pref_name <- "fukuoka"
 lakes_removed <- c()
@@ -34,8 +34,8 @@ sq_max_to_min <- 1.871
 sq_max_to_tottori2 <- 2.037
 sq_mun_splits <- 2
 sq_gun_splits <- 0
-sq_koiki_splits <- 0
-pop_tol <- 0.10
+sq_koiki_splits <- 1
+pop_tol <- 0.25
 
 # Codes of municipalities that are split under the status quo
 mun_not_freeze <- c(40134,
