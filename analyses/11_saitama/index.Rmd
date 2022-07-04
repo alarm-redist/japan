@@ -1,7 +1,7 @@
 ---
 title: "埼玉県 (議員定数：15 →16)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: June 16, 2022
+date: July 4, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -35,10 +35,17 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
-sq_mun_splits_name <- "さいたま市見沼区、熊谷市、 川口市、春日部市、鴻巣市、 越谷市、久喜市、ふじみ野市" 
+new_max_to_min <- 1.274
+new_mun_splits <- 1
+new_gun_splits <- 2
+new_koiki_splits <- 0
+sq_mun_splits_name <- "さいたま市見沼区、熊谷市、 川口市、春日部市、鴻巣市、越谷市、久喜市、ふじみ野市" 
 sq_gun_splits_name <- "入間郡"
 sq_koiki_splits_name <- ""
-optimal_splits_name <- "さいたま市岩槻区、さいたま市北区、川口市、上尾市、狭山市、入間市、熊谷市、行田市"
+new_mun_splits_name <- "川口市" 
+new_gun_splits_name <- "入間郡、北葛飾郡"
+new_koiki_splits_name <- ""
+optimal_splits_name <- "熊谷市、 川口市、鴻巣市、久喜市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -61,13 +68,17 @@ optimal_max_to_min <- results_sample[which(results_sample$index == optimal),]$ma
 ```{r}
 # summary table
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~optimal, 
-  "県内較差", sq_max_to_min, optimal_max_to_min, 
-  "改善率", NA, (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
-  "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split, 
-  "郡の分割", sq_gun_splits, results_sample[which(results_sample$index == optimal),]$gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, results_sample[which(results_sample$index == optimal),]$koiki_split
+  ~category, ~status_quo, ~new_enacted, ~optimal, 
+  "県内較差", sq_max_to_min, new_max_to_min, optimal_max_to_min, 
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1),
+      (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits,
+        results_sample[which(results_sample$index == optimal),]$mun_split, 
+  "郡の分割", sq_gun_splits, new_gun_splits,
+        results_sample[which(results_sample$index == optimal),]$gun_split, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,
+        results_sample[which(results_sample$index == optimal),]$koiki_split
 ) 
 
 table_summary %>% 
@@ -95,17 +106,19 @@ table_summary %>%
     label = md("**1票の格差**"),
     rows = 1:2
   ) %>% 
-  cols_label(
+ cols_label(
     status_quo = "現行",
+    new_enacted = "新たな区割り",
     optimal = "アルゴリズムの提案"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:3
+    columns = 2:4
   ) %>% 
   cols_width(
-    status_quo ~ pct(37.5),
-    optimal ~ pct(37.5)
+    status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    optimal ~ pct(25)
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
@@ -119,16 +132,30 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
-    footnote = optimal_splits_name,
+    footnote = new_mun_splits_name,
     locations = cells_body(
       columns = 3,
       rows = 4
     ) 
   ) %>% 
   tab_footnote(
+    footnote = optimal_splits_name,
+    locations = cells_body(
+      columns = 4,
+      rows = 4
+    ) 
+  ) %>% 
+  tab_footnote(
     footnote = sq_gun_splits_name,
     locations = cells_body(
-      columns = 2:3,
+      columns = c(2,4),
+      rows = 5
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = new_gun_splits_name,
+    locations = cells_body(
+      columns = 3,
       rows = 5
     ) 
   ) %>% 
@@ -138,7 +165,7 @@ table_summary %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:3,
+      columns = 2:4,
       rows = 1
     ) 
   ) 
@@ -252,17 +279,18 @@ ggplot() +
 ```
 
 # アルゴリズム設定
-* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ±`r 100*pop_tol`%
-* 国勢調査における小地域を基本の単位として扱う
-* * 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
+* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ± 20%
+* 市区町村を基本の単位として扱う 
+  * ただし、現状の区割りにおいて分割されている市区町村については、シミュレーションにおいても分割を許容し、国勢調査における小地域を基本の単位として扱う
+  * 現状の区割りにおいて分割されている市区町村は、さいたま市見沼区、熊谷市、 川口市、春日部市、鴻巣市、越谷市、久喜市、ふじみ野市。
+* 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) 、全体の分割数の制限をそれぞれを設定(`add_constr_total_splits`)
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、区割り改定案を`r format(4 * nsims, big.mark = ",")`作成
+* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、区割り改定案を50,000作成
 * 以下の案を棄却し有効な案を選定
-  + 飛び地が生じる案
-  + 市区町村が3つ以上の選挙区に分割される案
-  + 市区町村の分割が現状よりも多い案
-* 有効な案の中から5,000の案を無作為に抽出
+  * 市区町村が3つ以上の選挙区に分割される案
+  * 現状の区割りにおいて分割されていない郡・市区町村が分割される案
+* 有効な案の中から5,000の案を無作為に抽出 
 
 ### 県特有の設定  
 * 以下の地域は隣接するものとして扱った
