@@ -102,13 +102,45 @@ prefadj <- geomander::add_edge(prefadj,
 pref_add_edge <-
   matrix(c(
     # 北九州市若松区
+    which(pref$code == 40103)[1],
+    which(pref$code == 40103)[2],
+    which(pref$code == 40103)[1],
+    which(pref$code == 40103)[3],
+    which(pref$code == 40103)[1],
+    which(pref$code == 40103)[4],
+    which(pref$code == 40103)[1],
+    which(pref$code == 40103)[5],
     # 北九州市小倉北区
+    which(pref$code == 40106)[1],
+    which(pref$code == 40106)[2],
+    which(pref$code == 40106)[1],
+    which(pref$code == 40106)[3],
+    which(pref$code == 40106)[1],
+    which(pref$code == 40106)[4],
+    which(pref$code == 40106)[1],
+    which(pref$code == 40106)[5],
+    which(pref$code == 40106)[1],
+    which(pref$code == 40106)[6],
     # 大牟田市
+    which(pref$code == 40202)[1],
+    which(pref$code == 40202)[2],
+    which(pref$code == 40202)[1],
+    which(pref$code == 40202)[3],
     # 宗像市
-    which(pref$code == 12460)[1],
-    which(pref$code == 12460)[2],
-    which(pref$code == 12460)[1],
-    which(pref$code == 12460)[3]
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[2],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[3],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[4],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[5],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[6],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[7],
+    which(pref$code == 40220)[1],
+    which(pref$code == 40220)[8]
   ), ncol = 2, byrow = TRUE)
 #Add edges
 prefadj <- geomander::add_edge(prefadj,
@@ -124,8 +156,8 @@ pref_map <- redist::redist_map(pref,
 
 # Define constraints
 constr = redist::redist_constr(pref_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = pref_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = pref_map$code)
+constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 2, admin = pref_map$code)
 
 # Run simulation
 set.seed(2020)
