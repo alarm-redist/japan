@@ -91,11 +91,11 @@ if(check_ferries(pref_code) == TRUE){
 # Optional: Suggest connection between disconnected groups
 suggest <-  geomander::suggest_component_connection(shp = pref,
                                                     adj = prefadj)
-# The second row of `suggest` is incorrect.
-# Thus, [2,] is removed here.
+# The 2nd, 7th, and 14th row of `suggest` is incorrect.
+# Thus,  they are removed here.
 prefadj <- geomander::add_edge(prefadj,
-                               suggest[-2,]$x,
-                               suggest[-2,]$y,
+                               suggest[-c(2, 7, 14),]$x,
+                               suggest[-c(2, 7, 14),]$y,
                                zero = TRUE)
 
 ## TODO Repair adjacencies if necessary, and document these changes.
@@ -121,6 +121,11 @@ pref_add_edge <-
     which(pref$code == 40106)[5],
     which(pref$code == 40106)[1],
     which(pref$code == 40106)[6],
+    # 北九州市小倉南区
+    which(pref$code == 40107)[1],
+    which(pref$code == 40107)[2],
+    which(pref$code == 40107)[1],
+    which(pref$code == 40107)[3],
     # 大牟田市
     which(pref$code == 40202)[1],
     which(pref$code == 40202)[2],
@@ -140,7 +145,10 @@ pref_add_edge <-
     which(pref$code == 40220)[1],
     which(pref$code == 40220)[7],
     which(pref$code == 40220)[1],
-    which(pref$code == 40220)[8]
+    which(pref$code == 40220)[8],
+    # 福津市
+    which(pref$code == 40224)[1],
+    which(pref$code == 40224)[2]
   ), ncol = 2, byrow = TRUE)
 #Add edges
 prefadj <- geomander::add_edge(prefadj,

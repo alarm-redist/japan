@@ -218,7 +218,7 @@ plot(as.dendrogram(cl_co))
 abline(h = 2, col = "red") # explore different depths
 abline(h = 1.5, col = "blue")
 
-prec_clusters = cutree(cl_co, 18)  # change ndists_new to an appropriate number
+prec_clusters = cutree(cl_co, 19)  # change ndists_new to an appropriate number
 
 pref_membership <- as_tibble(as.data.frame(prec_clusters))
 names(pref_membership) <- "membership"
