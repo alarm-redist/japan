@@ -1,13 +1,13 @@
 ---
-title: "広島県 (議員定数：7 → 6)"
+title: "福岡県 (議員定数：11 → 11)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: July 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
     self_contained: true
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -22,31 +22,30 @@ library(Rttf2pt1)
 ```
 
 ```{r Manual Entries, include = FALSE}
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+pref_code <- 40
+pref_name <- "fukuoka"
+pref_name_kanji <- "福岡県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116),
-                     names = c("広島市", "福山市", "呉市"))
+cities <- data.frame(longitude = c(130.875050, 130.40171, 130.50841), 
+                     latitude = c(33.883329, 33.59014, 33.31924),
+                     names = c("北九州市", "福岡市", "久留米市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
-
 ## Information about splits
-new_max_to_min <- 1.311
-new_mun_splits <- 0
+new_max_to_min <- 1.836
+new_mun_splits <- 3
 new_gun_splits <- 0
-new_koiki_splits <- 3
-sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
+new_koiki_splits <- 1
+sq_mun_splits_name <- "福岡市南区、福岡市城南区" 
 sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-new_mun_splits_name <- "" 
+sq_koiki_splits_name <- "北九州都市圏域"
+new_mun_splits_name <- "福岡市南区、福岡市城南区、福岡市東区" 
 new_gun_splits_name <- ""
-new_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-split_1_name <- "福山市"
-
+new_koiki_splits_name <- "北九州都市圏域"
+optimal_splits_name <- ""
+optimal_koiki_splits_name <- "北九州都市圏域"
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
 ```
@@ -61,28 +60,25 @@ load(here::here(paste("data-out/pref/",
             sep = "")))
 ```
 
-```{r table summary}
+```{r}
+optimal_max_to_min <- results_sample[which(results_sample$index == optimal),]$max_to_min
+```
+
+```{r}
 # summary table
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~new_enacted, ~split_0, ~split_1,
-  "県内較差", sq_max_to_min, 
-              new_max_to_min, 
-              results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
-              results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min,
+  ~category, ~status_quo, ~new_enacted, ~optimal, 
+  "県内較差", sq_max_to_min, new_max_to_min, optimal_max_to_min, 
   "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1),
-          (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
-          (sq_max_to_min - results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min)/(sq_max_to_min - 1),
-  "選挙区数", ndists_old, ndists_new, ndists_new, ndists_new,
-  "市区町村の分割", sq_mun_splits, new_mun_splits, 0, 
-          results_1_sample[which(results_1_sample$index == optimal_1),]$mun_split,
-  "郡の分割", sq_gun_splits, new_gun_splits, 
-  results_0_sample[which(results_0_sample$index == optimal_0),]$gun_split, 
-  results_1_sample[which(results_1_sample$index == optimal_1),]$gun_split,
+      (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits,
+        results_sample[which(results_sample$index == optimal),]$mun_split, 
+  "郡の分割", sq_gun_splits, new_gun_splits,
+        results_sample[which(results_sample$index == optimal),]$gun_split, 
   "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,
-  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split, 
-  results_1_sample[which(results_1_sample$index == optimal_1),]$koiki_split
+        results_sample[which(results_sample$index == optimal),]$koiki_split
 ) 
-
 table_summary %>% 
   gt(rowname_col = "category") %>% 
   fmt_number(
@@ -108,33 +104,19 @@ table_summary %>%
     label = md("**1票の格差**"),
     rows = 1:2
   ) %>% 
-  tab_spanner(
-    label = "現行",
-    columns = status_quo
-  ) %>% 
-  tab_spanner(
-    label = "新たな区割り",
-    columns = new_enacted
-  ) %>% 
-  tab_spanner(
-    label = "アルゴリズムの提案",
-    columns = c(split_0, split_1)
-  ) %>% 
-  cols_label(
-    status_quo = "",
-    new_enacted = "",
-    split_0 = "市区町村の分割無し",
-    split_1 = "最大市区町村の分割可"
+ cols_label(
+    status_quo = "現行",
+    new_enacted = "新たな区割り",
+    optimal = "アルゴリズムの提案"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:5
+    columns = 2:4
   ) %>% 
   cols_width(
-    status_quo ~ pct(17),
-    new_enacted ~ pct(17),
-    split_0 ~ pct(23),
-    split_1 ~ pct(23),
+    status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    optimal ~ pct(25)
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
@@ -143,21 +125,28 @@ table_summary %>%
   tab_footnote(
     footnote = sq_mun_splits_name,
     locations = cells_body(
-      columns = 2,
+      columns = 2:3,
       rows = 4
     ) 
   ) %>% 
   tab_footnote(
-    footnote = split_1_name,
+    footnote = optimal_splits_name,
     locations = cells_body(
-      columns = 5,
+      columns = 4,
       rows = 4
     ) 
   ) %>% 
- tab_footnote(
+  tab_footnote(
     footnote = sq_koiki_splits_name,
     locations = cells_body(
-      columns = 2:5,
+      columns = 2:3,
+      rows = 6
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = optimal_koiki_splits_name,
+    locations = cells_body(
+      columns = 4,
       rows = 6
     ) 
   ) %>% 
@@ -167,11 +156,12 @@ table_summary %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:5,
+      columns = 2:4,
       rows = 1
     ) 
   ) 
 ```
+
 
 # 現行の区割り 
 ```{r status quo plan, warning=FALSE, message = FALSE}
@@ -190,14 +180,16 @@ ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = c(0.4, 1.2)) +
-  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), size = 3,
+              color = c("white", "white", "black"),
+              nudge_x = c(-2000, 2000, 0), # adjust the position of the labels
+              nudge_y = c(6000, 5000, -12000), # adjust the position of the labels
+              # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -207,50 +199,28 @@ ggplot() +
 # アルゴリズムの提案
 アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
-<!-- # When plan diversity is low -->
-<!-- 注: シミュレーション結果の区割り案の多様性が、理想より低い。 -->
-<!-- # When resampling efficiency is less than 5% -->
-<!-- 注:リサンプリング時の効率が理想より悪い。 -->
+一票の格差 : `r round(optimal_max_to_min, digits = 3) `
 
-### 市区町村を分割しない区割り案
-一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
-
-```{r optimal plan (0 split)}
-redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
-  labs(title = element_blank())+
+```{r optimal plan}
+optimal_matrix <- redist::get_plans_matrix(sim_smc_pref_sample %>% filter(draw == optimal))
+colnames(optimal_matrix) <- "district"
+optimal_plan <- cbind(pref_map, optimal_matrix) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
+ggplot() +
+  geom_sf(data = optimal_plan, aes(fill = as.factor(color)), 
+          show.legend = FALSE, lwd = 0) +
+  scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = c(0.4, 1.2)) +
-  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
-  
-  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
-              family = "HiraginoSans-W3") +
-  
-  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
-```
-
-### 最大市区町村の分割を許容する区割り案 
-人口が最大の市区町村 : `r split_1_name`
-
-一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
-
-```{r optimal plan (1split)}
-redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
-  labs(title = element_blank())+
-  
-  geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
-          fill = NA, lwd = c(0.4, 0.4, 1.2)) +
-   scale_color_manual(values = c("black", "#373C38", "#D0C1BA50")) +
-  scale_linetype_manual(values = c("dotted", "solid", "solid")) +
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), size = 3,
+              color = c("black", "white", "black"),
+              nudge_x = c(-2000, 2000, 0), # adjust the position of the labels
+              nudge_y = c(6000, 5000, -12000), # adjust the position of the labels
+              # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -258,66 +228,70 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
 ```
 
 # 共起分析
-* アルゴリズム設定
-  + 市区町村の分割無し
-  + 飛び地を含む案を棄却
-  + 一票の格差が下位10％の案を抽出
+* 有効な案のうち一票の格差が下位10％の案を抽出
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりをk = 12 設定
 * 読み取り方  
-地図上の市区町村の色が
+地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
-  + 同じ かつ 濃い → 隣接する市区町村と同じ選挙区に属する傾向が強い
+  + 同じ かつ 濃い → 隣接する地域と同じ選挙区に属する傾向が強い
 
 ```{r co-occurrence, warning = FALSE}
 # Match membership data with map object
 if(ndists_new > 6){
-  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
     mutate(color = redist:::color_graph(.$adj, as.integer(.$membership)))
 } else{
-  pref_0_cooc <- cbind(pref_map_0, cooc_ratio, pref_membership_0) %>% 
+  pref_cooc <- cbind(pref_map, cooc_ratio, pref_membership) %>% 
     mutate(color = .$membership)
 }
-
-# Reorder the color palette
-PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
-
 # Co-occurrence plot
 ggplot() +
-  geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
+  geom_sf(data = pref_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), 
+          show.legend = FALSE, lwd = 0) +
   scale_fill_manual(values = PAL, guide = "none") + 
-  scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
+  scale_alpha_continuous(range = c(min(cooc_ratio, na.rm = TRUE), 
+                                   max(cooc_ratio, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = c(0.4, 1.2)) +
-  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = 0.4) +
+  scale_color_manual(values = c("grey60", "grey30")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), size = 3,
+              color = c("black", "white", "black"),
+              nudge_x = c(-2000, 2000, 0), # adjust the position of the labels
+              nudge_y = c(6000, 5000, -12000), # adjust the position of the labels
+              # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
-
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
 
 # アルゴリズム設定
-
 * 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ±`r 100*pop_tol`%
-  + サンプリング効率が80%~100%となるように調節
-* 市区町村分割を許容しない案、及び日本人人口が最大の市（政令指定都市の行政区を除く）の分割を許容する案の2種類を作成
-  + 最大市区町村を分割する際は、平成の大合併以前の市区町村界に基づく
-  + 旧市区町村単位の人口（総人口-外国人人口）は、合併後の市区町村の人口（総人口-外国人人口）と旧市区町村単位の日本人人口を元に推計
+* 市区町村を基本の単位として扱う 
+  * ただし、現状の区割りにおいて分割されている市区町村については、シミュレーションにおいても分割を許容し、国勢調査における小地域を基本の単位として扱う
+  * 現状の区割りにおいて分割されている市区町村は、福岡市南区と城南区
+* 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
-* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(4 * nsims, big.mark = ",")`作成
+* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、区割り改定案を`r format(4 * nsims, big.mark = ",")`作成
 * 以下の案を棄却し有効な案を選定
-  + 飛び地が生じる案
-  + 市区町村が3つ以上の選挙区に分割される案
-  + 市区町村の分割が現状よりも多い案
+  * 市区町村が3つ以上の選挙区に分割される案
+  * 現状の区割りにおいて分割されていない郡・市区町村が分割される案
 * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定  
-特になし 
+* 以下の地域は隣接するものとして扱った。
+  * 姫路市飾磨区須加と姫路市旧家島町
+  * 尼崎市末広町と尼崎市の大部分の地域
+  * 芦屋市陽光町と芦屋市の大部分の地域
+  * 淡路市と神戸市垂水区
+  * 淡路市と明石市
+  * 播磨町新島と播磨町の大部分の地域
+  * たつの市島嶼部とたつの市の大部分の地域
+  * 相生市島嶼部と相生市の大部分の地域
+  * 赤穂市島嶼部と赤穂市の大部分の地域
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
