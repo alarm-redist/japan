@@ -151,13 +151,10 @@ mun_boundary <- pref_shp_cleaned %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
   group_by(code) %>%
   summarise(geometry = sf::st_union(geometry))
-gun_boundary <- pref_mutual %>%
-  select(mun_code, sub_code, pop, geometry) %>%
-  rename(code = mun_code) %>%
-  mutate(code = as.numeric(code)) %>%
-  arrange(code) %>%
+gun_boundary <- pref_shp_cleaned %>%
+  mutate(code = as.numeric(substr(code, 1, 5))) %>%
   merge_gun() %>%
-  filter(gun_code >= (pref_map$code[1]%/%1000)* 1000 + 300) %>%
+  filter(gun_code >= pref_code * 1000 + 300) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
