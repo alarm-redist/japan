@@ -128,13 +128,6 @@ table_summary %>%
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
     subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
   ) %>% 
-  tab_footnote(
-    footnote = new_koiki_splits_name,
-    locations = cells_body(
-      columns = 3,
-      rows = 6
-    ) 
-  ) %>%
   opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
@@ -167,8 +160,8 @@ ggplot() +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -191,8 +184,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -232,9 +225,10 @@ ggplot() +
   geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
   scale_fill_manual(values = PAL, guide = "none") + 
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
+  
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
