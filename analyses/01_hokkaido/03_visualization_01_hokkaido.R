@@ -148,7 +148,7 @@ optimal_non_ishikari <- results_sample_non_ishikari$index[which(
 results_sample_non_ishikari[which(results_sample_non_ishikari$index == optimal_non_ishikari),]
 
 # Gun/Municipality boundaries
-mun_boundary_non_ishikari <- pref_shp_cleaned %>%
+mun_boundary_non_ishikari <- pref %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
   filter(code %in% c(01101,
                      01102,
@@ -355,7 +355,7 @@ optimal_ishikari <- results_sample_ishikari$index[which(
 results_sample_ishikari[which(results_sample_ishikari$index == optimal_ishikari),]
 
 # Gun/Municipality boundaries
-mun_boundary_ishikari <- pref_shp_cleaned %>%
+mun_boundary_ishikari <- pref %>%
   mutate(code = as.numeric(substr(code, 1, 5))) %>%
   filter(code %in% c(01101,
                      01102,
@@ -394,6 +394,10 @@ gun_boundary_ishikari <- pref %>%
                      01235,
                      01303,
                      01304)) %>%
+  mutate(gun_code = if_else(
+    code %in% c(1303, 1304),
+    01300,
+    code)) %>%
   group_by(gun_code) %>%
   summarise(geometry = sf::st_union(geometry))
 
@@ -464,8 +468,10 @@ for (i in 1:length(ishikari$code))
 
 # Save files
 rm(cl_co,
+   cl_co_0,
    constr,
    m_co,
+   m_co_0,
    mun_ishikari,
    mun_non_ishikari,
    gun_ishikari,
