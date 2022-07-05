@@ -1,5 +1,5 @@
 ###############################################################################
-# Data visualization for `33_Okayama`
+# Data visualization for `33_okayama`
 # © ALARM Project, June 2021
 ###############################################################################
 # TODO Define the koiki-renkei areas (広域連携)
@@ -54,7 +54,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -68,7 +68,7 @@ for (i in 0:1)
 
 # Add Kurashiki-shi back to result of simulation with 0 split
 sim_smc_pref_0_with_Kurashiki <- NULL
-for(i in 1:as.integer(nsims*2)){
+for(i in 1:as.integer(nsims*4)){
     with_Kurashiki <-
       dplyr::bind_rows(as_tibble(sim_smc_pref_0 %>% filter(draw == i)),
                        data.frame(draw = as.factor(i),

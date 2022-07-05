@@ -1,13 +1,14 @@
 ###############################################################################
 # Simulations for `13_tokyo`
-# © ALARM Project, April 2021
+# © ALARM Project, July 2022
 ###############################################################################
 
-# Obtain codes of 郡 to merge
+# Assign 郡 codes
 pref <- merge_gun(pref)
+
+# Choose 郡 to merge
 gun_codes <- unique(pref$gun_code[which(pref$gun_code >= (pref$code[1]%/%1000)*1000+300)])
-# Filter out exceptions
-gun_codes <- setdiff(gun_codes, gun_exception)
+gun_codes <- setdiff(gun_codes, gun_exception) # Filter out exceptions
 
 # Set aside non-郡 municipalities
 pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
@@ -50,6 +51,8 @@ new_rows[1, ]$pop <- pref[1, ]$pop
 
 pref_sep <- new_rows
 
+# to calculate area size, switch off `geometry (s2)`
+sf_use_s2(FALSE)
 for (i in 2:nrow(pref))
 {
   new_rows <- data.frame(code = pref[i, ]$code,
@@ -58,23 +61,39 @@ for (i in 2:nrow(pref))
                          pop = 0,
                          gun_code = pref[i, ]$gun_code
   )
+
+  # order by size
+  new_rows <- new_rows %>%
+    dplyr::mutate(area = sf::st_area(geometry)) %>%
+    dplyr::arrange(desc(area)) %>%
+    dplyr::select(-area)
+
+  # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
 
+# switch on `geometry (s2)`
+sf_use_s2(TRUE)
 pref <- dplyr::bind_rows(pref_sep, pref_islands) %>%
   sf::st_as_sf()
 
 #######Separate special wards area from Tama###############
-special_wards <- filter(pref, code %in% c(13101:13123,
-                13360, 13380, 13400, 13420)) #Islands are considered connected to Minato-ku
+special_wards <- pref %>%
+  filter(code %in% c(13101:13123,
+                     13360, 13380, 13400, 13420)) %>% #Islands are considered connected to Minato-ku
 
-tama <-  filter(pref, code %in% c(13101:13123,
-                      13360, 13380, 13400, 13420) == FALSE)
+  # Filter out Koto-ku, whose population is larger than the target population
+  filter(code %in% pref$code[which(pref$pop > sum(pref$pop)/ndists_new)] == FALSE)
+
+special_wards_with_koto <- filter(pref, code %in% c(13101:13123, 13360, 13380, 13400, 13420))
+
+tama <-  filter(pref, code %in% c(13101:13123, 13360, 13380, 13400, 13420) == FALSE)
 
 # Calculate seats to allocate
-ndists_new_special_wards <- round(ndists_new * (sum(special_wards$pop)/sum(pref$pop)))
+ndists_new_special_wards <-
+  round(ndists_new * (sum(special_wards_with_koto$pop)/sum(pref$pop))) - 1 # Exclude Koto-ku
 ndists_new_tama <- round(ndists_new * (sum(tama$pop)/sum(pref$pop)))
 
 #######Special wards###############
@@ -117,51 +136,24 @@ special_wards_add_edge <-
     #品川区八潮-品川区東大井
     which(special_wards$code == 13109 & special_wards$sub_code == 250),
     which(special_wards$code == 13109 & special_wards$sub_code == 160),
-    #品川区八潮-品川区東品川
+    #品川区八潮-品川区東品川5丁目
     which(special_wards$code == 13109 & special_wards$sub_code == 250),
-    which(special_wards$code == 13109 & special_wards$sub_code == 180),
+    which(special_wards$code == 13109 & special_wards$sub_code == 180)[2],
+    #品川区東品川1・3・4丁目 - 品川区東品川2丁目
+    which(special_wards$code == 13109 & special_wards$sub_code == 180)[1],
+    which(special_wards$code == 13109 & special_wards$sub_code == 180)[3],
+    #品川区東品川2丁目 - 品川区東品川5丁目
+    which(special_wards$code == 13109 & special_wards$sub_code == 180)[3],
+    which(special_wards$code == 13109 & special_wards$sub_code == 180)[2],
     #港区海岸-港区台場
     which(special_wards$code == 13103 & special_wards$sub_code == 20),
-    which(special_wards$code == 13103 & special_wards$sub_code == 300)[2],
-    #中央区晴海-江東区豊洲
-    which(special_wards$code == 13102 & special_wards$sub_code == 380),
-    which(special_wards$code == 13108 & special_wards$sub_code == 210),
-    #中央区晴海-中央区月島
-    which(special_wards$code == 13102 & special_wards$sub_code == 380),
-    which(special_wards$code == 13102 & special_wards$sub_code == 350),
-    #中央区月島-中央区明石町
-    which(special_wards$code == 13102 & special_wards$sub_code == 350),
-    which(special_wards$code == 13102 & special_wards$sub_code == 70),
-    #中央区明石町-中央区佃
-    which(special_wards$code == 13102 & special_wards$sub_code == 70),
-    which(special_wards$code == 13102 & special_wards$sub_code == 340),
-    #中央区築地-中央区勝どき
-    which(special_wards$code == 13102 & special_wards$sub_code == 80),
-    which(special_wards$code == 13102 & special_wards$sub_code == 360),
-    #中央区佃-中央区新川
-    which(special_wards$code == 13102 & special_wards$sub_code == 340),
-    which(special_wards$code == 13102 & special_wards$sub_code == 110),
-    #中央区佃-江東区越中島
-    which(special_wards$code == 13102 & special_wards$sub_code == 340),
-    which(special_wards$code == 13108 & special_wards$sub_code == 180),
-    #中央区新川-江東区永代
-    which(special_wards$code == 13102 & special_wards$sub_code == 110),
-    which(special_wards$code == 13108 & special_wards$sub_code == 100),
-    #中央区新川-中央区湊
-    which(special_wards$code == 13102 & special_wards$sub_code == 110),
-    which(special_wards$code == 13102 & special_wards$sub_code == 60),
-    #江東区豊洲-江東区有明
-    which(special_wards$code == 13108 & special_wards$sub_code == 210),
-    which(special_wards$code == 13108 & special_wards$sub_code == 230),
-    #江東区塩浜-江東区木場
-    which(special_wards$code == 13108 & special_wards$sub_code == 190),
-    which(special_wards$code == 13108 & special_wards$sub_code == 350),
-    #江東区塩浜-江東区東陽
-    which(special_wards$code == 13108 & special_wards$sub_code == 190),
-    which(special_wards$code == 13108 & special_wards$sub_code == 360),
-    #江東区塩浜-江東区新砂
-    which(special_wards$code == 13108 & special_wards$sub_code == 190),
-    which(special_wards$code == 13108 & special_wards$sub_code == 420)
+    which(special_wards$code == 13103 & special_wards$sub_code == 300)[1],
+    #中央区佃・月島・勝鬨-中央区の大部分の地域
+    which(special_wards$code == 13102)[1],
+    which(special_wards$code == 13102)[2],
+    #中央区浜離宮庭園の各地域
+    which(special_wards$code == 13102)[1],
+    which(special_wards$code == 13102)[4]
   ), ncol = 2, byrow = TRUE)
 
 #Add edges
@@ -179,19 +171,25 @@ special_wards_map <- redist::redist_map(special_wards,
 # Define constraints
 constr_special_wards = redist::redist_constr(special_wards_map)
 constr_special_wards = redist::add_constr_splits(constr_special_wards,
-                                                 strength = 1,
+                                                 strength = 2,
                                                  admin = special_wards_map$code)
 constr_special_wards = redist::add_constr_multisplits(constr_special_wards,
-                                                      strength = 2,
+                                                      strength = 6,
                                                       admin = special_wards_map$code)
 
 # Run simulation
+set.seed(2020)
 sim_smc_special_wards <- redist::redist_smc(
   map = special_wards_map,
-  nsims = nsims,
+  nsims = nsims_special_wards,
+  runs = 4L,
   counties = special_wards_map$code,
   constraints = constr_special_wards,
-  pop_temper = 0.05)
+  pop_temper = 0.06)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_special_wards)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
@@ -231,7 +229,7 @@ saveRDS(sim_smc_special_wards, paste("data-out/plans/",
                                "_",
                                as.character(sim_type),
                                "_",
-                               as.character(nsims),
+                               as.character(nsims_special_wards * 4),
                                "_special_wards.Rds",
                                sep = ""))
 
@@ -266,12 +264,18 @@ constr_tama = redist::add_constr_multisplits(constr_tama,
                                              admin = tama_map$code)
 
 # Run simulation
+set.seed(2020)
 sim_smc_tama <- redist::redist_smc(
   map = tama_map,
-  nsims = nsims,
+  nsims = nsims_tama,
+  runs = 4L,
   counties = tama_map$code,
   constraints = constr_tama,
   pop_temper = 0.05)
+
+# Check to see whether there are SMC convergence warnings
+# If there are warnings, increase `nsims`
+summary(sim_smc_tama)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
@@ -311,6 +315,6 @@ saveRDS(sim_smc_tama, paste("data-out/plans/",
                               "_",
                               as.character(sim_type),
                               "_",
-                              as.character(nsims),
+                              as.character(nsims_tama * 4),
                               "_tama.Rds",
                               sep = ""))

@@ -1,5 +1,5 @@
 ###############################################################################
-# Data visualization for `38_Ehime`
+# Data visualization for `38_ehime`
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -51,7 +51,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -65,7 +65,7 @@ for (i in 0:1)
 
 # Add 松山市 back to result of simulation with 0 split
 sim_smc_pref_0_with_Matsuyama <- NULL
-for(i in 1:as.integer(nsims*2)){
+for(i in 1:as.integer(nsims*4)){
   with_Matsuyama <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_0 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
@@ -76,7 +76,7 @@ for(i in 1:as.integer(nsims*2)){
 
 # Add 旧松山市 back to result of simulation with 1 split
 sim_smc_pref_1_with_Matsuyama <- NULL
-for(i in 1:as.integer(nsims*2)){
+for(i in 1:as.integer(nsims*4)){
   with_Matsuyama <-
     dplyr::bind_rows(as_tibble(sim_smc_pref_1 %>% filter(draw == i)),
                      data.frame(draw = as.factor(i),
@@ -303,6 +303,7 @@ rm(pref_smc_plans_0,
    results_0,
    results_1
 )
+
 save.image(paste("data-out/pref/",
                  as.character(pref_code),
                  "_",
@@ -332,6 +333,7 @@ for (i in 0:1){
 sim_smc_pref_0_with_Matsuyama %>%
   filter(draw %in% valid_sample_0) %>%
 
+  # Remove the column "pop_overlap" that was created when renumbering the district numbers
   select("draw", "district", "total_pop") %>%
 
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%
@@ -349,6 +351,7 @@ sim_smc_pref_0_with_Matsuyama %>%
 sim_smc_pref_1_with_Matsuyama %>%
   filter(draw %in% valid_sample_1) %>%
 
+  # Remove the column "pop_overlap" that was created when renumbering the district numbers
   select("draw", "district", "total_pop") %>%
 
   mutate(across(where(is.numeric), format, digits = 4, scientific = FALSE)) %>%

@@ -1,5 +1,5 @@
 ###############################################################################
-# Download and prepare data for `38_Ehime` analysis
+# Download and prepare data for `38_ehime` analysis
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 10000 # Set so that the number of valid plans > 5,000
+nsims <- 5000 # Set so that the number of valid plans > 5,000
 pref_code <- 38
 pref_name <- "ehime"
 lakes_removed <- c()

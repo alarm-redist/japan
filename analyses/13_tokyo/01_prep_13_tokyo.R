@@ -1,22 +1,20 @@
 ###############################################################################
 # Download and prepare data for `13_tokyo` analysis
-# © ALARM Project, April 2021
+# © ALARM Project, July 2022
 ###############################################################################
 
 suppressMessages({
-    library(dplyr)
-    library(readr)
-    library(sf)
-    library(redist)
-    library(geomander)
-    library(cli)
-    library(here)
-    library(tidyverse)
-    library(nngeo)
-    devtools::load_all() # load utilities
+  library(dplyr)
+  library(readr)
+  library(sf)
+  library(redist)
+  library(geomander)
+  library(cli)
+  library(here)
+  library(tidyverse)
+  library(nngeo)
+  devtools::load_all() # load utilities
 })
-
-set.seed(12345)
 
 # Pull functions
 setwd("R")
@@ -26,7 +24,8 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 25000 # Set so that the number of valid plans > 5,000
+nsims_special_wards <- 10000 # Set so that the number of valid plans > 5,000
+nsims_tama <- 60000
 pref_code <- 13
 pref_name <- "tokyo"
 lakes_removed <- c()
@@ -38,20 +37,22 @@ sq_mun_splits <- 17
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
 pop_tol_special_wards <- 0.06
-pop_tol_tama <- 0.06
+pop_tol_tama <- 0.08
   # Population tolerance is set separately for the 23 special wards area and Tama area
+
+# Codes of municipalities that are split under the status quo
+mun_not_freeze <- c(13103, 13104, 13106, 13109, 13110, 13111, 13112, 13114, 13115,
+                    13116, 13119, 13120, 13121, 13123,
+                    13201, 13224, 13225)
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
-
-# Change time limit
-options(timeout = 300)
 
 # Download 2015 Census shapefile
 pref_shp_2015 <- download_shp(pref_code)
 # Clean 2015 Census shapefile
 pref_shp_cleaned <- pref_shp_2015 %>%
-    clean_jcdf()
+  clean_jcdf()
 # Note that S_NAME shows the name of the first entry of the areas grouped
 # in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
@@ -79,74 +80,76 @@ sq_tama <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
 # Clean 2020 Census data at the 小地域-level
 pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE)
 
-
 # Match 2015 shapefile (`pref_shp_cleaned`) with 2020 Census data (`pref_pop_2020`)
 # Combine municipality code with sub-code
-pref_shp_cleaned <- mutate(pref_shp_cleaned, code = str_c(code, KIHON1))
+pref_shp_cleaned <- mutate(pref_shp_cleaned, mun_code = code, code = str_c(code, KIHON1))
 # Combine municipality code with sub-code
 pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
 
+### Municipalities that not split under the status quo ###
+# Match at the municipality level
+pop <- pref_pop_2020 %>%
+  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+  dplyr::group_by(mun_code) %>%
+  dplyr::summarise(pop = sum(pop)) %>%
+  dplyr::rename(code = mun_code)
+
+geom <- pref_shp_cleaned %>%
+  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+  dplyr::group_by(mun_code) %>%
+  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
+  dplyr::select(mun_code, geometry) %>%
+  dplyr::rename(code = mun_code)
+
+# Combine data frames
+pref_freeze <- merge(pop, geom, by = "code")
+
+### Municipalities that split under the status quo ###
+# Match at the 小地域 level
 # TODO Match areas that do not exist in either `pref_shp_cleaned` or `pref_pop_2020`
-# 1. Areas that are accounted for in both dataframes
-pref_mutual <- merge(pref_pop_2020, pref_shp_cleaned, by = "code")
+# 1. Areas that are accounted for in both data frames
+pref_mutual <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                     dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                     by = "code")
 
 # 2. Areas that exist only in 2015 shapefile (`pref_shp_cleaned`)
-pref_geom_only <- merge(pref_shp_cleaned, pref_pop_2020, by = "code", all.x = TRUE)
+pref_geom_only <- merge(dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                        dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                        by = "code", all.x = TRUE)
 pref_geom_only <- setdiff(pref_geom_only, pref_mutual)
+# There are no areas that fall under this category
 
 # 3. Areas that exist only in 2020 Census data (`pref_pop_2020`)
-pref_pop_only <- merge(pref_pop_2020, pref_shp_cleaned, by = "code", all.x = TRUE)
+pref_pop_only <- merge(dplyr::filter(pref_pop_2020, mun_code %in% mun_not_freeze),
+                       dplyr::filter(pref_shp_cleaned, mun_code %in% mun_not_freeze),
+                       by = "code", all.x = TRUE)
 pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
-    filter(pop > 0)
-
-# Match or combine data so that every single census block is taken into account
-# Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
-pref_geom_only$pop <- 0
-pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
+  filter(pop > 0)
 
 # Match or combine areas so that each area in `pref_pop_only` is matched with an existing area
-# Assign 港区 to 港区台場
+# Assign 港区(sub_code: 310) to 港区台場
 pref_mutual[pref_mutual$code == "131030300",]$pop <- # 港区台場
-    pref_mutual[pref_mutual$code == "131030300",]$pop + # 港区台場
-    pref_pop_only[pref_pop_only$code == "131030310",]$pop
+  pref_mutual[pref_mutual$code == "131030300",]$pop + # 港区台場
+  pref_pop_only[pref_pop_only$code == "131030310",]$pop # 港区(sub_code: 310)
 
-# Assign 新宿区四谷 to 新宿区四谷
-pref_mutual[pref_mutual$code == "131040010",]$pop <- # 新宿区四谷
-  pref_mutual[pref_mutual$code == "131040010",]$pop + # 新宿区四谷
-  pref_pop_only[pref_pop_only$code == "131040011",]$pop +
-  pref_pop_only[pref_pop_only$code == "131040012",]$pop
-
-# Assign 昭島市もくせいの杜 to 昭島市福島町
-pref_mutual[pref_mutual$code == "132070051",]$pop <- # 昭島市福島町
-  pref_mutual[pref_mutual$code == "132070051",]$pop + # 昭島市福島町
-  pref_pop_only[pref_pop_only$code == "132070230",]$pop # 昭島市もくせいの杜
-
-# Assign 町田市南町田(pop: 450) to 町田市鶴間、小川
-pref_geom_only_1 <- pref_geom_only %>%
-  filter(code %in% c("132090040", "132090200")) %>% # 町田市鶴間, 町田市小川
-  group_by(mun_code) %>%
-  mutate(geometry = sf::st_union(geometry)) %>%
-  ungroup() %>%
-  slice(1)
-pref_geom_only_1[pref_geom_only_1$code == "132090040"]$pop <-
-  pref_pop_only[pref_pop_only$code == "132090450",]$pop # 町田市南町田
-# Add sub_code
-pref_geom_only_1$sub_code = 450
-
-# Group together 町田市木曽西
-pref_mutual[pref_mutual$code == "132090112",]$geometry <-
-  sf::st_union(filter(pref_mutual, code == "132090112")$geometry,
-               filter(pref_geom_only, code == "132090114")$geometry)
+# Assign 新宿区四谷(sub_code: 11, 12) to 新宿区四谷(sub_code: 10)
+pref_mutual[pref_mutual$code == "131040010",]$pop <- # 新宿区四谷(sub_code: 10)
+    pref_mutual[pref_mutual$code == "131040010",]$pop + # 新宿区四谷(sub_code: 10)
+    pref_pop_only[pref_pop_only$code == "131040011",]$pop + # 新宿区四谷(sub_code: 11)
+    pref_pop_only[pref_pop_only$code == "131040012",]$pop # 新宿区四谷(sub_code: 12)
 
 # Finalize pref object
-pref <- rbind(pref_mutual, pref_geom_only_1)
-pref <- pref %>%
-    select(mun_code, sub_code, pop, geometry) %>%
-    rename(code = mun_code) %>%
-    mutate(code = as.numeric(code)) %>%
-    arrange(code) %>%
-    sf::st_as_sf()
+pref <- bind_rows(
+  pref_mutual %>%
+    select(mun_code.x, sub_code, pop, geometry) %>%
+    rename(code = mun_code.x) %>%
+    mutate(code = as.numeric(code)),
+
+  pref_freeze
+
+) %>%
+  arrange(code, sub_code) %>%
+  sf::st_as_sf()
 
 # Finally, confirm that these matching operations were conducted correctly
 sum(pref$pop) == sum(pref_pop_2020$pop)
-sum(pref$pop)
