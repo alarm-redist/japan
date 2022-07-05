@@ -52,7 +52,7 @@ pref <- dplyr::bind_rows(
                      code = dplyr::last(code),
                      gun_code = dplyr::last(gun_code),
                      sub_code = dplyr::last(sub_code))
-)%>%
+  )%>%
   sf::st_as_sf()
 
 # Convert multi-polygons into polygons
@@ -88,6 +88,7 @@ for (i in 2:nrow(pref))
 
   pref_sep <- rbind(pref_sep, new_rows)
 }
+
 # switch on the `geometry (s2)``
 sf_use_s2(TRUE)
 pref <- sf::st_as_sf(pref_sep)

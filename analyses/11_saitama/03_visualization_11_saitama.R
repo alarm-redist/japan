@@ -11,7 +11,6 @@
 koiki_1_codes <- c(11207, 11360)
 koiki_2_codes <- c(11211, 11380)
 
-
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 pref_map <- readRDS(paste("data-out/maps/",
                           as.character(pref_code),
@@ -76,6 +75,7 @@ koiki_split <-
 koiki_split <- koiki_split %>%
   matrix(ncol = ndists_new, byrow = TRUE)
 koiki_split <- koiki_split[,1]
+
 # Compile results
 results <- data.frame(matrix(ncol = 0, nrow = nrow(wgt_smc)))
 results$max_to_min <- wgt_smc$max_to_min
@@ -85,7 +85,6 @@ results$mun_split <- mun_split
 results$multi <-  num_mun_split - mun_split
 results$koiki_split <- koiki_split
 results$index <- 1:nrow(wgt_smc)
-
 
 # Confirm that the 郡 that are kept together in the same district under the enacted plan
 # are not split in the simulated plans
