@@ -35,9 +35,16 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
+new_max_to_min <- 0
+new_mun_splits <- 0
+new_gun_splits <- 0
+new_koiki_splits <- 0
 sq_mun_splits_name <- "市川市、船橋市、松戸市、柏市、横芝光町" 
 sq_gun_splits_name <- "山武郡"
 sq_koiki_splits_name <- ""
+new_mun_splits_name <- "市川市、船橋市" 
+new_gun_splits_name <- "xx"
+new_koiki_splits_name <- "x"
 optimal_splits_name <- "xxxxx"
 
 ## Color Palette
@@ -61,15 +68,18 @@ optimal_max_to_min <- results_sample[which(results_sample$index == optimal),]$ma
 ```{r}
 # summary table
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~optimal, 
-  "県内較差", sq_max_to_min, optimal_max_to_min, 
-  "改善率", NA, (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
-  "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, results_sample[which(results_sample$index == optimal),]$mun_split, 
-  "郡の分割", sq_gun_splits, results_sample[which(results_sample$index == optimal),]$gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, results_sample[which(results_sample$index == optimal),]$koiki_split
+  ~category, ~status_quo, ~new_enacted, ~optimal, 
+  "県内較差", sq_max_to_min, new_max_to_min, optimal_max_to_min, 
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1),
+      (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits,
+        results_sample[which(results_sample$index == optimal),]$mun_split, 
+  "郡の分割", sq_gun_splits, new_gun_splits,
+        results_sample[which(results_sample$index == optimal),]$gun_split, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,
+        results_sample[which(results_sample$index == optimal),]$koiki_split
 ) 
-
 table_summary %>% 
   gt(rowname_col = "category") %>% 
   fmt_number(
@@ -95,17 +105,19 @@ table_summary %>%
     label = md("**1票の格差**"),
     rows = 1:2
   ) %>% 
-  cols_label(
+ cols_label(
     status_quo = "現行",
+    new_enacted = "新たな区割り",
     optimal = "アルゴリズムの提案"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:3
+    columns = 2:4
   ) %>% 
   cols_width(
-    status_quo ~ pct(37.5),
-    optimal ~ pct(37.5)
+    status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    optimal ~ pct(25)
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
@@ -119,17 +131,31 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
-    footnote = optimal_splits_name,
+    footnote = new_mun_splits_name,
     locations = cells_body(
       columns = 3,
       rows = 4
     ) 
   ) %>% 
   tab_footnote(
-    footnote = sq_koiki_splits_name,
+    footnote = optimal_splits_name,
     locations = cells_body(
-      columns = 2:3,
-      rows = 6
+      columns = 4,
+      rows = 4
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = sq_gun_splits_name,
+    locations = cells_body(
+      columns = c(2,4),
+      rows = 5
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = new_gun_splits_name,
+    locations = cells_body(
+      columns = 3,
+      rows = 5
     ) 
   ) %>% 
   opt_footnote_marks(marks = "letters") %>% 
@@ -138,7 +164,7 @@ table_summary %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:3,
+      columns = 2:4,
       rows = 1
     ) 
   ) 
@@ -168,10 +194,10 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(4000, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(3000, 3000, -3000, 3000, -3000), # adjust the position of the labels
-              #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
+              color = c("black", "white", "black"),
+              nudge_x = c(4000, 2000, 0), # adjust the position of the labels
+              nudge_y = c(3000, 3000, -3000), # adjust the position of the labels
+              #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -200,10 +226,10 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "black", "white", "black"),
-              nudge_x = c(0, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
-              #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
+              color = c("white", "black", "black"),
+              nudge_x = c(0, 2000, 0), # adjust the position of the labels
+              nudge_y = c(-3000, 3000, -3000), # adjust the position of the labels
+              #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -212,7 +238,7 @@ ggplot() +
 
 # 共起分析
 * 有効な案のうち一票の格差が下位10％の案を抽出
-* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを k = **16** 設定
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを k = **26** 設定
 * 読み取り方  
 地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
@@ -242,10 +268,10 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "white", "black", "black"),
-              nudge_x = c(8000, 2000, 0, 0, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000, 3000, 3000), # adjust the position of the labels
-              #名古屋市, 豊田市, 豊橋市, 岡崎市, 一宮市
+              color = c("white", "black", "white"),
+              nudge_x = c(8000, 2000, 0), # adjust the position of the labels
+              nudge_y = c(-3000, 3000, -3000), # adjust the position of the labels
+              #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -268,9 +294,28 @@ ggplot() +
 
 
 ### 県特有の設定  
+* 以下の隣接した市区郡（分割を許容しない）の間には、それらの境界を跨る飛地が存在する。有効な案を作成するため、これらの市区郡はポリゴンを結合して、一つの単位にしてシュミレーションを行った。
+  * 千葉市緑区と市原市
+  * 茂原市と大綱白里町
+  * 茂原市と長生郡
+  * 大綱白里市と東金市
+  * 東金市と山武市
+  * 旭市と匝瑳市
+  * 君津市と富津市
+  * 印旛郡と印西市
+  * 香取郡と成田市
+  * 香取郡と香取市
+  * 夷隅郡と勝浦市
+
+* 以下の地域は厳密には飛び地とみなすこともできるが、現行の区割りでは飛び地として扱われていないため、本プロジェクトでも飛び地として扱わない。
+  * 千葉市緑区小食土町
+  * 茂原市大沢
+  * 八街市文違
+  * 佐倉市上勝田
+
 * 以下の地域は隣接するものとして扱った
-  * list
-  * list
+    + 鴨川市太海浜（本土）と鴨川市太海浜仁右衛門島
+    + 安房郡鋸南町（本土）と安房郡鋸南町浮島・みさご島
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
