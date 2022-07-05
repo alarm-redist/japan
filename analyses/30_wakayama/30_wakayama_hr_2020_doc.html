@@ -60,7 +60,6 @@ if (window.hljs) {
 
 
 
-
 <style type="text/css">
 .main-container {
   max-width: 940px;
@@ -81,9 +80,6 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
-}
-details > summary > p:only-child {
-  display: inline;
 }
 pre code {
   padding: 0;
@@ -217,7 +213,10 @@ pre code {
 </ul>
 <div id="和歌山県特有の設定" class="section level3">
 <h3>和歌山県特有の設定</h3>
-<p>日本人人口が県内最大の市区町村である和歌山市は、1959年以降は市区町村合併を経ておらず、「平成の大合併以前の市区町村界」に該当する市区町村界が存在しない。よって、和歌山市の分割を許容する案は作成せず、市区町村分割を許容しない案のみを作成した。</p>
+<ul>
+<li>日本人人口が県内最大の市区町村である和歌山市は、1959年以降は市区町村合併を経ておらず、「平成の大合併以前の市区町村界」に該当する市区町村界が存在しない。よって、和歌山市の分割を許容する案は作成せず、市区町村分割を許容しない案のみを作成した。</li>
+<li>北山村および新宮市飛地はは他県に囲われた飛び地だが、現行の区割りに従い、本プロジェクトも新宮市と地続きとして扱う。</li>
+</ul>
 </div>
 </div>
 <div id="データの出典" class="section level2">
@@ -239,9 +238,9 @@ pre code {
 <div id="ファイル内容" class="section level2">
 <h2>ファイル内容</h2>
 <ul>
-<li><code>30_wakayama_hr_2020_map_0.rds</code>, <code>30_wakayama_hr_2020_map_1.rds</code>: 圧縮された <code>redist_map</code> オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。</li>
-<li><code>30_wakayama_hr_2020_plans_0.rds</code>, <code>30_wakayama_hr_2020_plans_1.rds</code> : 圧縮された<code>redist_plans</code> オブジェクト。選挙区への割り当てを示す行列を含む。</li>
-<li><code>30_wakayama_hr_2020_stats_0.csv</code>, <code>30_wakayama_hr_2020_stats_1.csv</code>: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。</li>
+<li><code>30_wakayama_hr_2020_map_0.rds</code>: 圧縮された <code>redist_map</code> オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。</li>
+<li><code>30_wakayama_hr_2020_plans_0.rds</code> : 圧縮された<code>redist_plans</code> オブジェクト。選挙区への割り当てを示す行列を含む。</li>
+<li><code>30_wakayama_hr_2020_stats_0.csv</code>: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。</li>
 </ul>
 <p><code>redist_plans</code> 及び <code>redist_map</code> オブジェクトは Rパッケージ <a href="https://alarm-redist.github.io/redist/">redist</a>を使用して分析する。</p>
 </div>
