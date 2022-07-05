@@ -161,9 +161,9 @@ ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
@@ -197,13 +197,13 @@ ggplot() +
           show.legend = FALSE, lwd = 0) +
   scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "black", "black", 
+              color = c("black", "white", "black", "black", 
                         "black", "black", "black", "black", "black"),
               nudge_x = c(-15000, 4400, 6500, 8500, 
                           -5800, 7000, 6500, 8500, -5800), # adjust the position of the labels
@@ -242,13 +242,13 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio, na.rm = TRUE), 
                                    max(cooc_ratio, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "black", "black", 
+              color = c("black", "white", "black", "black", 
                         "black", "black", "black", "black", "black"),
               nudge_x = c(-15000, 4400, 6500, 8500, 
                           -5800, 7000, 6500, 8500, -5800), # adjust the position of the labels
