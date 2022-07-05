@@ -1,7 +1,7 @@
 ---
 title: "千葉県 (議員定数：13 → 14)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: July 4, 2022
+date: July 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -35,8 +35,8 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
-new_max_to_min <- 0
-new_mun_splits <- 0
+new_max_to_min <- 1.462
+new_mun_splits <- 2
 new_gun_splits <- 0
 new_koiki_splits <- 0
 sq_mun_splits_name <- "市川市、船橋市、松戸市、柏市、横芝光町" 
@@ -44,7 +44,7 @@ sq_gun_splits_name <- "山武郡"
 sq_koiki_splits_name <- ""
 new_mun_splits_name <- "市川市、船橋市" 
 new_gun_splits_name <- "xx"
-new_koiki_splits_name <- "x"
+new_koiki_splits_name <- ""
 optimal_splits_name <- "xxxxx"
 
 ## Color Palette
@@ -194,9 +194,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black"),
-              nudge_x = c(4000, 2000, 0), # adjust the position of the labels
-              nudge_y = c(3000, 3000, -3000), # adjust the position of the labels
+              color = c("black", "black", "black"),
+              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
   
@@ -226,9 +226,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "black"),
-              nudge_x = c(0, 2000, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000), # adjust the position of the labels
+              color = c("black", "black", "black"),
+              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
   
@@ -238,7 +238,7 @@ ggplot() +
 
 # 共起分析
 * 有効な案のうち一票の格差が下位10％の案を抽出
-* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを k = **26** 設定
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりを k = 26 設定
 * 読み取り方  
 地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
@@ -268,9 +268,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "black", "white"),
-              nudge_x = c(8000, 2000, 0), # adjust the position of the labels
-              nudge_y = c(-3000, 3000, -3000), # adjust the position of the labels
+              color = c("black", "black", "black"),
+              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
 
