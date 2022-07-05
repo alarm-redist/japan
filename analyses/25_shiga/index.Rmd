@@ -1,7 +1,7 @@
 ---
 title: "滋賀県 (議員定数：4 → 3)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: June 14, 2022
+date: July 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -21,7 +21,6 @@ library(extrafontdb)
 library(Rttf2pt1)
 ```
 
-
 ```{r Manual Entries, include = FALSE}
 pref_code <- 25
 pref_name <- "shiga"
@@ -36,9 +35,16 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
+new_max_to_min <- 1.344
+new_mun_splits <- 0
+new_gun_splits <- 0
+new_koiki_splits <- 0
 sq_mun_splits_name <- "東近江市" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- ""
+new_mun_splits_name <- "" 
+new_gun_splits_name <- ""
+new_koiki_splits_name <- ""
 split_1_name <- "大津市"
 
 ## Color Palette
@@ -58,24 +64,24 @@ load(here::here(paste("data-out/pref/",
 ```{r table summary}
 # summary table
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~split_0, ~split_1,
-   "県内較差", sq_max_to_min, 
-               results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
-               results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min,
-   "改善率", NA, 
-           (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
-           (sq_max_to_min - results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min)/(sq_max_to_min - 1),
-  "選挙区数", ndists_old, ndists_new, ndists_new,
-  "市区町村の分割", sq_mun_splits, 0, 
-           results_1_sample[which(results_1_sample$index == optimal_1),]$mun_split,
-   "郡の分割", sq_gun_splits, 
-   results_0_sample[which(results_0_sample$index == optimal_0),]$gun_split, 
-   results_1_sample[which(results_1_sample$index == optimal_1),]$gun_split,
-   "広域連携地域の分割", sq_koiki_splits, 
-   results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split, 
-   results_1_sample[which(results_1_sample$index == optimal_1),]$koiki_split
+  ~category, ~status_quo, ~new_enacted, ~split_0, ~split_1,
+  "県内較差", sq_max_to_min, 
+              new_max_to_min, 
+              results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
+              results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min,
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1),
+          (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
+          (sq_max_to_min - results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min)/(sq_max_to_min - 1),
+  "選挙区数", ndists_old, ndists_new, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits, 0, 
+          results_1_sample[which(results_1_sample$index == optimal_1),]$mun_split,
+  "郡の分割", sq_gun_splits, new_gun_splits, 
+  results_0_sample[which(results_0_sample$index == optimal_0),]$gun_split, 
+  results_1_sample[which(results_1_sample$index == optimal_1),]$gun_split,
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,
+  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split, 
+  results_1_sample[which(results_1_sample$index == optimal_1),]$koiki_split
 ) 
-
 table_summary %>% 
   gt(rowname_col = "category") %>% 
   fmt_number(
@@ -106,22 +112,28 @@ table_summary %>%
     columns = status_quo
   ) %>% 
   tab_spanner(
+    label = "新たな区割り",
+    columns = new_enacted
+  ) %>% 
+  tab_spanner(
     label = "アルゴリズムの提案",
     columns = c(split_0, split_1)
   ) %>% 
   cols_label(
     status_quo = "",
+    new_enacted = "",
     split_0 = "市区町村の分割無し",
     split_1 = "最大市区町村の分割可"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:4
+    columns = 2:5
   ) %>% 
   cols_width(
-    status_quo ~ pct(25),
-    split_0 ~ pct(25),
-    split_1 ~ pct(25),
+    status_quo ~ pct(14),
+    new_enacted ~ pct(16),
+    split_0 ~ pct(22),
+    split_1 ~ pct(23),
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
@@ -140,7 +152,7 @@ table_summary %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:4,
+      columns = 2:5,
       rows = 1
     ) 
   ) 
@@ -165,8 +177,8 @@ ggplot() +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -193,8 +205,8 @@ redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0)+
   scale_fill_manual(values = PAL, guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -219,19 +231,19 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
  labs(title = element_blank())+ 
  scale_fill_manual(values = PAL, guide = "none") + 
 
-geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
-        fill = NA, lwd = 0.4) +
-scale_color_manual(values = c("black", "grey60", "grey30")) +
-scale_linetype_manual(values = c("dotted", "solid", "solid")) +
+  geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.4, 1.2)) +
+  scale_color_manual(values = c("black", "#373C38", "#D0C1BA50")) +
+  scale_linetype_manual(values = c("dotted", "solid", "solid")) +
 
-geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
             nudge_x = c(-8000), # adjust the position of the labels
             nudge_y = c(-8000), # adjust the position of the labels
             family = "HiraginoSans-W3") +
 
-ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-theme(legend.position = "right", legend.title = element_blank())
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
 ```
 
 # 共起分析
@@ -262,9 +274,10 @@ ggplot() +
   geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
   scale_fill_manual(values = PAL, guide = "none") + 
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
+ 
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -292,7 +305,7 @@ ggplot() +
  * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定　　
-特になし 
+`02_sim_25_shiga.R`にてシュミレーション（`redist_smc()`）を執行する際に、乱数のシードをランダムに設定した。これは、4つの独立したSMC (`runs = 4L`) を執行する際にランダムに発生するプログラムのエラーに対応するためである。なお、1つ (`1L`)と2つ(`2L`)の独立したSMCによって発生する結果や分布と比較することで、チェリーピッキングを回避した。
 
 # データとプログラム
  * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
