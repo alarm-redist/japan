@@ -13,6 +13,7 @@ gun_codes <- setdiff(gun_codes, gun_exception) # Filter out exceptions
 
 # Set aside non-郡 municipalities
 pref_non_gun <- dplyr::filter(pref, gun_code %in% gun_codes == FALSE)
+
 # Merge together 郡
 pref_gun <- NULL
 for(i in 1:length(gun_codes)){
@@ -35,11 +36,10 @@ for(i in 1:length(gun_codes)){
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
 ### Method for Saitama ###
-# In order to make sure 秩父郡 (discontinuous) not to be split,
-# we will merge it together with 秩父市,
-# because this is the only option to make the valid plan.
-chichibu_code <- c(11207,
-                   11360)
+# 秩父郡 is made up of discontiguous parts. In order to make sure that 秩父郡 is not split
+# and to ensure that we do not create discontiguous districts, we merge it with
+# its adjacent municipality, 秩父市.
+chichibu_code <- c(11207, 11360)
 
 pref <- dplyr::bind_rows(
   pref %>%
@@ -151,7 +151,6 @@ summary(sim_smc_pref)
 # However, for some prefectures, it is impossible to get a diverse set of plans
 # because there are fewer possible plans.
 hist(plans_diversity(sim_smc_pref))
-
 
 # Save pref object, pref_map object, adjacency list, and simulation data
 saveRDS(pref, paste("data-out/pref/",
