@@ -1,7 +1,7 @@
 ---
 title: "福島県 (議員定数：5 → 4)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: June 14, 2022
+date: July 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -36,7 +36,7 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
-new_max_to_min <- 1.311
+new_max_to_min <- 1.314
 new_mun_splits <- 0
 new_gun_splits <- 0
 new_koiki_splits <- 1
