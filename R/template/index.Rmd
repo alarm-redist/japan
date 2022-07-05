@@ -131,9 +131,9 @@ table_summary %>%
     columns = 2:5
   ) %>% 
   cols_width(
-    status_quo ~ pct(17),
-    new_enacted ~ pct(17),
-    split_0 ~ pct(23),
+    status_quo ~ pct(14),
+    new_enacted ~ pct(16),
+    split_0 ~ pct(22),
     split_1 ~ pct(23),
   ) %>% 
   tab_header(
