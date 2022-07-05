@@ -1,7 +1,7 @@
 ---
 title: "和歌山県 (議員定数：3 → 2)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: April 23, 2022
+date: July 5, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -34,9 +34,16 @@ cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"),
                        crs = 4612)
 
 ## Information about splits
+new_max_to_min <- 1.033
+new_mun_splits <- 0
+new_gun_splits <- 0
+new_koiki_splits <- 0
 sq_mun_splits_name <- "" 
 sq_gun_splits_name <- ""
 sq_koiki_splits_name <- ""
+new_mun_splits_name <- "" 
+new_gun_splits_name <- ""
+new_koiki_splits_name <- ""
 split_1_name <- "和歌山市"
 
 ## Color Palette
@@ -58,15 +65,14 @@ load(here::here(paste("data-out/pref/",
 sim_gun_split <- ifelse(is.null(results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split), 0, (results_0_sample[which(results_0_sample$index == optimal_0),]$num_gun_split))
 
 table_summary <- dplyr::tribble(
-  ~category, ~status_quo, ~split_0, 
-  "県内較差", sq_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
-  "改善率", NA, (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
-  "選挙区数", ndists_old, ndists_new,
-  "市区町村の分割", sq_mun_splits, 0, 
-  "郡の分割", sq_gun_splits, sim_gun_split, 
-  "広域連携地域の分割", sq_koiki_splits, results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
+  ~category, ~status_quo, ~new_enacted, ~split_0, 
+  "県内較差", sq_max_to_min, new_max_to_min, results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, 
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1), (sq_max_to_min - results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits, 0, 
+  "郡の分割", sq_gun_splits, new_gun_splits, sim_gun_split, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits,  results_0_sample[which(results_0_sample$index == optimal_0),]$koiki_split
 ) 
-
 table_summary %>% 
   gt(rowname_col = "category") %>% 
   fmt_number(
@@ -97,31 +103,38 @@ table_summary %>%
     columns = status_quo
   ) %>% 
   tab_spanner(
+    label = "新しい区割り",
+    columns = new_enacted
+  ) %>% 
+  tab_spanner(
     label = "アルゴリズムの提案",
     columns = c(split_0)
   ) %>% 
   cols_label(
     status_quo = "",
+    new_enacted = "",
     split_0 = "市区町村の分割無し"
   ) %>% 
   cols_align(
     align = "center",
-    columns = 2:3
+    columns = 2:4
   ) %>% 
   cols_width(
-    status_quo ~ pct(37.5),
-    split_0 ~ pct(37.5)
+    status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    split_0 ~ pct(25)
   ) %>% 
   tab_header(
     title = md(paste("**", pref_name_kanji, "**", sep = "")),
     subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
   ) %>% 
+  opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = 2:3,
+      columns = 2:4,
       rows = 1
     ) 
   ) 
@@ -147,8 +160,8 @@ ggplot() +
   scale_fill_manual(values = PAL, guide = "none") +
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -171,8 +184,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -212,9 +225,10 @@ ggplot() +
   geom_sf(data = pref_0_cooc, aes(fill = as.factor(color), alpha = cooc_ratio), show.legend = FALSE) +
   scale_fill_manual(values = PAL, guide = "none") + 
   scale_alpha_continuous(range = c(min(cooc_ratio), max(cooc_ratio)), guide = "none") + 
+  
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
@@ -235,7 +249,7 @@ ggplot() +
    + 旧市区町村単位の人口（総人口-外国人人口）は、合併後の市区町村の人口（総人口-外国人人口）と旧市区町村単位の日本人人口を元に推計
  * 郡の分割は、現行の区割りにて分割されている場合のみ許容
  * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
- * 市区町村分割を許容しない案、最大市区町村の分割を許容する案をそれぞれ`r format(nsims, big.mark = ",")`作成 
+ * 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、市区町村分割を許容しない案を`r format(4 * nsims, big.mark = ",")`作成 
  * 以下の案を棄却し有効な案を選定
    + 飛び地が生じる案
    + 市区町村が3つ以上の選挙区に分割される案

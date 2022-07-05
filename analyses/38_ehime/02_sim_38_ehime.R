@@ -1,5 +1,5 @@
 ###############################################################################
-# Simulations for `38_Ehime`
+# Simulations for `38_ehime`
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -128,7 +128,7 @@ run_simulations <- function(pref_n, prefadj_n){
   sim_smc_pref_n <- redist::redist_smc(
     map = pref_map_n,
     nsims = nsims,
-    runs = 2L,
+    runs = 4L,
     pop_temper = 0.05
   )
 
@@ -169,7 +169,7 @@ run_simulations <- function(pref_n, prefadj_n){
                                 "_",
                                 as.character(sim_type),
                                 "_",
-                                as.character(nsims * 2),
+                                as.character(nsims * 4),
                                 "_",
                                 as.character(i),
                                 ".Rds",
