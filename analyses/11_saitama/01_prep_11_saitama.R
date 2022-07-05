@@ -37,23 +37,19 @@ sq_gun_splits <- 1
 sq_koiki_splits <- 0
 pop_tol <- 0.20
 
-# Code of minicipalities that are split under the status quo
-mun_not_freeze <- c(11104,
-                    11202,
-                    11203,
-                    11214,
-                    11217,
-                    11222,
-                    11232,
-                    11245)
+# Code of municipalities that are split under the status quo
+mun_not_freeze <- c(11104, 11202, 11203, 11214,
+                    11217, 11222, 11232, 11245)
+
 # Code of 郡 that are split under the status quo
-gun_exception <- c(11320 # Iruma (11324, 11326, 11327)
-                   )
+gun_exception <- c(11320) # Iruma (11324, 11326, 11327)
+
 # Change time limit
 options(timeout = 300)
 
 # Download 2015 Census shapefile
 pref_shp_2015 <- download_shp(pref_code)
+
 # Clean 2015 Census shapefile
 pref_shp_cleaned <- pref_shp_2015 %>%
     clean_jcdf()
@@ -125,6 +121,7 @@ pref_pop_only <- setdiff(pref_pop_only, pref_mutual) %>%
 
 # Match or combine data so that every single census block is taken into account
 # Add municipality code, sub_code, sub_name to areas that only exist in 2015 shapefile (`pref_shp_cleaned`)
+
 # For Saitama, every 2015 geometry is assigned to 2020 census population data.
 #pref_geom_only$pop <- 0
 #pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
