@@ -56,14 +56,14 @@ non_ishikari_map <- readRDS(paste("data-out/maps/",
                           as.character(pref_code),
                           "_",
                           as.character(pref_name),
-                          "_non_ishikari_hr_2020_map.rds",
+                          "hr_2020_map_non_ishikari.rds",
                            sep = ""))
 
 non_ishikariadj <- readRDS(paste("data-out/pref/",
                          as.character(pref_code),
                          "_",
                          as.character(pref_name),
-                         "_non_ishikari_adj.Rds",
+                         "adj_non_ishikari.Rds",
                          sep = ""))
 
 sim_smc_non_ishikari <- readRDS(paste("data-out/plans/",
@@ -253,14 +253,14 @@ ishikari_map <- readRDS(paste("data-out/maps/",
                                   as.character(pref_code),
                                   "_",
                                   as.character(pref_name),
-                                  "_ishikari_hr_2020_map.rds",
+                                  "hr_2020_map_ishikari.rds",
                                   sep = ""))
 
 ishikariadj <- readRDS(paste("data-out/pref/",
                                  as.character(pref_code),
                                  "_",
                                  as.character(pref_name),
-                                 "_ishikari_adj.Rds",
+                                 "adj_ishiraki.Rds",
                                  sep = ""))
 
 sim_smc_ishikari <- readRDS(paste("data-out/plans/",
@@ -527,7 +527,7 @@ write_rds(sim_smc_ishikari_sample,
                   as.character(pref_code),
                   "_",
                   as.character(pref_name),
-                  "_ishikari_hr_2020_plans.rds",
+                  "hr_2020_plans_ishikari.rds",
                   sep = ""),
             compress = "xz")
 
@@ -537,7 +537,7 @@ write_rds(sim_smc_non_ishikari_sample,
                 as.character(pref_code),
                 "_",
                 as.character(pref_name),
-                "_non_ishikari_hr_2020_plans.rds",
+                "hr_2020_plans_non_ishikari.rds",
                 sep = ""),
           compress = "xz")
 
@@ -551,7 +551,7 @@ as_tibble(sim_smc_ishikari_sample) %>%
                     as.character(pref_code),
                     "_",
                     as.character(pref_name),
-                    "_ishikari_hr_2020_stats.csv",
+                    "hr_2020_stats_ishikari.csv",
                     sep = ""))
 
 # Non-Ishikari
@@ -562,5 +562,5 @@ as_tibble(sim_smc_non_ishikari_sample) %>%
                   as.character(pref_code),
                   "_",
                   as.character(pref_name),
-                  "_non_ishikari_hr_2020_stats.csv",
+                  "hr_2020_stats_non_ishikari.csv",
                   sep = ""))
