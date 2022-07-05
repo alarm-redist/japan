@@ -9,12 +9,12 @@
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
 
-# さっぽろ連携中枢都市圈 is split in every simulations because of the 振興局 boundaries
+# さっぽろ連携中枢都市圈 is split in every simulation.
 
 # 北しべりし定住自立圈, 上川中部定住自立圈, 西いぶり定住自立圈, 釧路定住自立圈,
 # 北見地域定住自立圈, 十勝定住自立圈, 網走市大空町定住自立圈, 東胆振定住自立圈,
 # 宗谷定住自立圈, 中空知定住自立圈, 北空知定住自立港, and 富良野地区定住自立圈
-# are not split, because it is in the 振興局.
+# are not split, because it is within the boundaries of the corresponding 振興局.
 
 # 南北海道定住自立圈
 koiki_1_codes <- c(01202,
@@ -296,8 +296,7 @@ gun_split <- redist::redist.splits(ishikari_smc_plans, gun_index) %>%
 gun_split <- gun_split[,1]
 
 # Count number of koiki renkei splits
-# さっぽろ連携中枢都市圈 is split in every simulations because of the 振興局 boundaries
-# Thus, we assign 1 for `koiki_split`
+# さっぽろ連携中枢都市圈 is split in every simulation.
 koiki_split <- 1
 
 # Compile results

@@ -6,7 +6,7 @@
 ####-------------- 2. Method for Urban Prefectures-------------------------####
 # Assign 郡 codes
 # For Hokkaido, we will assign codes for 総合振興局 and 振興局 as `gun_code`
-# following the rule by the redistricting committee.
+# in order to comply with the redistricting committee's rules.
 pref <- pref %>%
   dplyr::mutate(gun_code = case_when(
     code %in% c(01209,
@@ -198,9 +198,9 @@ pref <- pref %>%
                 01693,
                 01694) ~ "nemuro"))
 
-# Set aside 石狩振興局 (pop == 2,381,374) and assign proportional seats (6) to it.
+# Set aside 石狩振興局 (pop == 2,381,374) and apportion seats proportionately.
 # This is because in Hokkaido, the boundaries of 振興局 must be respected,
-# and only 石狩振興局 needs to be split into multiple districts.
+# and only 石狩振興局 is split into multiple districts.
 ishikari <- pref %>%
   dplyr::filter(gun_code %in% c("ishikari"))
 non_ishikari <- pref %>%
@@ -306,8 +306,8 @@ saveRDS(sim_smc_non_ishikari, paste("data-out/plans/",
 
 ### Ishikari Shinko-kyoku ###
 # For Ishikari Shinko-kyoku, we will assign 6 seats.
-# To make sure that the boudnaries of 郡 are respected,
-# we are going to re-assign and merge by the gun_code
+# To make sure that the boundaries of 郡 are respected,
+# re-assign 郡 codes and merge by gun_code
 ishikari <- ishikari %>%
   dplyr::mutate(gun_code = if_else(
     # ishikari-gun
