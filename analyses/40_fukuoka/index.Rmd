@@ -187,14 +187,14 @@ ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.6)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "white"),
-              nudge_x = c(0, 2000, 3000), # adjust the position of the labels
+              nudge_x = c(0, 2000, 5000), # adjust the position of the labels
               nudge_y = c(6000, 5000, -6000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
@@ -218,14 +218,14 @@ ggplot() +
           show.legend = FALSE, lwd = 0) +
   scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.6)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "black"),
-              nudge_x = c(-2000, 2000, 3000), # adjust the position of the labels
+              color = c("black", "black", "white"),
+              nudge_x = c(-2000, 2000, 5000), # adjust the position of the labels
               nudge_y = c(6000, 5000, -4000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
@@ -236,7 +236,7 @@ ggplot() +
 
 # 共起分析
 * 有効な案のうち一票の格差が下位10％の案を抽出
-* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりをk = 12 設定
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりをk = 19設定
 * 読み取り方  
 地図上の地域の色が
   + 同じ → 同じ選挙区に属する傾向が強い
@@ -259,14 +259,14 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio, na.rm = TRUE), 
                                    max(cooc_ratio, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
-          fill = NA, lwd = 0.4) +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_sf(data = boundary, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.6)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black"),
-              nudge_x = c(4500, 2000, 3000), # adjust the position of the labels
+              nudge_x = c(4500, 2000, 5000), # adjust the position of the labels
               nudge_y = c(6000, 5000, -5000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
