@@ -59,9 +59,9 @@
 特になし
 
 ## ファイル内容
-* `13_tokyo_hr_2020_map_special_wards.rds`, `13_tokyo_hr_2020_map_tama.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び小地域）単位のシェイプファイル及び人口データ。
-* `13_tokyo_hr_2020_plans_special_wards.rds`, `13_tokyo_hr_2020_plans_tama.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
-* `13_tokyo_hr_2020_stats_special_wards.csv`, `13_tokyo_hr_2020_stats_tama.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
+* `1_hokkaido_hr_2020_map_ishikari.rds`, `1_hokkaido_hr_2020_map_non_ishikari.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び小地域）単位のシェイプファイル及び人口データ。
+* `1_hokkaido_hr_2020_plans_ishikari.rds`, `1_hokkaido_hr_2020_plans_non_ishikari.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
+* `1_hokkaido_hr_2020_stats_ishikari.csv`, `1_hokkaido_hr_2020_plans_non_ishikari.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
 
 `redist_plans` 及び `redist_map` オブジェクトは Rパッケージ [redist](https://alarm-redist.github.io/redist/)を使用して分析する。
 
