@@ -43,9 +43,9 @@ sq_mun_splits_name <- "市川市、船橋市、松戸市、柏市、横芝光町
 sq_gun_splits_name <- "山武郡"
 sq_koiki_splits_name <- ""
 new_mun_splits_name <- "市川市、船橋市" 
-new_gun_splits_name <- "xx"
+new_gun_splits_name <- ""
 new_koiki_splits_name <- ""
-optimal_splits_name <- "xxxxx"
+optimal_splits_name <- "市川市、船橋市、松戸市、柏市、横芝光町"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -151,13 +151,6 @@ table_summary %>%
       rows = 5
     ) 
   ) %>% 
-  tab_footnote(
-    footnote = new_gun_splits_name,
-    locations = cells_body(
-      columns = 3,
-      rows = 5
-    ) 
-  ) %>% 
   opt_footnote_marks(marks = "letters") %>% 
   tab_style(
     style = list(
@@ -195,7 +188,7 @@ ggplot() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black"),
-              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_x = c(-10000, 8000, 0), # adjust the position of the labels
               nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
@@ -227,7 +220,7 @@ ggplot() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black"),
-              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_x = c(-10000, 8000, 0), # adjust the position of the labels
               nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
@@ -269,7 +262,7 @@ ggplot() +
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "black", "black"),
-              nudge_x = c(-8000, 4000, 0), # adjust the position of the labels
+              nudge_x = c(-10000, 8000, 0), # adjust the position of the labels
               nudge_y = c(0, 4500, 4000), # adjust the position of the labels
               #"千葉市", "船橋市", "柏市"
               family = "HiraginoSans-W3") +
