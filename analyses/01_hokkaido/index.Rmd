@@ -220,7 +220,7 @@ ggplot() +
   geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
               color = c("black", "white"),
-              nudge_x = c(-2000, 9000), # adjust the position of the labels
+              nudge_x = c(5000, 9000), # adjust the position of the labels
               nudge_y = c(-15000, 12000), # adjust the position of the labels
               #"函館市", "旭川市"
               family = "HiraginoSans-W3") +
@@ -290,7 +290,7 @@ redist::redist.plot.plans(sim_smc_non_ishikari_sample, optimal_non_ishikari, non
   geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
               color = c("black", "white"),
-              nudge_x = c(2000, -10000), # adjust the position of the labels
+              nudge_x = c(2000, -50000), # adjust the position of the labels
               nudge_y = c(-25000, 15000), # adjust the position of the labels
               #"函館市", "旭川市"
               family = "HiraginoSans-W3") +

@@ -14,7 +14,7 @@
 # 北しべりし定住自立圈, 上川中部定住自立圈, 西いぶり定住自立圈, 釧路定住自立圈,
 # 北見地域定住自立圈, 十勝定住自立圈, 網走市大空町定住自立圈, 東胆振定住自立圈,
 # 宗谷定住自立圈, 中空知定住自立圈, 北空知定住自立港, and 富良野地区定住自立圈
-# are not split, because it is within the boundaries of the corresponding 振興局.
+# are not split, because they are within the boundaries of the corresponding 振興局.
 
 # 南北海道定住自立圈
 koiki_1_codes <- c(01202,
