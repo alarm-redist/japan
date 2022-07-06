@@ -281,7 +281,7 @@ saveRDS(non_ishikariadj, paste("data-out/pref/",
                        as.character(pref_code),
                        "_",
                        as.character(pref_name),
-                       "adj_non_ishikari.Rds",
+                       "_adj_non_ishikari.Rds",
                        sep = ""))
 
 # pref_map object: to be uploaded to Dataverse
@@ -289,7 +289,7 @@ write_rds(non_ishikari_map, paste("data-out/maps/",
                           as.character(pref_code),
                           "_",
                           as.character(pref_name),
-                          "hr_2020_map_non_ishikari.rds",
+                          "_hr_2020_map_non_ishikari.rds",
                           sep = ""),
           compress = "xz")
 
@@ -453,7 +453,7 @@ saveRDS(ishikariadj, paste("data-out/pref/",
                        as.character(pref_code),
                        "_",
                        as.character(pref_name),
-                       "adj_ishiraki.Rds",
+                       "_adj_ishiraki.Rds",
                        sep = ""))
 
 # pref_map object: to be uploaded to Dataverse
@@ -461,7 +461,7 @@ write_rds(ishikari_map, paste("data-out/maps/",
                           as.character(pref_code),
                           "_",
                           as.character(pref_name),
-                          "hr_2020_map_ishikari.rds",
+                          "_hr_2020_map_ishikari.rds",
                           sep = ""),
           compress = "xz")
 
