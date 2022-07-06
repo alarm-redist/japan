@@ -197,7 +197,7 @@ mun_non_ishikari$type <- "市区町村の境界"
 # Combine gun boundary data
 gun_non_ishikari <- gun_boundary_non_ishikari %>%
   summarise(geometry = sf::st_combine(geometry))
-gun_non_ishikari$type <- "郡の境界"
+gun_non_ishikari$type <- "振興局の境界"
 
 # Municipality/Gun boundary
 boundary_non_ishikari <- rbind(mun_non_ishikari, gun_non_ishikari)

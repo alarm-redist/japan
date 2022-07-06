@@ -416,8 +416,8 @@ ishikari_map <- redist::redist_map(ishikari,
 
 # Define constraints
 constr = redist::redist_constr(ishikari_map)
-constr = redist::add_constr_splits(constr, strength = 5, admin = ishikari_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 10, admin = ishikari_map$code)
+constr = redist::add_constr_splits(constr, strength = 1, admin = ishikari_map$code)
+constr = redist::add_constr_multisplits(constr, strength = 1, admin = ishikari_map$code)
 
 # Run simulation
 set.seed(2020)
@@ -426,7 +426,7 @@ sim_smc_ishikari <- redist::redist_smc(
   nsims = nsims,
   runs = 4L,
   counties = ishikari$code,
-#  constraints = constr,
+  constraints = constr,
   pop_temper = 0.05)
 
 # Check to see whether there are SMC convergence warnings
