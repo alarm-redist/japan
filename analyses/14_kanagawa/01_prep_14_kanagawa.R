@@ -37,10 +37,10 @@ sq_max_to_tottori2 <- 2.022
 sq_mun_splits <- 6
 sq_gun_splits <- 0
 sq_koiki_splits <- 0
-pop_tol <- 0.10
+pop_tol <- 0.20
 
 # Code of minicipalities that are split under the status quo
-mun_not_freeze <- c(14118, 
+mun_not_freeze <- c(14118,
                     14133,
                     14136,
                     14151,
@@ -132,8 +132,8 @@ pref_geom_only$mun_code <- substr(pref_geom_only$code, start = 1, stop = 5)
 # Assign 野川本町 and 西野川 to the 野川 block (separated from the greater 野川 block in 2018 and 2019)
 pref_mutual[pref_mutual$code == "141365100",]$pop <- # 野川
   pref_mutual[pref_mutual$code == "141365100",]$pop + # 野川
-  pref_pop_only[pref_pop_only$code == "141365101",]$pop + # 野川本町 
-  pref_pop_only[pref_pop_only$code == "141365102",]$pop # 西野川 
+  pref_pop_only[pref_pop_only$code == "141365101",]$pop + # 野川本町
+  pref_pop_only[pref_pop_only$code == "141365102",]$pop # 西野川
 # Combine the three blocks
 pref_mutual_new_address <- pref_mutual %>%
   dplyr::filter(code %in% c("141365100",
@@ -182,7 +182,7 @@ pref_mutual <- pref_geom_only_1 %>%
   dplyr::bind_rows(pref_mutual_without_new_address)
 
 pref_mutual <-
-  rbind(pref_mutual, 
+  rbind(pref_mutual,
         pref_geom_only[pref_geom_only$code %in% c("141510010", "142161400"), ] %>%
           dplyr::mutate(sub_code = KIHON1,
                         sub_name = S_NAME)
@@ -195,7 +195,7 @@ pref <- bind_rows(
     select(mun_code.x, sub_code, pop, geometry) %>%
     rename(code = mun_code.x) %>%
     mutate(code = as.numeric(code)),
-  
+
   pref_freeze
 ) %>%
   arrange(code, sub_code) %>%

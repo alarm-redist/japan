@@ -90,16 +90,12 @@ for(i in 1:length(respect_gun_code)){
 # Store results
 results$respect_gun <- colSums(respect_gun_matrix) == length(respect_gun_code)
 
-# Allow enclaves
 # Confirm that the municipalities that are not split under the enacted plan
 # are not split in the simulated plans
-# Under the enacted plan, there are districts that are strictly speaking discontiguous
-# because of the presence of small enclaves. We allow those small areas to be enclaved by
-# another municipality in the simulated plans too.
-# Codes of municipalities that have areas enclaved by another municipality under the status quo
 
 # Define the codes of the municipalities that must not be split
-respect_mun_code <- setdiff(unique(pref$code), c(mun_not_freeze, allow_enclave))
+respect_mun_code <- setdiff(unique(pref$code), mun_not_freeze)
+
 # Evaluate whether the municipalities that must be not be split are split in the simulated plans
 respect_mun_matrix <- matrix(0, nrow = length(respect_mun_code), ncol = ncol(pref_smc_plans))
 for(i in 1:length(respect_mun_code)){
@@ -109,19 +105,10 @@ for(i in 1:length(respect_mun_code)){
       sum(duplicated(pref_smc_plans[which(pref$code == respect_mun_code[i]),j]))
   }
 }
+
 # Store results
 results$respect_mun <- colSums(respect_mun_matrix) == length(respect_mun_code)
-# Count the true number of municipality splits by evaluating whether each municipality
-# in `mun_not_freeze` is split
-# i.e. disregard enclaves that are ignored under the status quo
-count_split_matrix <- matrix(0, nrow = length(mun_not_freeze), ncol = ncol(pref_smc_plans))
-for(i in 1:length(mun_not_freeze)){
-  for(j in 1:ncol(pref_smc_plans)){
-    count_split_matrix[i, j] <-
-      length(unique(pref_smc_plans[which(pref$code == mun_not_freeze[i]),j])) != 1
-  }
-}
-results$mun_split <- colSums(count_split_matrix)
+
 # Discard plans with multi-splits as well as plans that split 郡/municipalities that
 # should not be split
 functioning_results <- results %>%

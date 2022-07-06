@@ -19,7 +19,7 @@ for(i in 1:length(gun_codes)){
   gun <- gun %>%
     dplyr::group_by(code) %>%
     dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
-  
+
   # merge back together
   gun$sub_code <- NA
   gun$gun_code <- gun_codes[i]
@@ -48,16 +48,16 @@ for (i in 2:nrow(pref)){
                          geometry = sf::st_cast(pref[i, ]$geometry, "POLYGON"),
                          pop = 0,
                          gun_code = pref[i, ]$gun_code)
-  
+
   # order by size
   new_rows <- new_rows %>%
     dplyr::mutate(area = sf::st_area(geometry)) %>%
     dplyr::arrange(desc(area)) %>%
     dplyr::select(-area)
-  
+
   # assign population to the largest area
   new_rows[1, ]$pop <- pref[i, ]$pop
-  
+
   pref_sep <- rbind(pref_sep, new_rows)
 }
 # switch on the `geometry (s2)``
@@ -113,8 +113,8 @@ pref_map <- redist::redist_map(pref,
 # Define constraints
 constr = redist::redist_constr(pref_map)
 #constr = redist::add_constr_splits(constr, strength = 2, admin = pref_map$gun_code)
-constr = redist::add_constr_multisplits(constr, strength = 3, admin = pref_map$gun_code)
-constr = redist::add_constr_total_splits(constr, strength = 3, admin = pref_map$gun_code)
+constr = redist::add_constr_multisplits(constr, strength = 1, admin = pref_map$gun_code)
+constr = redist::add_constr_total_splits(constr, strength = 1, admin = pref_map$gun_code)
 
 # Run simulation
 set.seed(2020)
