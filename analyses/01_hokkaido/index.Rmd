@@ -268,9 +268,9 @@ ggplot() +
   
   geom_sf(data = cities_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_ishikari, aes(label = names), size = 3,
-              color = c("black"),
-              nudge_x = c(7000), # adjust the position of the labels
-              nudge_y = c(5000), # adjust the position of the labels
+              color = "white",
+              nudge_x = 7000, # adjust the position of the labels
+              nudge_y = 5000, # adjust the position of the labels
               # 札幌市
               family = "HiraginoSans-W3") +
   
@@ -290,8 +290,8 @@ redist::redist.plot.plans(sim_smc_non_ishikari_sample, optimal_non_ishikari, non
   geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
               color = c("black", "white"),
-              nudge_x = c(-2000, 10000), # adjust the position of the labels
-              nudge_y = c(-15000, 7000), # adjust the position of the labels
+              nudge_x = c(2000, -10000), # adjust the position of the labels
+              nudge_y = c(-25000, 15000), # adjust the position of the labels
               #"函館市", "旭川市"
               family = "HiraginoSans-W3") +
   
@@ -332,9 +332,9 @@ ggplot() +
   
   geom_sf(data = cities_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_ishikari, aes(label = names), size = 3,
-              color = c("black"),
-              nudge_x = c(6000), # adjust the position of the labels
-              nudge_y = c(6000), # adjust the position of the labels
+              color = "white",
+              nudge_x = 10000, # adjust the position of the labels
+              nudge_y = 6000, # adjust the position of the labels
               # 札幌市
               family = "HiraginoSans-W3") +
 
@@ -365,9 +365,9 @@ ggplot() +
   
   geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
-              color = c("black", "black"),
-              nudge_x = c(-2000, 15000), # adjust the position of the labels
-              nudge_y = c(-15000, 8000), # adjust the position of the labels
+              color = c("black", "white"),
+              nudge_x = c(2000, -50000), # adjust the position of the labels
+              nudge_y = c(-25000, 15000), # adjust the position of the labels
               #"函館市", "旭川市"
               family = "HiraginoSans-W3") +
 
@@ -386,10 +386,10 @@ ggplot() +
     * ただし、現状の区割りにおいて分割されている市区町村については、シミュレーションにおいても分割を許容し、国勢調査における小地域を基本の単位として扱う
     * 現状の区割りにおいて分割されている市区町村は札幌市北区、札幌市西区
     
-  *その他の振興局: 
+  * その他の振興局: 
     * 総合振興局または振興局を基本の単位とする。
     
-* 市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
+* 石狩総合振興局においては、市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
 * 郡の分割は、現行の区割りにて分割されている場合のみ許容
 * 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
 * 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、石狩総合振興局とその他の振興局それぞれで20,000区割り改定案を作成
