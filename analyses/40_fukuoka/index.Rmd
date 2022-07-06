@@ -193,9 +193,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "white"),
-              nudge_x = c(0, 2000, 5000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -6000), # adjust the position of the labels
+              color = c("white", "white", "white"),
+              nudge_x = c(1500, 8000, 4500), # adjust the position of the labels
+              nudge_y = c(-6000, 5000, -5000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
   
@@ -224,9 +224,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "white"),
-              nudge_x = c(-2000, 2000, 5000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -4000), # adjust the position of the labels
+              color = c("white", "white", "white"),
+              nudge_x = c(1500, 8000, 4500), # adjust the position of the labels
+              nudge_y = c(-6000, 5000, -5000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
   
@@ -265,9 +265,9 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "black", "black"),
-              nudge_x = c(4500, 2000, 5000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -5000), # adjust the position of the labels
+              color = c("white", "white", "white"),
+              nudge_x = c(1500, 8000, 4500), # adjust the position of the labels
+              nudge_y = c(-6000, 5000, -5000), # adjust the position of the labels
               # "北九州市", "福岡市", "久留米市"
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
