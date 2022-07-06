@@ -1,0 +1,411 @@
+---
+title: "北海道 (議員定数：12 → 12)"
+description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
+date: July 5, 2022
+author: "ALARM Japan プロジェクトチーム"
+output:
+  distill::distill_article:
+    css: !expr here::here("alarm_japan.css")
+    self_contained: true
+doi: "10.7910/DVN/Z9UKSH"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(width = 100)
+library(redist)
+library(geomander)
+library(tidyverse)
+library(gt)
+library(extrafontdb)
+library(Rttf2pt1)
+```
+
+```{r Manual Entries, include = FALSE}
+pref_code <- 01
+pref_name <- "hokkaido"
+pref_name_kanji <- "北海道"
+## Find the coordinates of the 県庁, 
+## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
+## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
+cities_ishikari <- data.frame(longitude = 141.35438, 
+                     latitude = 43.06206,
+                     names = "札幌市")
+cities_ishikari <- sf::st_as_sf(cities_ishikari, coords = c("longitude", "latitude"), 
+                       crs = 4612)
+cities_non_ishikari <- data.frame(longitude = c(140.728948, 142.365055), 
+                     latitude = c(41.768663, 43.770687),
+                     names = c("函館市", "旭川市"))
+cities_non_ishikari <- sf::st_as_sf(cities_non_ishikari, coords = c("longitude", "latitude"), 
+                       crs = 4612)
+
+## Information about splits
+new_max_to_min <- 1.858
+new_mun_splits <- 3
+new_gun_splits <- 1
+new_koiki_splits <- 2
+sq_mun_splits_name <- "札幌市北区、札幌市西区" 
+sq_gun_splits_name <- "札幌市手稲区を含む現行の4区は厳密には石狩総合振興局の分割"
+sq_koiki_splits_name <- "さっぽろ連携中枢都市圈、北・北海道中央圈域定住自立圈"
+new_mun_splits_name <- "札幌市北区、札幌市西区、札幌市白石区" 
+new_gun_splits_name <- "石狩総合振興局（石狩市・手稲区）"
+new_koiki_splits_name <- "さっぽろ連携中枢都市圈、北・北海道中央圈域定住自立圈"
+optimal_splits_name <- "札幌市北区、札幌市西区"
+
+## Color Palette
+PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+```
+
+```{r load data, include=FALSE}
+load(here::here(paste("data-out/pref/",
+            as.character(pref_code),
+            "_",
+            as.character(pref_name),
+            "_data",
+            ".Rdata",
+            sep = "")))
+```
+
+```{r maxmin, include = FALSE}
+# calculate overall maxmin ratio
+optimal_pops <- c(
+  max(filter(sim_smc_ishikari_sample, draw %in% optimal_ishikari)$total_pop),
+  min(filter(sim_smc_ishikari_sample, draw %in% optimal_ishikari)$total_pop),
+  max(filter(sim_smc_non_ishikari_sample, draw %in% optimal_non_ishikari)$total_pop),
+  min(filter(sim_smc_non_ishikari_sample, draw %in% optimal_non_ishikari)$total_pop)
+  )
+optimal_max_to_min <- round(max(optimal_pops)/min(optimal_pops), 3)
+```
+
+```{r optimal plan splits, include = FALSE}
+optimal_splits <- results_sample_ishikari[which(results_sample_ishikari$index == 
+                                                       optimal_ishikari),]$mun_split +
+  results_sample_non_ishikari[which(results_sample_non_ishikari$index == 
+                                    optimal_non_ishikari),]$mun_split
+```
+
+```{r table summary}
+table_summary <- dplyr::tribble(
+  ~category, ~status_quo, ~new_enacted, ~optimal, 
+  "県内較差", sq_max_to_min, new_max_to_min, optimal_max_to_min, 
+  "改善率", NA, (sq_max_to_min - new_max_to_min)/(sq_max_to_min - 1),
+      (sq_max_to_min - optimal_max_to_min)/(sq_max_to_min - 1), 
+  "選挙区数", ndists_old, ndists_new, ndists_new,
+  "市区町村の分割", sq_mun_splits, new_mun_splits, optimal_splits, 
+  "振興局の分割", sq_gun_splits, new_gun_splits, 0, 
+  "広域連携地域の分割", sq_koiki_splits, new_koiki_splits, 2
+) 
+
+table_summary %>% 
+  gt(rowname_col = "category") %>% 
+  fmt_number(
+    columns = everything(),
+    rows = 1,
+    decimals = 3
+  ) %>% 
+  fmt_percent(
+    columns = everything(),
+    rows = 2,
+    decimals = 1
+  ) %>% 
+  fmt_missing(
+    columns = 2,
+    rows = 2,
+    missing_text = "-"
+  ) %>% 
+  tab_row_group(
+    label = md("**選挙区の状況**"),
+    rows = 3:6
+  ) %>%   
+  tab_row_group(
+    label = md("**1票の格差**"),
+    rows = 1:2
+  ) %>% 
+  cols_label(
+    status_quo = "現行",
+    new_enacted = "新たな区割り",
+    optimal = "アルゴリズムの提案"
+  ) %>% 
+  cols_align(
+    align = "center",
+    columns = 2:4
+  ) %>% 
+  cols_width(
+     status_quo ~ pct(25),
+    new_enacted ~ pct(25),
+    optimal ~ pct(25)
+  ) %>% 
+  tab_header(
+    title = md(paste("**", pref_name_kanji, "**", sep = "")),
+    subtitle = paste("人口：", format(sum(pref$pop), big.mark = ",", scientific = FALSE), "人（2020年）")
+  ) %>% 
+  tab_footnote(
+    footnote = sq_mun_splits_name,
+    locations = cells_body(
+      columns = 2,
+      rows = 4
+    ) 
+  )%>% 
+  tab_footnote(
+    footnote = new_mun_splits_name,
+    locations = cells_body(
+      columns = 3,
+      rows = 4
+    ) 
+  )%>% 
+  tab_footnote(
+    footnote = optimal_splits_name,
+    locations = cells_body(
+      columns = 4,
+      rows = 4
+    ) 
+  ) %>% 
+  tab_footnote(
+    footnote = sq_gun_splits_name,
+    locations = cells_body(
+      columns = 2,
+      rows = 5
+    ) 
+  )%>% 
+  tab_footnote(
+    footnote = new_gun_splits_name,
+    locations = cells_body(
+      columns = 3,
+      rows = 5
+    ) 
+  )%>% 
+  tab_footnote(
+    footnote = new_koiki_splits_name,
+    locations = cells_body(
+      columns = 2:4,
+      rows = 6
+    ) 
+  )%>% 
+  opt_footnote_marks(marks = "letters") %>% 
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+      ),
+    locations = cells_body(
+      columns = 2:4,
+      rows = 1
+    ) 
+  ) 
+```
+
+# 現行の区割り
+
+```{r status quo plan, warning=FALSE, message = FALSE}
+# Set Colors for Plot
+if(ndists_old > 6){
+  sq_pref_map <- sq_pref %>% 
+    mutate(pop = 1) %>% # only for plotting purpose
+    redist_map(ndists = nrow(sq_pref)) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$ku)))
+}else{
+  sq_pref_map <- sq_pref %>% 
+    mutate(color = ku)
+}
+# Plot Map
+ggplot() +
+  geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
+  scale_fill_manual(values = PAL, guide = "none") +
+  
+  geom_sf(data = boundary_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  geom_sf(data = boundary_non_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  
+  geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
+              color = c("black", "white"),
+              nudge_x = c(5000, 9000), # adjust the position of the labels
+              nudge_y = c(-15000, 12000), # adjust the position of the labels
+              #"函館市", "旭川市"
+              family = "HiraginoSans-W3") +
+  
+  geom_sf(data = cities_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_ishikari, aes(label = names), size = 3,
+              color = c("white"),
+              nudge_x = c(5000), # adjust the position of the labels
+              nudge_y = c(10000), # adjust the position of the labels
+              # 札幌市
+              family = "HiraginoSans-W3") +
+  
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+
+# アルゴリズムの提案
+アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
+
+### 石狩総合振興局
+```{r optimal plan boundaries, include = FALSE}
+optimal_boundary_ishikari_shp <- optimal_boundary_ishikari %>%
+  filter(code < 13300) %>% #filter out islands
+  select(-adj) %>%
+  group_by(district) %>%
+  summarize(geometry = sf::st_union(geometry))
+```
+
+```{r assing colors to optimal plan, include = FALSE}
+# Set Colors for Plot
+optimal_boundary_ishikari_map <- optimal_boundary_ishikari_shp %>% 
+    mutate(pop = 1) %>% # only for plotting purpose
+    redist_map(ndists = nrow(boundary_ishikari)) %>% 
+    mutate(color = redist:::color_graph(.$adj, as.integer(.$district)))
+```
+
+```{r optimal plan Ishikari Shinko-kyoku}
+ggplot() +
+  geom_sf(data = optimal_boundary_ishikari_map, aes(fill = factor(color)), color = NA) +
+  scale_fill_manual(values = PAL, guide = "none") + 
+  
+  geom_sf(data = boundary_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  
+  geom_sf(data = cities_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_ishikari, aes(label = names), size = 3,
+              color = "white",
+              nudge_x = 7000, # adjust the position of the labels
+              nudge_y = 5000, # adjust the position of the labels
+              # 札幌市
+              family = "HiraginoSans-W3") +
+  
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+
+### その他の振興局 
+```{r optimal plan for non_ishikari}
+redist::redist.plot.plans(sim_smc_non_ishikari_sample, optimal_non_ishikari, non_ishikari_map) +
+  labs(title = element_blank()) +
+  
+  geom_sf(data = boundary_non_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  
+  geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
+              color = c("black", "white"),
+              nudge_x = c(2000, -50000), # adjust the position of the labels
+              nudge_y = c(-25000, 15000), # adjust the position of the labels
+              #"函館市", "旭川市"
+              family = "HiraginoSans-W3") +
+  
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+
+# 共起分析
+* 有効な案のうち一票の格差が下位10％の案を抽出
+* 隣接する地域と同じ選挙区に属する傾向が強い地域同士の集まりをk設定
+  + 石狩総合振興局: k = 6
+  + その他の振興局: k = 6
+* 読み取り方  
+地図上の地域の色が
+  + 同じ → 同じ選挙区に属する傾向が強い
+  + 同じ かつ 濃い → 隣接する地域と同じ選挙区に属する傾向が強い
+
+###  石狩総合振興局
+```{r co-occurrence special wards, warning = FALSE}
+ishikari_cooc <- 
+  cbind(ishikari_map,
+        cooc_ratio_ishikari,
+        ishikari_membership) %>%
+  mutate(color = redist:::color_graph(.$adj, as.integer(.$membership))) %>%
+  filter(code < 13300)   # filter out islands
+
+# Co-occurrence plot
+ggplot() +
+  geom_sf(data = ishikari_cooc, aes(fill = as.factor(color), 
+                  alpha = cooc_ratio_ishikari), show.legend = FALSE, lwd = 0) +
+  scale_fill_manual(values = PAL, guide = "none") + 
+  scale_alpha_continuous(range = c(min(cooc_ratio_ishikari, na.rm = TRUE),
+                            max(cooc_ratio_ishikari, na.rm = TRUE)), guide = "none") + 
+  
+  geom_sf(data = boundary_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 0.8)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  
+  geom_sf(data = cities_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_ishikari, aes(label = names), size = 3,
+              color = "white",
+              nudge_x = 10000, # adjust the position of the labels
+              nudge_y = 6000, # adjust the position of the labels
+              # 札幌市
+              family = "HiraginoSans-W3") +
+
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+
+### その他の振興局
+```{r co-occurrence non_ishikari, warning = FALSE}
+non_ishikari_cooc <- 
+  cbind(non_ishikari_map,
+        cooc_ratio,
+        pref_membership_non_ishikari) %>%
+  mutate(color = redist:::color_graph(.$adj, as.integer(.$membership))) 
+
+
+# Co-occurrence plot
+ggplot() +
+  geom_sf(data = non_ishikari_cooc, aes(fill = as.factor(color), 
+              alpha = cooc_ratio), show.legend = FALSE, lwd = 0) +
+  scale_fill_manual(values = PAL, guide = "none") + 
+  scale_alpha_continuous(range = c(min(cooc_ratio, na.rm = TRUE),
+                          max(cooc_ratio, na.rm = TRUE)), guide = "none") + 
+  
+  geom_sf(data = boundary_non_ishikari, show.legend = "line", 
+          fill = NA, lwd = c(0.4, 1.2)) +
+  scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
+  
+  geom_sf(data = cities_non_ishikari, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_non_ishikari, aes(label = names), size = 3,
+              color = c("black", "white"),
+              nudge_x = c(2000, -50000), # adjust the position of the labels
+              nudge_y = c(-25000, 15000), # adjust the position of the labels
+              #"函館市", "旭川市"
+              family = "HiraginoSans-W3") +
+
+  ggthemes::theme_map(base_family = "HiraginoSans-W3") +
+  theme(legend.position = "right", legend.title = element_blank())
+```
+
+# アルゴリズム設定
+* 各選挙区の人口 : 
+  * 石狩総合振興局: (日本人人口 / 選挙区数:6) ± 10%
+  * その他の振興局: (日本人人口 / 選挙区数:6) ± 40%
+  
+* 基本の単位：
+  * 石狩総合振興局: 
+    * 市区町村を基本の単位とする。
+    * ただし、現状の区割りにおいて分割されている市区町村については、シミュレーションにおいても分割を許容し、国勢調査における小地域を基本の単位として扱う
+    * 現状の区割りにおいて分割されている市区町村は札幌市北区、札幌市西区
+    
+  * その他の振興局: 
+    * 総合振興局または振興局を基本の単位とする。
+    
+* 石狩総合振興局においては、市区町村の分割数の制限 (`add_constr_splits`)と、市区町村の複数選挙区への分割の制限(`add_constr_multisplits`) をそれぞれを設定
+* 郡の分割は、現行の区割りにて分割されている場合のみ許容
+* 離島は、航路で結ばれている本土の市区町村と同一の選挙区にする
+* 逐次モンテカルロ法(SMC)による4つの独立したシミュレーションにより、石狩総合振興局とその他の振興局それぞれで20,000区割り改定案を作成
+* 以下の案を棄却し有効な案を選定
+  * 市区町村が3つ以上の選挙区に分割される案
+  * 現状の区割りにおいて分割されていない郡・市区町村が分割される案
+* 有効な案の中から5,000の案をそれぞれ無作為に抽出
+
+### 北海道特有の設定  
+* [「区割り改定案の作成方針」](https://www.soumu.go.jp/main_content/000794997.pdf)では、「北海道の選挙区の改定案の作成に当たっては、総合振興局又は振興局の区域 を尊重するものとする。」とされている。
+よって、北海道では総合振興局又は振興局を基本の単位として扱う。
+* 石狩総合振興局の人口は、北海道の1議席あたりの人口（県の総人口 / 選挙区数）より大きいため、別々に区割りシミュレーションを行うことにより、総合振興局又は振興局の区域にまたがる選挙区が作成されないようにした。
+* その際、北海道の小選挙区数12を、石狩総合振興局とその他の振興局それぞれの日本人人口に基づき比例配分し、以下の通り定数を割り当てた。
+  * 石狩総合振興局: 6
+  * その他の振興局: 6
+
+# データとプログラム
+* [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
+* [**GitHub** : プログラム・コード](https://github.com/alarm-redist/japan)
