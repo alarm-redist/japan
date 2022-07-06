@@ -35,9 +35,11 @@ for(i in 1:length(gun_codes)){
 pref <- dplyr::bind_rows(pref_non_gun, pref_gun)
 
 ### Method for Chiba ###
-# In order to make sure that the 飛地 (discontiguous area) is not created if that is not ignored in the status quo,
-# we will merge municipalities (except `mun_not_freeze`) that have 飛地 in their boundaries.
-# In this way, new 飛地 will not be created.
+# In order to make sure that discontiguous districts are not created,
+# we merge together municipalities (except those in `mun_not_freeze`) that have discontiguous areas
+# within their boundaries. In our simulation, we filter out all plans that have discontiguous districts
+# except in cases where a discontiguous area is ignored under the status quo.
+
 # Merge 香取郡, 香取市, and 成田市
 tobichi_1 <- c(12211,
                12236,
