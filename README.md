@@ -27,7 +27,7 @@ for further analysis.
 
 ## Acknowledgement
 
-We acknowledge the partial support from the [Edwin O. Reischauer Institute of Japanese Studies (RIJS)](https://rijs.fas.harvard.edu) at Harvard University.
+We acknowledge the partial support from the [Edwin O. Reischauer Institute of Japanese Studies (RIJS)](https://rijs.fas.harvard.edu) at Harvard University. We also thank Harvard Data Science Initiative and Microsoft for computational support.
 
 ## Repository Structure
 
