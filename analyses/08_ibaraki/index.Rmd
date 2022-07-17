@@ -1,13 +1,13 @@
 ---
-title: "広島県 (議員定数：7 → 6)"
+title: "茨城県 (議員定数：7 → 7)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: July 17, 2022
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
     self_contained: true
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -28,24 +28,24 @@ pref_name_kanji <- "茨城県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116),
-                     names = c("広島市", "福山市", "呉市"))
+cities <- data.frame(longitude = c(140.471652), 
+                     latitude = c(36.365729),
+                     names = c("水戸市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
 ## Information about splits
 new_max_to_min <- 1.910
 new_mun_splits <- 0
-new_gun_splits <- 0
-new_koiki_splits <- 3
-sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
-sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
+new_gun_splits <- 1
+new_koiki_splits <- 1
+sq_mun_splits_name <- "水戸市、下妻市、笠間市、 常陸大宮市、小美玉市"
+sq_gun_splits_name <- "東茨城郡"
+sq_koiki_splits_name <- "茨城県央地域定住自立圏"
 new_mun_splits_name <- "" 
-new_gun_splits_name <- ""
-new_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-split_1_name <- "福山市"
+new_gun_splits_name <- "東茨城郡"
+new_koiki_splits_name <- "茨城県央地域定住自立圏"
+split_1_name <- "水戸市"
 
 ## Color Palette
 PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
@@ -148,6 +148,13 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
+    footnote = sq_gun_splits_name,
+    locations = cells_body(
+      columns = 2:4,
+      rows = 5
+    ) 
+  ) %>% 
+  tab_footnote(
     footnote = split_1_name,
     locations = cells_body(
       columns = 5,
@@ -196,8 +203,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(0), # adjust the position of the labels
+              nudge_y = c(-4000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -206,11 +213,6 @@ ggplot() +
 
 # アルゴリズムの提案
 アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
-
-<!-- # When plan diversity is low -->
-<!-- 注: シミュレーション結果の区割り案の多様性が、理想より低い。 -->
-<!-- # When resampling efficiency is less than 5% -->
-<!-- 注:リサンプリング時の効率が理想より悪い。 -->
 
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
@@ -225,8 +227,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(-0), # adjust the position of the labels
+              nudge_y = c(-4000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -249,8 +251,8 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(0), # adjust the position of the labels
+              nudge_y = c(-4000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -292,8 +294,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(0), # adjust the position of the labels
+              nudge_y = c(-4000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
