@@ -8,7 +8,7 @@
 # Define using the codes in the column `pref$code`
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
-koiki_1_codes <- c()
+koiki_1_codes <- c(08201, 08216, 08221, 08226, 08236, 08302, 08309, 08310, 08341)
 koiki_2_codes <- c()
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
@@ -77,8 +77,7 @@ koiki_2_0[koiki_2_0 %in% koiki_2_codes] <- 2
 # Assign koiki_renkei area codes for simulation with 1 split
 # When a municipality that belongs to a koiki-renkei area is split:
 koiki_1_1 <- pref_1$pre_gappei_code
-koiki_1_1[koiki_1_1 %in% c(koiki_1_codes,
-                           setdiff(pref_1$pre_gappei_code[which(pref_1$code == split_code)], split_code))] <- 1
+koiki_1_1[koiki_1_1 %in% koiki_1_codes] <- 1
 koiki_2_1 <- pref_1$pre_gappei_code
 koiki_2_1[koiki_2_1 %in% koiki_2_codes] <- 2
 
