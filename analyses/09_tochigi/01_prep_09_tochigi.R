@@ -26,7 +26,7 @@ setwd("..")
 sim_type <- "smc"
 nsims <- 25000 # Set so that the number of valid plans > 5,000
 pref_code <- 09
-pref_name <- "tochogi"
+pref_name <- "tochigi"
 lakes_removed <- c()
 ndists_new <- 5
 ndists_old <- 5
