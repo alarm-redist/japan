@@ -1,13 +1,13 @@
 ---
-title: "広島県 (議員定数：7 → 6)"
+title: "群馬県 (議員定数：5 → 5)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "`r format(Sys.time(), '%Y/%m/%d')`"
+date: "July 18, 2022"
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
     css: !expr here::here("alarm_japan.css")
     self_contained: true
-doi: "10.7910/DVN/Z9UKSH"　
+doi: "10.7910/DVN/Z9UKSH"
 ---
 
 ```{r setup, include=FALSE}
@@ -22,33 +22,34 @@ library(Rttf2pt1)
 ```
 
 ```{r Manual Entries, include = FALSE}
-pref_code <- 34
-pref_name <- "hiroshima"
-pref_name_kanji <- "広島県"
+pref_code <- 10
+pref_name <- "gunma"
+pref_name_kanji <- "群馬県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(132.45975600, 133.362474, 132.565010), 
-                     latitude = c(34.396516, 34.485497, 34.248116),
-                     names = c("広島市", "福山市", "呉市"))
+cities <- data.frame(longitude = c(139.063545, 139.0032835), 
+                     latitude = c(36.3893955, 36.321787),
+                     names = c("前橋市", "高崎市"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
 ## Information about splits
-new_max_to_min <- 1.311
-new_mun_splits <- 0
+new_max_to_min <- 1.155
+new_mun_splits <- 1
 new_gun_splits <- 0
-new_koiki_splits <- 3
-sq_mun_splits_name <- "江田島市、尾道市、東広島市、三原市" 
+new_koiki_splits <- 0
+sq_mun_splits_name <- "高崎市、桐生市、太田市、 渋川市、みどり市" 
 sq_gun_splits_name <- ""
-sq_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-new_mun_splits_name <- "" 
+sq_koiki_splits_name <- ""
+new_mun_splits_name <- "高崎市" 
 new_gun_splits_name <- ""
-new_koiki_splits_name <- "広島広域都市圏、備後圏域、広島中央地域連携中枢都市圏"
-split_1_name <- "福山市"
+new_koiki_splits_name <- ""
+split_1_name <- "高崎市"
+split_1_koiki_splits_name <- "利根沼田地域定住自立圏"
 
 ## Color Palette
-PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#364B7F', '#DCAD35', '#9A9BB9', '#7F4E28', '#2A4E45')
 ```
 
 ```{r load data, include=FALSE}
@@ -148,6 +149,13 @@ table_summary %>%
     ) 
   ) %>% 
   tab_footnote(
+    footnote = new_mun_splits_name,
+    locations = cells_body(
+      columns = 3,
+      rows = 4
+    ) 
+  ) %>% 
+  tab_footnote(
     footnote = split_1_name,
     locations = cells_body(
       columns = 5,
@@ -155,9 +163,9 @@ table_summary %>%
     ) 
   ) %>% 
  tab_footnote(
-    footnote = sq_koiki_splits_name,
+    footnote = split_1_koiki_splits_name,
     locations = cells_body(
-      columns = 2:5,
+      columns = 5,
       rows = 6
     ) 
   ) %>% 
@@ -196,8 +204,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(0.06, 0), # adjust the position of the labels
+              nudge_y = c(0.03, -0.03), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -207,17 +215,17 @@ ggplot() +
 # アルゴリズムの提案
 アルゴリズムが提案した5,000案のうち、一票の格差が最小のもの
 
-<!-- # When plan diversity is low -->
-<!-- 注: シミュレーション結果の区割り案の多様性が、理想より低い。 -->
-<!-- # When resampling efficiency is less than 5% -->
-<!-- 注:リサンプリング時の効率が理想より悪い。 -->
+注: 市区町村を分割しないシミュレーション結果の区割り案の多様性 (`plan diversity`)が、ソフトウェアが設定する理想値より低い。
 
 ### 市区町村を分割しない区割り案
 一票の格差 : `r round(results_0_sample[which(results_0_sample$index == optimal_0),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (0 split)}
+## Reorder Color Palette
+PAL <- c('#6D9537', '#9A9BB9', '#DCAD35', '#364B7F', '#7F4E28', '#2A4E45')
 redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   labs(title = element_blank())+
+  scale_fill_manual(values = PAL, guide = "none") + 
   
   geom_sf(data = boundary_0, aes(color = type), show.legend = "line", 
           fill = NA, lwd = c(0.4, 1.2)) +
@@ -225,8 +233,8 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(10000, 0), # adjust the position of the labels
+              nudge_y = c(3000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -239,8 +247,11 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 一票の格差 : `r round(results_1_sample[which(results_1_sample$index == optimal_1),]$max_to_min, digits = 3) `
 
 ```{r optimal plan (1split)}
+## Reorder Color Palette
+PAL <- c('#6D9537', '#9A9BB9', '#DCAD35', '#364B7F', '#7F4E28', '#2A4E45')
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank())+
+  scale_fill_manual(values = PAL, guide = "none") + 
   
   geom_sf(data = boundary_1, aes(color = type, linetype = type), show.legend = "line", 
           fill = NA, lwd = c(0.4, 0.4, 1.2)) +
@@ -249,8 +260,8 @@ redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-8000), # adjust the position of the labels
-              nudge_y = c(-8000), # adjust the position of the labels
+              nudge_x = c(10000, 0), # adjust the position of the labels
+              nudge_y = c(3000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -278,7 +289,7 @@ if(ndists_new > 6){
 }
 
 # Reorder the color palette
-PAL <- c('#364B7F', '#6D9537', '#DCAD35', '#9A9BB9', '#2A4E45', '#7F4E28')
+PAL <- c('#6D9537', '#9A9BB9', '#364B7F', '#DCAD35', '#7F4E28', '#2A4E45')
 
 # Co-occurrence plot
 ggplot() +
@@ -292,8 +303,8 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(0, 0, 0), # adjust the position of the labels
-              nudge_y = c(5000, 5000, 5000), # adjust the position of the labels
+              nudge_x = c(10000, 0), # adjust the position of the labels
+              nudge_y = c(3000, -5000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -302,7 +313,9 @@ ggplot() +
 
 # アルゴリズム設定
 
-* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) ±`r 100*pop_tol`%
+* 各選挙区の人口 : (県内の日本人人口 / 選挙区数) 
+  + ± 50% (市区町村分割を許容しない案) 
+  + ± 30% (最大市区町村を分割する案)
   + サンプリング効率が80%~100%となるように調節
 * 市区町村分割を許容しない案、及び日本人人口が最大の市（政令指定都市の行政区を除く）の分割を許容する案の2種類を作成
   + 最大市区町村を分割する際は、平成の大合併以前の市区町村界に基づく
@@ -317,7 +330,7 @@ ggplot() +
 * 有効な案の中から5,000の案を無作為に抽出
 
 ### 県特有の設定  
-特になし 
+みどり市と桐生市の間には飛地があり、且つ桐生市はみどり市をはさみ2つに分割されている。そのため、有効な案を作成するためにこれら２市はポリゴンを結合して、一つの単位にしてシュミレーションを行った。
 
 # データとプログラム
 * [**Dataverse** : シュミレーションデータ](https://doi.org/10.7910/DVN/Z9UKSH)
