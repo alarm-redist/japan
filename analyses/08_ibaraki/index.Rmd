@@ -39,7 +39,7 @@ new_max_to_min <- 1.910
 new_mun_splits <- 0
 new_gun_splits <- 1
 new_koiki_splits <- 1
-sq_mun_splits_name <- "水戸市、下妻市、笠間市、 常陸大宮市、小美玉市"
+sq_mun_splits_name <- "水戸市、下妻市、笠間市、常陸大宮市、小美玉市"
 sq_gun_splits_name <- "東茨城郡"
 sq_koiki_splits_name <- "茨城県央地域定住自立圏"
 new_mun_splits_name <- "" 
