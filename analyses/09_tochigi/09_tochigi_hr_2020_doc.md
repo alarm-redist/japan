@@ -49,14 +49,13 @@
 * [衆議院議員選挙の小選挙区のポリゴンデータ (東京大学空間情報科学研究センター 西沢明）](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/)
 
 ## データの処理
-特になし
-栃木県佐野市仙波町 genimitsu niha... tochigi and kanuma
-<!---[When manual processing was necessary when assessing contiguity] 宮城野区港５丁目を飛び地として扱わないため、作成した区割り案に飛び地が生じているかどうか判断する際、一時的に宮城野区港５丁目及び隣接する七ヶ浜町をデータから除外した。-->
+* 宇都宮市・旧宇都宮市単独で選挙区を構成させるべく、宇都宮市・旧宇都宮市をそれぞれポリゴンデータから取り除いた。
+* 栃木県佐野市仙波町は飛び地として扱わない。そのため、アルゴリズムが作成した区割り案の飛び地の有無をテストする際に、栃木県佐野市仙波町をポリゴンデータから取り除いた。
 
 ## ファイル内容
-* `00_pref_hr_2020_map_0.rds`, `00_pref_hr_2020_map_1.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。
-* `00_pref_hr_2020_plans_0.rds`, `00_pref_hr_2020_plans_1.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
-* `00_pref_hr_2020_stats_0.csv`, `00_pref_hr_2020_stats_1.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
+* `09_tochigi_hr_2020_map_0.rds`, `09_tochigi_hr_2020_map_1.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。
+* `09_tochigi_hr_2020_plans_0.rds`, `09_tochigi_hr_2020_plans_1.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
+* `09_tochigi_hr_2020_stats_0.csv`, `09_tochigi_hr_2020_stats_1.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
 
 `redist_plans` 及び `redist_map` オブジェクトは Rパッケージ [redist](https://alarm-redist.github.io/redist/)を使用して分析する。
 

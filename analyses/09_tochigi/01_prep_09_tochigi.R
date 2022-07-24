@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `09_tochigi` analysis
-# © ALARM Project, June 2022
+# © ALARM Project, July 2022
 ###############################################################################
 
 suppressMessages({

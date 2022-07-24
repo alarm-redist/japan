@@ -8,8 +8,9 @@
 # Define using the codes in the column `pref$code`
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
-koiki_1_codes <- c(09208, 09216, 09364)
-koiki_2_codes <- c(09210, 09213, 09407, 09411)
+koiki_1_codes <- c(09208, 09216, 09361)
+# Both 八溝山周辺地域定住自立圈 and 那須地域定住自立圈 are the same
+koiki_2_codes <- c(09210, 09213, 09407)
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data
@@ -117,14 +118,14 @@ gun_split_1 <- gun_split_1[,1]
 
 # Count number of koiki renkei splits
 koiki_split_0 <-
-  1 + #We know that koiki_1 is split because Utsunomiya-shi is set aside.
+  redist::redist.splits(pref_smc_plans_0, koiki_1_0) +
   redist::redist.splits(pref_smc_plans_0, koiki_2_0)
 koiki_split_0 <- koiki_split_0 %>%
   matrix(ncol = ndists_new - 1, byrow = TRUE)
 koiki_split_0 <- koiki_split_0[,1]
 
 koiki_split_1 <-
-  1 + #We know that koiki_1 is split because Kyu-Utsunomiya-shi is set aside.
+  redist::redist.splits(pref_smc_plans_1, koiki_1_1) +
   redist::redist.splits(pref_smc_plans_1, koiki_2_1)
 koiki_split_1 <- koiki_split_1 %>%
   matrix(ncol = ndists_new - 1, byrow = TRUE)
@@ -157,7 +158,7 @@ results_1$index <- 1:nrow(wgt_smc_1)
 discont_geom <- data.frame(unit = 1,
                            geometry = sf::st_cast(pref_0[which(pref_0$code == 9204),]$geometry,
                                                   "POLYGON"))
-discont_geom <- sf::st_as_sf(discont_geom[2,])
+discont_geom <- sf::st_as_sf(discont_geom[1,])
 
 # Edit pref_0 object by removing discontiguous area in 佐野市 (i.e. 佐野市仙波町)
 pref_0_without_discont <- pref_0
@@ -220,8 +221,7 @@ optimal_split <- dplyr::inner_join(as.data.frame(pref_1),
                                    as.data.frame(optimal_boundary_0),
                                    by = "code")
 sim_smc_pref_1_sample <- redist::match_numbers(sim_smc_pref_1_sample,
-                                               # Add 旧北条市および旧中島町
-                                               c(1, 1, optimal_split$district),
+                                               optimal_split$district,
                                                col = "pop_overlap")
 
 # Gun/Municipality/Koiki-renkei boundaries
