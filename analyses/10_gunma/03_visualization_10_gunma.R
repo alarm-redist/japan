@@ -8,11 +8,7 @@
 # Define using the codes in the column `pref$code`
 # i.e. For rural prefectures, define using the municipality codes, not the gun codes
 # i.e. For urban prefectures, define using gun codes if gun was merged
-koiki_1_codes <- c(10206,
-                   10443,
-                   10444,
-                   10448,
-                   10449)
+koiki_1_codes <- c(10206, 10443)
 
 ####-------------- 1. Method for Rural Prefectures-------------------------####
 # Load data

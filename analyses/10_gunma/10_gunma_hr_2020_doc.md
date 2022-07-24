@@ -36,7 +36,6 @@
 
 ### 群馬県特有の設定
 * みどり市と桐生市の間には飛地があり、且つ桐生市はみどり市をはさみ2つに分割されている。そのため、有効な案を作成するためにこれら２市はポリゴンを結合して、一つの単位にしてシュミレーションを行った。
-* 市区町村を分割しないシミュレーション結果の区割り案の多様性 (`plan diversity`)が、ソフトウェアが設定する理想値より低い。
 
 ## データの出典
 * [「地図で見る統計(統計GIS)  境界データダウンロード」(政府統計の総合窓口(e-Stat)）](https://www.e-stat.go.jp/gis/statmap-search?page=1&type=2&aggregateUnitForBoundary=A&toukeiCode=00200521)
@@ -48,12 +47,12 @@
 * [衆議院議員選挙の小選挙区のポリゴンデータ (東京大学空間情報科学研究センター 西沢明）](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/)
 
 ## データの処理
-特になし
+* 飛地を解消した有効な案を作成するため、みどり市と桐生市はポリゴンを結合して、一つの単位にしてシュミレーションを行った。
 
 ## ファイル内容
-* `00_pref_hr_2020_map_0.rds`, `00_pref_hr_2020_map_1.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。
-* `00_pref_hr_2020_plans_0.rds`, `00_pref_hr_2020_plans_1.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
-* `00_pref_hr_2020_stats_0.csv`, `00_pref_hr_2020_stats_1.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
+* `10_gunma_hr_2020_map_0.rds`, `10_gunma_hr_2020_map_1.rds`: 圧縮された `redist_map` オブジェクト。市区町村（及び平成の大合併前の市区町村）単位のシェイプファイル及び人口データ。
+* `10_gunma_hr_2020_plans_0.rds`, `10_gunma_hr_2020_plans_1.rds` :  圧縮された`redist_plans` オブジェクト。選挙区への割り当てを示す行列を含む。
+* `10_gunma_hr_2020_stats_0.csv`, `10_gunma_hr_2020_stats_1.csv`: 区割り改定案の元での選挙区ごとの日本人人口（総人口-外国人人口）をまとめたファイル。
 
 `redist_plans` 及び `redist_map` オブジェクトは Rパッケージ [redist](https://alarm-redist.github.io/redist/)を使用して分析する。
 
