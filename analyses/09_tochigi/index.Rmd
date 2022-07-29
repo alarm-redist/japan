@@ -1,7 +1,7 @@
 ---
 title: "栃木県 (議員定数：5 → 5)"
 description: "アルゴリズムによる衆議院小選挙区の区割り改定案"
-date: "July 18, 2022"
+date: "July 25, 2022"
 author: "ALARM Japan プロジェクトチーム"
 output:
   distill::distill_article:
@@ -254,7 +254,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
 
 ```{r optimal plan (1split)}
 # Reorder the color palette 
-PAL <- c( '#DCAD35', '#7F4E28', '#364B7F', '#6D9537',  '#9A9BB9', '#2A4E45')
+PAL <- c('#6D9537', '#DCAD35', '#364B7F', '#7F4E28', '#9A9BB9', '#2A4E45')
 redist::redist.plot.plans(sim_smc_pref_1_sample, optimal_1, pref_map_1) +
   labs(title = element_blank())+
   scale_fill_manual(values = PAL, guide = "none") + 
