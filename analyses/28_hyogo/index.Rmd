@@ -30,7 +30,7 @@ pref_name_kanji <- "兵庫県"
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
 cities <- data.frame(longitude = c(135.195794, 134.685579, 135.341088, 135.406389, 134.997116), 
                      latitude = c(34.689840, 34.814940, 34.737914, 34.734231, 34.643524),
-                     names = c("神戸市", "姫路市", "西宮市", "尼崎市", "明石市"))
+                     names = c("Kobe", "Himeji", "Nishinomiya", "Amagasaki", "Akashi"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
@@ -64,6 +64,13 @@ load(here::here(paste("data-out/pref/",
 
 ```{r}
 optimal_max_to_min <- results_sample[which(results_sample$index == optimal),]$max_to_min
+```
+```{r}
+boundary <- boundary %>% 
+  mutate(type = case_when(
+    type == "市区町村の境界" ~ "Municipality boundary",
+    type == "郡の境界" ~ "County boundary",
+  ))
 ```
 
 ```{r}
@@ -182,15 +189,15 @@ ggplot() +
   geom_sf(data = sq_pref_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary, show.legend = "line", 
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
           fill = NA, lwd = c(0.4, 0.8)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("white", "white", "black", "black", "black"),
-              nudge_x = c(-2000, 2000, 0, 4500, -15000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -12000, 5500, -3000), # adjust the position of the labels
+              color = c("black", "white", "black", "black", "black"),
+              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
+              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
               #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
               family = "HiraginoSans-W3") +
   
@@ -213,15 +220,15 @@ ggplot() +
           show.legend = FALSE, lwd = 0) +
   scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary, show.legend = "line", 
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
           fill = NA, lwd = c(0.4, 0.8)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(-2000, 2000, 0, 3500, -15000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -12000, 5500, -3000), # adjust the position of the labels
+              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
+              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
               #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
               family = "HiraginoSans-W3") +
   
@@ -254,15 +261,15 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio, na.rm = TRUE), 
                                    max(cooc_ratio, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary, show.legend = "line", 
+  geom_sf(data = boundary, aes(color = type), show.legend = "line", 
           fill = NA, lwd = c(0.4, 0.8)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
               color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(-2000, 2000, 0, 3500, -15000), # adjust the position of the labels
-              nudge_y = c(6000, 5000, -12000, 5500, -3000), # adjust the position of the labels
+              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
+              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
               #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +

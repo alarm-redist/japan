@@ -30,7 +30,7 @@ pref_name_kanji <- "東京都"
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
 cities <- data.frame(longitude = 139.315780, 
                      latitude = 35.666113,
-                     names = "八王子市")
+                     names = "Hachioji")
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
@@ -60,7 +60,17 @@ load(here::here(paste("data-out/pref/",
             ".Rdata",
             sep = "")))
 ```
-
+```{r}
+boundary_tama <- boundary_tama %>% 
+  mutate(type = case_when(
+    type == "市区町村の境界" ~ "Municipality boundary",
+    type == "郡の境界" ~ "County boundary",
+  ))
+boundary_special_wards <- boundary_special_wards %>% 
+  mutate(type = case_when(
+    type == "市区町村の境界" ~ "Municipality boundary"
+  ))
+```
 ```{r maxmin, include = FALSE}
 # calculate overall maxmin ratio
 optimal_pops <- c(
@@ -185,8 +195,8 @@ ggplot() +
   geom_sf(data = sq_special_wards_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary_special_wards, show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -207,12 +217,12 @@ ggplot() +
   geom_sf(data = sq_tama_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary_tama, show.legend = "line", 
+  geom_sf(data = boundary_tama, show.legend = "line", aes(color = type),
           fill = NA, lwd = c(0.4, 1.2)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
+  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
               nudge_x = 0, # adjust the position of the labels
               nudge_y = -2000, # adjust the position of the labels
               family = "HiraginoSans-W3") +
@@ -246,8 +256,8 @@ ggplot() +
   geom_sf(data = optimal_boundary_special_wards_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary_special_wards, show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
   
   # add koto
@@ -263,7 +273,7 @@ ggplot() +
 redist::redist.plot.plans(sim_smc_tama_sample, optimal_tama, tama_map) +
   labs(title = element_blank()) +
   
-  geom_sf(data = boundary_tama, show.legend = "line", 
+  geom_sf(data = boundary_tama, show.legend = "line", aes(color = type),
           fill = NA, lwd = c(0.4, 1.2)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
@@ -304,8 +314,8 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio_special_wards, na.rm = TRUE),
                             max(cooc_ratio_special_wards, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary_special_wards, show.legend = "line", 
-          fill = NA, lwd = 0.4) +
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+          fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
 
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
@@ -329,7 +339,7 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio_tama, na.rm = TRUE),
                           max(cooc_ratio_tama, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary_tama, show.legend = "line", 
+  geom_sf(data = boundary_tama, show.legend = "line", aes(color = type),
           fill = NA, lwd = c(0.4, 1.2)) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   

@@ -30,7 +30,7 @@ pref_name_kanji <- "長崎県"
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
 cities <- data.frame(longitude = c(129.877503, 129.715321), 
                      latitude = c(32.750035, 33.179578),
-                     names = c("長崎市", "佐世保市"))
+                     names = c("Nagasaki", "Sasebo"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
@@ -173,6 +173,20 @@ table_summary %>%
   ) 
 ```
 
+```{r}
+boundary_0 <- boundary_0 %>% 
+  mutate(type = case_when(
+    type == "市区町村の境界" ~ "Municipality boundary",
+    type == "郡の境界" ~ "County boundary",
+  ))
+boundary_1 <- boundary_1 %>% 
+  mutate(type = case_when(
+    type == "合併前の市町村の境界" ~ "Historical boundary",
+    type == "市区町村の境界" ~ "Municipality boundary",
+    type == "郡の境界" ~ "County boundary",
+  ))
+```
+
 # 現行の区割り 
 ```{r status quo plan, warning=FALSE, message = FALSE}
 # Set Colors for Plot
@@ -196,7 +210,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-0.28, 0.33), # adjust the position of the labels
+              nudge_x = c(-0.3, 0.35), # adjust the position of the labels
               nudge_y = c(0, 0.05), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -224,7 +238,7 @@ redist::redist.plot.plans(sim_smc_pref_0_sample, optimal_0, pref_map_0) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-32000, 36000), # adjust the position of the labels
+              nudge_x = c(-35000, 40000), # adjust the position of the labels
               nudge_y = c(-5000, 8800), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
@@ -295,7 +309,7 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = c(-32000, 36000), # adjust the position of the labels
+              nudge_x = c(-35000, 40000), # adjust the position of the labels
               nudge_y = c(-5000, 8800), # adjust the position of the labels
               family = "HiraginoSans-W3") +
 
