@@ -28,9 +28,11 @@ pref_name_kanji <- "兵庫県"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = c(135.195794, 134.685579, 135.341088, 135.406389, 134.997116), 
-                     latitude = c(34.689840, 34.814940, 34.737914, 34.734231, 34.643524),
-                     names = c("Kobe", "Himeji", "Nishinomiya", "Amagasaki", "Akashi"))
+ 
+ 
+cities <- data.frame(longitude = c(135.195794, 134.685579, 135.341088, 134.7675993953388, 134.54966094250287, 134.91488779579626), 
+                     latitude = c(34.689840, 34.814940, 34.737914, 35.404501366177385, 35.00442758156127, 34.439684490682886),
+                     names = c("Kobe", "Himeji", "Nishinomiya", "Yabu", "Shiso", "Awaji"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
@@ -195,14 +197,14 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
-              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
-              #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
+              color = c("black", "black", "white", "black", "white", "black"),
+              nudge_x = c(0, 0, -7500, -5000, 0, 12500), # adjust the position of the labels
+              nudge_y = c(-10000, -10000, 7500, -7500, 7500,0), # adjust the position of the labels
+              #"Kobe", "Himeji", "Nishinomiya", "Yabu", "Shiso", "Awaji"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
+  theme(legend.position = "none", legend.title = element_blank())
 ```
 
 # アルゴリズムの提案
@@ -226,14 +228,14 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
-              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
-              #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
+              color = c("black", "black", "black", "black", "black", "black"),
+              nudge_x = c(0, 0, -7500, -5000, 0, 12500), # adjust the position of the labels
+              nudge_y = c(-10000, -10000, 7500, -7500, 7500,0), # adjust the position of the labels
+              #"Kobe", "Himeji", "Nishinomiya", "Yabu", "Shiso", "Awaji"
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
+  theme(legend.position = "none", legend.title = element_blank())
 ```
 
 # 共起分析
@@ -267,13 +269,13 @@ ggplot() +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
   geom_sf_text(data = cities, aes(label = names), size = 3,
-              color = c("black", "white", "black", "black", "black"),
-              nudge_x = c(-12000, 2000, -20000, -15000, -15000), # adjust the position of the labels
-              nudge_y = c(0, 5000, 0, 7500, -3000), # adjust the position of the labels
-              #神戸市, 姫路市, 西宮市, 尼崎市, 明石市
+              color = c("black", "black", "black", "black", "black", "black"),
+              nudge_x = c(0, 0, -7500, -5000, 0, 12500), # adjust the position of the labels
+              nudge_y = c(-10000, -10000, 7500, -7500, 7500,0), # adjust the position of the labels
+              #"Kobe", "Himeji", "Nishinomiya", "Yabu", "Shiso", "Awaji"),
               family = "HiraginoSans-W3") +
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
+  theme(legend.position = "none", legend.title = element_blank())
 ```
 
 # アルゴリズム設定

@@ -28,9 +28,17 @@ pref_name_kanji <- "東京都"
 ## Find the coordinates of the 県庁, 
 ## 政令指定都市の市庁舎 (if there is a 政令指定都市 different from 県庁所在地)
 ## and 中核市の市庁舎 (if there is a 中核市 different from 県庁所在地)
-cities <- data.frame(longitude = 139.315780, 
-                     latitude = 35.666113,
-                     names = "Hachioji")
+ 
+ 
+cities_23 <- data.frame(longitude = c(139.65332912651843, 139.65170077845272, 139.71609059399458), 
+                     latitude = c(35.64645000193717, 35.73570613758218, 35.56127295797411),
+                     names = c("Setagaya", "Nerima", "Ota"))
+cities_23 <- sf::st_as_sf(cities_23, coords = c("longitude", "latitude"), 
+                       crs = 4612)
+ 
+cities <- data.frame(longitude = c(139.315780, 139.44634690994533), 
+                     latitude = c(35.666113, 35.63699581394712),
+                     names = c("Hachioji", "Tama"))
 cities <- sf::st_as_sf(cities, coords = c("longitude", "latitude"), 
                        crs = 4612)
 
@@ -195,9 +203,15 @@ ggplot() +
   geom_sf(data = sq_special_wards_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") +
   
-  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = FALSE, 
           fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
+  geom_sf(data = cities_23, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_23, aes(label = names), 
+               color = c("white", "white", "white"), size = 3,
+              nudge_x = c(-3300, -3300, 0), # adjust the position of the labels
+              nudge_y = c(0, 1800,-1000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -222,13 +236,14 @@ ggplot() +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = 0, # adjust the position of the labels
-              nudge_y = -2000, # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("white", "black"), size = 3,
+              nudge_x = c(0, -1000), # adjust the position of the labels
+              nudge_y = c(-2000, -2000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
+  theme(legend.position = "none", legend.title = element_blank())
 ```
 
 # アルゴリズムの提案
@@ -256,12 +271,19 @@ ggplot() +
   geom_sf(data = optimal_boundary_special_wards_map, aes(fill = factor(color)), color = NA) +
   scale_fill_manual(values = PAL, guide = "none") + 
   
-  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = FALSE, 
           fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
   
   # add koto
   geom_sf(data = koto, fill = '#7F4E28', color = "#373C38", lwd = 0.4) + 
+  
+  geom_sf(data = cities_23, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_23, aes(label = names), 
+               color = c("black", "white", "black"), size = 3,
+              nudge_x = c(0, -3300, 0), # adjust the position of the labels
+              nudge_y = c(1000, 1500,-1000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
@@ -278,13 +300,14 @@ redist::redist.plot.plans(sim_smc_tama_sample, optimal_tama, tama_map) +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "black", size = 3,
-              nudge_x = 0, # adjust the position of the labels
-              nudge_y = 2000, # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("black", "black"), size = 3,
+              nudge_x = c(0, 1500), # adjust the position of the labels
+              nudge_y = c(-2000, -3000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
   
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
-  theme(legend.position = "right", legend.title = element_blank())
+  theme(legend.position = "none", legend.title = element_blank())
 ```
 
 # 共起分析
@@ -314,10 +337,16 @@ ggplot() +
   scale_alpha_continuous(range = c(min(cooc_ratio_special_wards, na.rm = TRUE),
                             max(cooc_ratio_special_wards, na.rm = TRUE)), guide = "none") + 
   
-  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = "line", 
+  geom_sf(data = boundary_special_wards, aes(color = type), show.legend = FALSE, 
           fill = NA, lwd = c(0.4)) +
   scale_color_manual(values = c("#373C38")) +
-
+  geom_sf(data = cities_23, size = 2, shape = 21, fill = "red") +
+  geom_sf_text(data = cities_23, aes(label = names), 
+               color = c("black", "white", "black"), size = 3,
+              nudge_x = c(0, -3300, 0), # adjust the position of the labels
+              nudge_y = c(1000, 1500,-1000), # adjust the position of the labels
+              family = "HiraginoSans-W3") +
+  
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
@@ -344,11 +373,12 @@ ggplot() +
   scale_color_manual(values = c("#373C38", "#D0C1BA50")) +
   
   geom_sf(data = cities, size = 2, shape = 21, fill = "red") +
-  geom_sf_text(data = cities, aes(label = names), color = "white", size = 3,
-              nudge_x = -5000, # adjust the position of the labels
-              nudge_y = 2000, # adjust the position of the labels
+  geom_sf_text(data = cities, aes(label = names), 
+               color = c("white", "black"), size = 3,
+              nudge_x = c(0, -1000), # adjust the position of the labels
+              nudge_y = c(-3000, -2000), # adjust the position of the labels
               family = "HiraginoSans-W3") +
-
+  
   ggthemes::theme_map(base_family = "HiraginoSans-W3") +
   theme(legend.position = "right", legend.title = element_blank())
 ```
