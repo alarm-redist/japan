@@ -1,7 +1,9 @@
 * Title
+
 Estimating the Partisan Bias of Redistricting Plans in Japan: Application of a Redistricting Simulation Algorithm 
 
 * Abstract
+
 Many scholars have assumed that there is little to no room for gerrymandering to occur in the redistricting process in Japan because of the non-partisan nature of the process: in Japan, redistricting plans are drawn by an independent group of experts commissioned by the Ministry of Internal Affairs and Communications. 
 However, there has yet to be a study that provides empirical evidence for this assumption, and it is questionable whether the process is truly non-partisan. 
 For example, before redrawing the maps, the redistricting commission invites governors to submit opinions regarding how districts should be redrawn in their prefectures. 
