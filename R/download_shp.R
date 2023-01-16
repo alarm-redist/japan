@@ -23,7 +23,8 @@ download_shp <- function(pref_code){
   }
 
   # download the files from the Japanese Government Statistics Portal (e-Stat)
-  download.file(paste('https://www.e-stat.go.jp/gis/statmap-search/data?dlserveyId=A002005212015&code=',
+  # This shapefile is from 2020 Census (Reiwa 2)
+  download.file(paste('https://www.e-stat.go.jp/gis/statmap-search/data?dlserveyId=A002005212020&code=',
                       as.character(pref_code), '&coordSys=1&format=shape&downloadType=5', sep = ''), 'data-raw/shp_data.zip')
 
   # unzip the downloaded zip file
@@ -33,7 +34,7 @@ download_shp <- function(pref_code){
   file.remove("data-raw/shp_data.zip")
 
   # return the shp file
-  pref_raw <- sf::st_read(paste("data-raw/h27ka", as.character(pref_code), '.shp', sep = ''))
+  pref_raw <- sf::st_read(paste("data-raw/r2ka", as.character(pref_code), '.shp', sep = ''))
   return(pref_raw)
 
 }
