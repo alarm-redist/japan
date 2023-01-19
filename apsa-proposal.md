@@ -4,9 +4,12 @@ Estimating the Partisan Bias of Redistricting Plans in Japan: Application of a R
 
 * Abstract
 
-Many scholars have assumed that there is little to no room for gerrymandering to occur in the redistricting process in Japan because of the non-partisan nature of the process: in Japan, redistricting plans are drawn by an independent group of experts commissioned by the Ministry of Internal Affairs and Communications. 
-However, there has yet to be a study that provides empirical evidence for this assumption, and it is questionable whether the process is truly non-partisan. 
-For example, before redrawing the maps, the redistricting commission invites governors to submit opinions regarding how districts should be redrawn in their prefectures. 
-To fill this gap in the literature, we use a state-of-the-art redistricting simulation algorithm based on Sequential Monte Carlo to simulate a large set of redistricting plans that follow all redistricting rules adopted by the redistricting commission. 
-We estimate the hypothetical electoral outcomes under those counterfactual plans and compare them with the expected outcomes under the actual map adopted in the 2020 redistricting cycle. 
-In this way, we empirically examine whether there actually is no gerrymandering in the Japanese redistricting process.
+Many scholars have assumed, without empirical evidence, that there is little to no room for partisan gerrymandering to occur in the Japanese redistricting process because an independent group of experts commissioned by the Ministry of Internal Affairs and Communications draws a redistricting plan. 
+The process is, however, not entirely free of politics. 
+The redistricting commission invites the governors of all prefectures to provide their opinions regarding districting within their own prefectures.
+In addition, the national Diet must approve the final redistricting plan submitted by the commission.
+We conduct the first ever empirical analysis of partisan effects of Japanese redistricting.
+We apply a state-of-the-art redistricting simulation algorithm to generate a large number of alternative redistricting plans that are representative of the population of plans consistent with the redistricting rules adopted by the commission.
+By comparing the enacted plan with these alternative non-partisan plans, one can quantify the extent to which the plan favors a particular party.
+Unlike the traditional methods, which compare the enacted plans across time and space, the simulation approach enables researchers to account for political geography and redistricting rules specific to each prefecture.
+Our analysis focuses on the 2020 lower house redistricting plan, which was just approved and will be used in the upcoming elections.
