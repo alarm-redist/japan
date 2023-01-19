@@ -1,5 +1,5 @@
 ###############################################################################
-# Data visualization for `04_Miyagi`
+# Data visualization for `04_miyagi`
 # © ALARM Project, June 2021
 ###############################################################################
 
@@ -51,7 +51,7 @@ for (i in 0:1)
                                   "_",
                                   as.character(sim_type),
                                   "_",
-                                  as.character(nsims * 2),
+                                  as.character(nsims * 4),
                                   "_",
                                   as.character(i),
                                   ".Rds",
@@ -131,7 +131,7 @@ results_1$index <- 1:nrow(wgt_smc_1)
 # 宮城野区(4102) is made up of discontiguous parts (宮城野区港５丁目 appears to be discontiguous from the rest of 宮城野区)
 # However, in practice, 宮城野区 is treated as one contiguous unit.
 # Thus, for the purpose of checking whether plans are contiguous or not,
-# we remove 宮城野区 as well as its neighboring municipality, 七ヶ浜町(4404), from the analysis.
+# we remove 宮城野区港５丁目 as well as its neighboring municipality, 七ヶ浜町(4404), from the analysis.
 
 # Filter out discontiguous area in 宮城野区(4102)
 discont_geom <- data.frame(unit = 1,
