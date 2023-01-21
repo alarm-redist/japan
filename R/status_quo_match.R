@@ -17,17 +17,22 @@ status_quo_match <- function(pref_raw, pref_code){
   # initialize object
   pref_ku <- pref_raw
 
-  # import district data
-  download.file('https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/senkyoku289polygon_detailed.zip', 'data-raw/senkyoku289polygon_detailed.zip')
+  # check if data exists in working directory
+  if(!file.exists("data-raw/senkyoku289polygon_detailed/senkyoku289polygon_detailed.shp")){
 
-  # unzip the downloaded zip file
-  unzip("data-raw/senkyoku289polygon_detailed.zip", exdir = "data-raw/")
+    # if not, download the data
+    download.file('https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/senkyoku289polygon_detailed.zip',
+                  'data-raw/senkyoku289polygon_detailed.zip')
+
+    # unzip the downloaded zip file
+    unzip("data-raw/senkyoku289polygon_detailed.zip", exdir = "data-raw/")
+
+    # remove the zip file after zip is decompressed
+    file.remove("data-raw/senkyoku289polygon_detailed.zip")
+  }
 
   # return the shp file
   district_data <- sf::st_read('data-raw/senkyoku289polygon_detailed/senkyoku289polygon_detailed.shp')
-
-  # remove the zip file after zip is decompressed
-  file.remove("data-raw/senkyoku289polygon_detailed.zip")
 
   # subset to the interested prefecture
   district_data <- district_data %>%

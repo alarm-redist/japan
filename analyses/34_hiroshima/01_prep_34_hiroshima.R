@@ -1,6 +1,6 @@
 ###############################################################################
 # Download and prepare data for `34_hiroshima` analysis
-# © ALARM Project, June 2021
+# © ALARM Project, January 2023
 ###############################################################################
 
 suppressMessages({
@@ -24,7 +24,7 @@ setwd("..")
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 20000  # Set so that the number of valid plans > 5,000
+nsims <- 5000  # Set so that the number of valid plans > 5,000
 pref_code <- 34
 pref_name <- "hiroshima"
 lakes_removed <- c()
@@ -43,15 +43,16 @@ gun_exception <- c()
 # Change time limit
 options(timeout = 300)
 
-# Download 2015 Census shapefile
-pref_shp_2015 <- download_shp(pref_code)
-# Clean 2015 Census shapefile
-pref_shp_cleaned <- pref_shp_2015 %>%
+# Download Census shapefile
+pref_shp_2020 <- download_shp(pref_code)
+
+# Clean Census shapefile
+pref_shp_cleaned <- pref_shp_2020 %>%
   clean_jcdf()
 # Note that S_NAME shows the name of the first entry of the areas grouped
 # in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
-# Download 2020 Census data at 小地域-level
+# Download 2020 Census data at 小地域-level (size of Japanese population)
 pref_pop_2020 <- download_pop_2020(pref_code)
 
 # status quo
@@ -62,7 +63,7 @@ sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
 
 ####1. Rural Prefectures########
 # Clean 2020 Census data at the 小地域-level
-pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
+pref_pop_cleaned <- clean_pref_pop_2020(pref_pop_2020)
 
 # Download and clean 2020 census data at municipality/old-munipality-level
 census_mun_old_2020 <- clean_2020_census(pref_code)
@@ -74,9 +75,7 @@ census_mun_old_2020 <- clean_2020_census(pref_code)
 old_mun <- download_old_shp(pref_code)
 
 # custom data for the analysis
-pop <- pref_pop_2020 %>%
-  dplyr::group_by(mun_code) %>%
-  dplyr::summarise(pop = sum(pop)) %>%
+pop <- pref_pop_cleaned %>%
   dplyr::rename(code = mun_code)
 
 geom <- pref_shp_cleaned %>%
