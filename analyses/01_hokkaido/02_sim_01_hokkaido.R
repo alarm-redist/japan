@@ -1,13 +1,15 @@
 ###############################################################################
 # Simulations for `01_hokkaido`
-# © ALARM Project, June 2022
+# © ALARM Project, May 2023
 ###############################################################################
 
 ####-------------- 2. Method for Urban Prefectures-------------------------####
-# Assign 郡 codes
-# For Hokkaido, we will assign codes for 総合振興局 and 振興局 as `gun_code`
-# in order to comply with the redistricting committee's rules.
-pref <- pref %>%
+# Re-order and add 郡 codes
+pref <- pref_mun %>%
+  arrange(code, sub_code) %>%
+  # In Hokkaido, the redistricting committee uses the 振興局 grouping as an administrative boundary.
+  # Thus, We treat this 振興局 as `gun` (county) in the program,
+  # because 振興局 is larger unit than 郡.
   dplyr::mutate(gun_code = case_when(
     code %in% c(01209,
                 01210,
@@ -198,281 +200,187 @@ pref <- pref %>%
                 01693,
                 01694) ~ "nemuro"))
 
-# Set aside 石狩振興局 (pop == 2,381,374) and apportion seats proportionately.
-# This is because in Hokkaido, the boundaries of 振興局 must be respected,
-# and only 石狩振興局 is split into multiple districts.
-ishikari <- pref %>%
-  dplyr::filter(gun_code %in% c("ishikari"))
-non_ishikari <- pref %>%
-  dplyr::filter(gun_code %in% c("ishikari") == FALSE)
-ndists_ishikari <- round(
-  sum(ishikari$pop) / (sum(pref$pop)/ndists_new))
-ndists_non_ishikari <- ndists_new - ndists_ishikari
-
-### Remaining Shinko-kyoku ###
-# Merge by Shinko-kyoku
-non_ishikari <- non_ishikari %>%
-  dplyr::group_by(gun_code) %>%
-  dplyr::summarise(code = code[1],
-                   pop = sum(pop),
-                   geometry = sf::st_union(geometry))
-
 # Make adjacency list
-non_ishikariadj <- redist::redist.adjacency(non_ishikari)
+prefadj <- redist::redist.adjacency(pref)
 
 # Modify according to ferry adjacencies
-if(check_ferries(pref_code) == TRUE){
-  # add ferries
-  ferries <- add_ferries(non_ishikari)
-  non_ishikariadj <- geomander::add_edge(non_ishikariadj,
-                                 ferries[, 1],
-                                 ferries[, 2],
-                                 zero = TRUE)
-}
+# ferries <- add_ferries(pref)
+# prefadj <- geomander::add_edge(prefadj,
+#                                ferries[, 1],
+#                                ferries[, 2],
+#                                zero = TRUE)
 
-# Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref,
-                                                    adj = prefadj)
-prefadj <- geomander::add_edge(prefadj,
-                               suggest$x,
-                               suggest$y,
-                               zero = TRUE)"
+# Suggest connection between disconnected groups
+# suggest <-  geomander::suggest_component_connection(shp = pref,
+#                                                     adj = prefadj)
+# prefadj <- geomander::add_edge(prefadj,
+#                                suggest$x,
+#                                suggest$y,
+#                                zero = TRUE)
 
 # TODO Repair adjacencies if necessary, and document these changes.
-# prefadj <- geomander::add_edge(prefadj,
-# which(pref$code == xxxxx & pref$sub_code == "xxxx"),
-# which(pref$code == xxxxx & pref$sub_code == "xxxx"))
+pref_add_edge <-
+  matrix(c(
+    # 檜山振興局奥尻町-せたな町
+    which(pref$code == 1367),
+    which(pref$code == 1371),
 
-# Define pref_map object
-non_ishikari_map <- redist::redist_map(non_ishikari,
-                                       ndists = ndists_non_ishikari,
-                                       pop_tol= pop_tol_non_ishikari,
-                                       total_pop = pop,
-                                       adj = non_ishikariadj)
+    # 宗谷振興局礼文町-利尻町
+    which(pref$code == 1517),
+    which(pref$code == 1518),
 
-# Run simulation
-set.seed(2020)
-sim_smc_non_ishikari <- redist::redist_smc(
-  map = non_ishikari_map,
-  nsims = nsims,
-  runs = 4L,
-  pop_temper = 0.05)
+    # 宗谷振興局礼文町-利尻富士町
+    which(pref$code == 1517),
+    which(pref$code == 1519),
 
-# Check to see whether there are SMC convergence warnings
-# If there are warnings, increase `nsims`
-summary(sim_smc_non_ishikari)
+    # 宗谷振興局礼文町-稚内市
+    which(pref$code == 1517),
+    which(pref$code == 1214),
 
-# Histogram showing plans diversity
-# Ideally, the majority of mass to would be above 50% and
-# we would not see a large spike at 0.
-# However, for some prefectures, it is impossible to get a diverse set of plans
-# because there are fewer possible plans.
-hist(plans_diversity(sim_smc_non_ishikari))
+    # 稚内市-利尻富士町
+    which(pref$code == 1214),
+    which(pref$code == 1519)
 
-# Save pref object, pref_map object, adjacency list, and simulation data
-saveRDS(non_ishikari, paste("data-out/pref/",
-                    as.character(pref_code),
-                    "_",
-                    as.character(pref_name),
-                    "_non_ishikari.Rds",
-                    sep = ""))
+  ), ncol = 2, byrow = TRUE)
 
-saveRDS(non_ishikariadj, paste("data-out/pref/",
-                       as.character(pref_code),
-                       "_",
-                       as.character(pref_name),
-                       "_adj_non_ishikari.Rds",
-                       sep = ""))
-
-# pref_map object: to be uploaded to Dataverse
-write_rds(non_ishikari_map, paste("data-out/maps/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_hr_2020_map_non_ishikari.rds",
-                          sep = ""),
-          compress = "xz")
-
-saveRDS(sim_smc_non_ishikari, paste("data-out/plans/",
-                            as.character(pref_code),
-                            "_",
-                            as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims * 4),
-                            "_non_ishikari.Rds",
-                            sep = ""))
-
-### Ishikari Shinko-kyoku ###
-# For Ishikari Shinko-kyoku, we will assign 6 seats.
-# To make sure that the boundaries of 郡 are respected,
-# re-assign 郡 codes and merge by gun_code
-ishikari <- ishikari %>%
-  dplyr::mutate(gun_code = if_else(
-    # ishikari-gun
-    code %in% c(01303, 01304),
-    01300,
-    # else: non_gun
-    code))
-
-# Choose 郡 to merge
-gun_codes <- unique(ishikari$gun_code[which(ishikari$gun_code >= (ishikari$code[1]%/%1000)*1000+300)])
-
-# Set aside non-郡 municipalities
-ishikari_non_gun <- dplyr::filter(ishikari, gun_code %in% gun_codes == FALSE)
-# Merge together 郡
-ishikari_gun <- NULL
-for(i in 1:length(gun_codes)){
-  # filter out gun
-  gun <- ishikari %>%
-    dplyr::filter(gun_code == gun_codes[i])
-  # merge together gun
-  gun$code <- gun_codes[i]
-  gun <- gun %>%
-    dplyr::group_by(code) %>%
-    dplyr::summarise(pop = sum(pop), geometry = sf::st_union(geometry))
-
-  # merge back together
-  gun$sub_code <- NA
-  gun$gun_code <- gun_codes[i]
-  ishikari_gun <- dplyr::bind_rows(ishikari_gun, gun)
-}
-
-# Bind together 郡 and non-郡 municipalities
-ishikari <- dplyr::bind_rows(ishikari_non_gun, ishikari_gun)
-
-# Convert multi-polygons into polygons
-new_rows <- data.frame(code = ishikari[1, ]$code,
-                       sub_code = ishikari[1, ]$sub_code,
-                       geometry = sf::st_cast(ishikari[1, ]$geometry, "POLYGON"),
-                       pop = 0,
-                       gun_code = ishikari[1, ]$gun_code
-)
-
-new_rows[1, ]$pop <- ishikari[1, ]$pop
-
-pref_sep <- new_rows
-
-# to calculate area size, switch off `geometry (s2)`
-sf_use_s2(FALSE)
-for (i in 2:nrow(ishikari))
-{
-  new_rows <- data.frame(code = ishikari[i, ]$code,
-                         sub_code = ishikari[i, ]$sub_code,
-                         geometry = sf::st_cast(ishikari[i, ]$geometry, "POLYGON"),
-                         pop = 0,
-                         gun_code = ishikari[i, ]$gun_code
-  )
-
-  # order by size
-  new_rows <- new_rows %>%
-    dplyr::mutate(area = sf::st_area(geometry)) %>%
-    dplyr::arrange(desc(area)) %>%
-    dplyr::select(-area)
-
-  # assign population to the largest area
-  new_rows[1, ]$pop <- ishikari[i, ]$pop
-
-  pref_sep <- rbind(pref_sep, new_rows)
-}
-
-# switch on `geometry (s2)`
-sf_use_s2(TRUE)
-ishikari <- sf::st_as_sf(pref_sep)
-
-# Make adjacency list
-ishikariadj <- redist::redist.adjacency(ishikari)
-
-# Modify according to ferry adjacencies
-if(check_ferries(pref_code) == TRUE){
-    # add ferries
-    ferries <- add_ferries(ishikari)
-    prefadj <- geomander::add_edge(ishikariadj,
-                                   ferries[, 1],
-                                   ferries[, 2],
-                                   zero = TRUE)
-}
-
-# Optional: Suggest connection between disconnected groups
-"suggest <-  geomander::suggest_component_connection(shp = pref,
-                                                    adj = prefadj)
+# Add edges
 prefadj <- geomander::add_edge(prefadj,
-                               suggest$x,
-                               suggest$y,
-                               zero = TRUE)"
+                               pref_add_edge[,1],
+                               pref_add_edge[,2])
 
-# TODO Repair adjacencies if necessary, and document these changes.
-# prefadj <- geomander::add_edge(prefadj,
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"),
-                                # which(pref$code == xxxxx & pref$sub_code == "xxxx"))
-
-# Define pref_map object
-ishikari_map <- redist::redist_map(ishikari,
-                               ndists = ndists_ishikari,
-                               pop_tol= pop_tol_ishikari,
+# Create redist.map object
+pref_map <- redist::redist_map(pref,
+                               ndists = ndists_new,
+                               pop_tol= pop_tol,
                                total_pop = pop,
-                               adj = ishikariadj)
+                               adj = prefadj,
+                               planarize = 4612)
 
-# Define constraints
-constr = redist::redist_constr(ishikari_map)
-constr = redist::add_constr_splits(constr, strength = 1, admin = ishikari_map$code)
-constr = redist::add_constr_multisplits(constr, strength = 1, admin = ishikari_map$code)
+# Merge gun
+pref_map_merged <- pref_map %>%
+  # Convert codes to character
+  mutate(code = as.character(code),
+         sub_code = as.character(sub_code),
+         gun_code = as.character(gun_code)) %>%
+  # Only freeze the "gun" that are kept together in the same district under the old plan
+  # Make a code to determine which gun to freeze
+  # If a gun is one of the gun in `gun_exception`, don't freeze it
+  mutate(freeze_code = if_else(gun_code %in% gun_exception,
+                               code,
+                               gun_code)) %>%
+  # For Hokkaido, there is an additional municipality that are split in the newly enacted plan.
+  # Thus, we will also allow that municipality to be split (3 municipality in total.)
+  mutate(freeze_code = if_else(freeze_code %in% split_code_lh_2022,
+                               str_c(code, sub_code),
+                               freeze_code)) %>%
+  # Group by and merge by `gun_code`
+  merge_by(freeze_code, by_existing = FALSE, drop_geom = FALSE) %>%
+  # Drop column `freeze_code`
+  select(-freeze_code)
+
+# If there is a possibility of a "multi-split," add a multi-split constraint
+# Comment out the following lines if you are not adding any constraints
+constr_pref = redist::redist_constr(pref_map_merged)
+constr_pref = redist::add_constr_splits(constr_pref, strength = 1, admin = pref_map_merged$code)
+constr_pref = redist::add_constr_multisplits(constr_pref, strength = 1, admin = pref_map_merged$code)
 
 # Run simulation
 set.seed(2020)
-sim_smc_ishikari <- redist::redist_smc(
-  map = ishikari_map,
+sim_smc_pref <- redist::redist_smc(
+  map = pref_map_merged,
   nsims = nsims,
   runs = 4L,
-  counties = ishikari$code,
-  constraints = constr,
+  # Vector of municipality codes
+  counties = pref_map_merged$code,
+  constraints = constr_pref,
   pop_temper = 0.05)
 
 # Check to see whether there are SMC convergence warnings
 # If there are warnings, increase `nsims`
-summary(sim_smc_ishikari)
+summary(sim_smc_pref)
 
 # Histogram showing plans diversity
 # Ideally, the majority of mass to would be above 50% and
 # we would not see a large spike at 0.
 # However, for some prefectures, it is impossible to get a diverse set of plans
 # because there are fewer possible plans.
-hist(plans_diversity(sim_smc_ishikari))
+hist(plans_diversity(sim_smc_pref))
 
+# Pull back plans to unmerged units
+sim_smc_pref_pullback <- pullback(sim_smc_pref)
+
+# Add reference plan
+# Write csv file
+pref %>%
+  as.data.frame() %>%
+  select("code",
+         "gun_code",
+         "pop",
+         "mun_name",
+         "sub_name") %>%
+  write_excel_csv(here(paste("temp/",
+                             as.character(pref_code),
+                             "_",
+                             as.character(pref_name),
+                             "_lh_2022.csv",
+                             sep = "")))
+
+# Read back the CSV to environment
+dist_lh_2022 <- read_csv(here(paste("data-raw/lh_2022/",
+                                    as.character(pref_code),
+                                    "_",
+                                    as.character(pref_name),
+                                    "_lh_2022.csv",
+                                    sep = "")))
+
+# Add reference plan
+pref_map$lh_2022 <- dist_lh_2022$lh_2022
+sim_smc_pref_ref <- add_reference(plans = sim_smc_pref_pullback,
+                                  ref_plan = as.numeric(dist_lh_2022$lh_2022),
+                                  name = "lh_2022")
+
+# Add `total_pop`
+for(i in 1:ndists_new){
+  sim_smc_pref_ref$total_pop[which(sim_smc_pref_ref$draw == "lh_2022" &
+                                     sim_smc_pref_ref$district == i)] <-
+    # Population in District i
+    sum(dist_lh_2022$pop[which(dist_lh_2022$lh_2022 == i)])
+}
+
+# Add precinct population
+attr(sim_smc_pref_ref, "prec_pop") <- pref_map$pop
 
 # Save pref object, pref_map object, adjacency list, and simulation data
-saveRDS(ishikari, paste("data-out/pref/",
-                    as.character(pref_code),
-                    "_",
-                    as.character(pref_name),
-                    "_ishikari.Rds",
-                    sep = ""))
+saveRDS(pref, here(paste("data-out/shapefile/",
+                         as.character(pref_code),
+                         "_",
+                         as.character(pref_name),
+                         ".Rds",
+                         sep = "")))
 
-saveRDS(ishikariadj, paste("data-out/pref/",
-                       as.character(pref_code),
-                       "_",
-                       as.character(pref_name),
-                       "_adj_ishiraki.Rds",
-                       sep = ""))
-
-# pref_map object: to be uploaded to Dataverse
-write_rds(ishikari_map, paste("data-out/maps/",
-                          as.character(pref_code),
-                          "_",
-                          as.character(pref_name),
-                          "_hr_2020_map_ishikari.rds",
-                          sep = ""),
-          compress = "xz")
-
-saveRDS(sim_smc_ishikari, paste("data-out/plans/",
+saveRDS(prefadj, here(paste("data-out/adj/",
                             as.character(pref_code),
                             "_",
                             as.character(pref_name),
-                            "_",
-                            as.character(sim_type),
-                            "_",
-                            as.character(nsims * 4),
-                            "_ishikari.Rds",
-                            sep = ""))
+                            "_adj.Rds",
+                            sep = "")))
 
+# pref_map object: to be uploaded to Dataverse
+write_rds(pref_map, here(paste("data-out/map/",
+                               as.character(pref_code),
+                               "_",
+                               as.character(pref_name),
+                               "_lh_2022_map.rds",
+                               sep = "")),
+          compress = "xz")
+
+saveRDS(sim_smc_pref_ref, here(paste("data-out/smc-out/",
+                                     as.character(pref_code),
+                                     "_",
+                                     as.character(pref_name),
+                                     "_",
+                                     as.character(sim_type),
+                                     "_",
+                                     as.character(nsims * 4),
+                                     ".Rds",
+                                     sep = "")))

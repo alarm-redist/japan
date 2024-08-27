@@ -1,41 +1,48 @@
 ###############################################################################
 # Download and prepare data for `04_miyagi` analysis
-# © ALARM Project, June 2021
+# © ALARM Project, March 2023
 ###############################################################################
 
-suppressMessages({
-  library(dplyr)
-  library(readr)
-  library(sf)
-  library(redist)
-  library(geomander)
-  library(cli)
-  library(here)
-  library(tidyverse)
-  library(nngeo)
-  devtools::load_all() # load utilities
-})
+# Set up packages
+library(redist)
+library(geomander)
+library(sf)
+library(tidyverse)
+library(here)
 
 # Pull functions
-setwd("R")
-files.sources = list.files()
+setwd(here("function"))
+files.sources <- list.files()
 sapply(files.sources, source)
-setwd("..")
+rm(files.sources)
+setwd(here())
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 5000 # Set so that the number of valid plans > 5,000
+nsims <- 5000  # Set so that the number of valid plans > 5,000
 pref_code <- 04
 pref_name <- "miyagi"
 lakes_removed <- c()
 ndists_new <- 5
 ndists_old <- 6
-sq_max_to_min <- 1.941
-sq_max_to_tottori2 <- 1.993
-sq_mun_splits <- 2
-sq_gun_splits <- 2
-sq_koiki_splits <- 1
-pop_tol <- 0.15 # Set so that re-sampling efficiencies are > 80% at each stage
+pop_tol <- 0.15
+lh_old_max_to_min <- 1.941
+lh_old_mun_split <- 2
+lh_old_gun_split <- 2
+lh_old_koiki_split <- 1
+lh_2022_max_to_min <- 1.643
+lh_2022_mun_split <- 0
+lh_2022_gun_split <- 0
+lh_2022_koiki_split <- 0
+
+# Split the municipalities that are split under the status quo
+split_code <- c(4215)
+# 大崎市
+
+# 仙台市太白区(04104) is split under the status quo.
+# However, it will not be split in the simulation because
+# the 名取郡秋保町 was merged into 仙台市 before 2000, meaning that
+# the population data is unavailable for 名取郡秋保町.
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c(4400, 4420)
@@ -43,50 +50,53 @@ gun_exception <- c(4400, 4420)
 # Change time limit
 options(timeout = 300)
 
-# Download 2015 Census shapefile
-pref_shp_2015 <- download_shp(pref_code)
-# Clean 2015 Census shapefile
-pref_shp_cleaned <- pref_shp_2015 %>%
+# Download Census shapefile
+pref_shp_2020 <- download_shp(pref_code)
+
+# Clean Census shapefile
+pref_shp_cleaned <- pref_shp_2020 %>%
   clean_jcdf()
 # Note that S_NAME shows the name of the first entry of the areas grouped
 # in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
-# Download 2020 Census data at 小地域-level
+# Download 2020 Census data at 小地域-level (size of Japanese population)
 pref_pop_2020 <- download_pop_2020(pref_code)
 
-# remove lake if needed
-"ifelse(is.null(lakes_removed),
-       pref_shp_cleaned <- pref_shp_cleaned,
-       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))"
+# Download 2019 House of Councillors election data (Proportional Representation)
+pref_2019_HoC_PR <- download_2019_HoC_PR(pref_code)
 
-# status quo
-sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
-sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
-  dplyr::group_by(ku) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry))
+# Download 2022 House of Councillors election data (Proportional Representation)
+pref_2022_HoC_PR <- download_2022_HoC_PR(pref_code)
 
 ####1. Rural Prefectures########
-# Clean 2020 Census data at the 小地域-level
-pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020)
+
+# Clean 2020 Census data
+pref_pop_cleaned <- clean_pref_pop_2020(pref_pop_2020)
 
 # Download and clean 2020 census data at municipality/old-munipality-level
 census_mun_old_2020 <- clean_2020_census(pref_code)
 # Note that the size of Japanese population in the object census_mun_old_2020 is defined differently
 # reflect_old_boundaries() automatically estimates the size of the Japanese population
-# based on the official definition (total population - foreign population)
+# based on the official definition by the redistricting committee.
+# (Japanese population) = (total population) - (foreign population)
+
+# Clean 2019 House of Councillors election data
+pref_2019_HoC_PR_cleaned <- clean_pref_2019_HoC_PR(pref_2019_HoC_PR)
+
+# Clean 2022 House of Councillors election data
+pref_2022_HoC_PR_cleaned <- clean_pref_2022_HoC_PR(pref_2022_HoC_PR)
+
+# Estimate baseline votes
+pref_HoC_PR <- clean_pref_HoC_PR(pref_2019_HoC_PR_cleaned, pref_2022_HoC_PR_cleaned)
+# Repair name of wards in Sendai City
+pref_HoC_PR$mun_name[1:5] <- paste0("仙台市", pref_HoC_PR$mun_name[1:5])
 
 # Download data from old boundaries (pre-平成の大合併)
 old_mun <- download_old_shp(pref_code)
 
 # custom data for the analysis
-pop <- pref_pop_2020 %>%
-  dplyr::group_by(mun_code) %>%
-  dplyr::summarise(pop = sum(pop)) %>%
+pop <- pref_pop_cleaned %>%
   dplyr::rename(code = mun_code)
-
-# Reflect change in municipality code
-# 富谷町 --> 富谷市 (municipality code/name was changed in 2016)
-pref_shp_cleaned[which(pref_shp_cleaned$code == 4423), ]$code <- 4216
 
 geom <- pref_shp_cleaned %>%
   dplyr::group_by(code) %>%
@@ -94,8 +104,9 @@ geom <- pref_shp_cleaned %>%
   dplyr::select(code, geometry)
 
 # Combine data frames
-pref <- merge(pop, geom, by = "code")
-pref <- sf::st_as_sf(pref)
+pref_mun <- full_join(pop, geom, by = "code") %>%
+  full_join(pref_HoC_PR, by = "mun_name")
+pref_mun <- sf::st_as_sf(pref_mun)
 
 # Confirm that the population figure matches that of the redistricting committee
-sum(pref$pop)
+sum(pref_mun$pop)

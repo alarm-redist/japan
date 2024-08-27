@@ -10,9 +10,8 @@
 [![Dataverse DOI-10.7910/DVN/Z9UKSH](<https://img.shields.io/badge/Dataverse DOI-10.7910/DVN/Z9UKSH-orange>)](https://doi.org/10.7910/DVN/Z9UKSH)
 
 The goal of the 47-Prefecture Simulation Project is to generate and analyze redistricting plans for the single-member districts of the House of Representatives of Japan using a redistricting simulation algorithm. 
-In this project, we use a redistricting simulation algorithm to generate redistricting plans that both limit the number of split municipalities and minimize the voting weight disparity (一票の格差) within each prefecture. 
-Our simulations are designed to comply with the redistricting rules that the Council abides by. 
-We will start with the 19 prefectures subject to redistricting and plan to expand the scope of our research to all 47 prefectures.
+In this project, we analyzed the partisan bias of the 2022 redistricting for 25 prefectures subject to redistricting.
+Our simulations are designed to comply with the [redistricting rules](https://www.soumu.go.jp/main_content/000794997.pdf) that the Council abides by. 
 
 This repository contains code to sample districting plans for the Japanese House of Representatives for the prefectures subject to redistrict following the demographic shifts reflected in the 2020 Census, according to relevant legal requirements.
 
@@ -21,9 +20,7 @@ the [dataverse](https://doi.org/10.7910/DVN/Z9UKSH)
 for this project. These consist of four files for each analysis:
 - a documentation file describing data formats, analysis decisions, and data sources
 - a CSV file of summary statistics for each of the generated plans
-- two `.rds` files containing `redist_map` and `redist_plans` objects, which
-contain the actual shapefiles and district assignment matrices and may be used
-for further analysis.
+- two `.rds` files containing `redist_map` and `redist_plans` objects, which contain the actual shapefiles and district assignment matrices and may be used for further analysis.
 
 ## Acknowledgement
 
@@ -32,16 +29,16 @@ We acknowledge the partial support from the [Edwin O. Reischauer Institute of Ja
 ## Repository Structure
 
 - `analyses/` contains the code for each self-contained analysis
-- `R/` contains common analysis and repository management code
+- `function/` contains common analysis and repository management code
 
 ## Data Sources
 
-Unless otherwise noted, data for each prefecture comes from [the 2020 Japapnese Census (令和2年国勢調査)](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472) 
-and [the 2015 Japanese Census (平成27国勢調査)](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001080615) from the Statistics Bureau.
-In these cases, shapefiles are also taken from the Census.
-
-Also, for the additional geographical information used in this analysis (ferries, lakes, etc.)  comes from [Ministry of Land, Infrastructure, Transport and Tourism](https://nlftp.mlit.go.jp/ksj/index.html), 
-and polygon files for the current legislative districts used for mapping comes from [Center for Spatial Information Science, at the University of Tokyo](https://home.csis.u-tokyo.ac.jp/~nishizawa/senkyoku/). 
+- [2020 Census](https://www.e-stat.go.jp/stat-search/files?page=1&toukei=00200521&tstat=000001136464&cycle=0&tclass1=000001136472)
+- [2000 Census](https://www.e-stat.go.jp/gis/statmap-search?page=1&type=2&aggregateUnitForBoundary=A&toukeiCode=00200521&toukeiYear=2000&serveyId=A002005212000&coordsys=1&format=shape&datum=2000)
+- [Periodical Ferry Route: National Geographic Information Download Service](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N09.html)
+- [Lake and Ponds: National Geographic Information Download Service](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-W09-v2_2.html)
+- [Vote record of the House of Councilors election of July 21st 2019](https://www.soumu.go.jp/senkyo/senkyo_s/data/sangiin25/index.html)
+- [Vote record of the House of Councilors election of July 10th 2022](https://www.soumu.go.jp/senkyo/senkyo_s/data/sangiin26/index.html)
 
 ## Contributing an Analysis
 Please read the contribution guidelines (forthcoming).

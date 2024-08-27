@@ -1,44 +1,45 @@
 ###############################################################################
 # Download and prepare data for `27_osaka` analysis
-# © ALARM Project, June 2021
+# © ALARM Project, March 2023
 ###############################################################################
 
-suppressMessages({
-  library(dplyr)
-  library(readr)
-  library(sf)
-  library(redist)
-  library(geomander)
-  library(cli)
-  library(here)
-  library(tidyverse)
-  library(nngeo)
-  devtools::load_all() # load utilities
-})
+# Set up packages
+library(redist)
+library(geomander)
+library(sf)
+library(tidyverse)
+library(here)
 
 # Pull functions
-setwd("R")
-files.sources = list.files()
+setwd(here("function"))
+files.sources <- list.files()
 sapply(files.sources, source)
-setwd("..")
+rm(files.sources)
+setwd(here())
 
 # TODO: Define parameters for simulation
 sim_type <- "smc"
-nsims <- 10000 # Set so that the number of valid plans > 5,000
+nsims <- 10000 # Set so that the number of valid plans > 5,000 and SMC converges
 pref_code <- 27
 pref_name <- "osaka"
 lakes_removed <- c()
 ndists_new <- 19
 ndists_old <- 19
-sq_max_to_min <- 1.530
-sq_max_to_tottori2 <- 2.005
-sq_mun_splits <- 0
-sq_gun_splits <- 0
-sq_koiki_splits <- 0
-pop_tol <- 0.25
+pop_tol <- 0.23
+lh_old_max_to_min <- 1.530
+lh_old_mun_split <- 0
+lh_old_gun_split <- 0
+lh_old_koiki_split <- 0
+lh_2022_max_to_min <- 1.453
+lh_2022_mun_split <- 0
+lh_2022_gun_split <- 0
+lh_2022_koiki_split <- 0
 
-# Codes of municipalities that are split under the status quo
-mun_not_freeze <- c()
+# Split the municipalities that are split under the status quo
+split_code <- c()
+
+# Municipalities that are split under the newly enacted plan
+split_code_lh_2022 <- c()
 
 # Code of 郡 that are split under the status quo
 gun_exception <- c()
@@ -46,72 +47,76 @@ gun_exception <- c()
 # Change time limit
 options(timeout = 300)
 
-# Download 2015 Census shapefile
-pref_shp_2015 <- download_shp(pref_code)
-# Clean 2015 Census shapefile
-pref_shp_cleaned <- pref_shp_2015 %>%
-  clean_jcdf()
+# Download Census shapefile
+pref_shp_2020 <- download_shp(pref_code)
+
+# Clean Census shapefile
+pref_shp_cleaned <- pref_shp_2020 %>%
+  clean_jcdf() %>%
+  # Discard the data for Kansai International Airport (pop:0)
+  dplyr::slice(-c(which(.$code == 27213 &
+                          .$KIHON1 == "0680"), #泉佐野市泉州空港北
+                  which(.$code == 27362 &
+                          .$KIHON1 == "0030"), #田尻町泉州空港中
+                  which(.$code == 27228 &
+                          .$KIHON1 == "0230") #泉南市泉州空港南
+  ))
+
 # Note that S_NAME shows the name of the first entry of the areas grouped
 # in the same KIHON-1 unit (i.e. disregard --丁目,字--)
 
-# Download 2020 Census data at 小地域-level
+# Download 2020 Census data at 小地域-level (size of Japanese population)
 pref_pop_2020 <- download_pop_2020(pref_code)
 
-# remove lake if needed
-"ifelse(is.null(lakes_removed),
-       pref_shp_cleaned <- pref_shp_cleaned,
-       pref_shp_cleaned <- remove_lake(pref_shp_cleaned, lakes_removed))"
+# Download 2019 House of Councillors election data (Proportional Representation)
+pref_2019_HoC_PR <- download_2019_HoC_PR(pref_code)
 
-# status quo
-sq_pref <- status_quo_match(pref_shp_cleaned, pref_code)
-sq_pref <- sf::st_transform(sq_pref , crs = sf::st_crs(4612)) %>%
-  dplyr::group_by(ku) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry))
+# Download 2022 House of Councillors election data (Proportional Representation)
+pref_2022_HoC_PR <- download_2022_HoC_PR(pref_code)
 
 ####2. Urban Prefectures########
 # Clean 2020 Census data at the 小地域-level
-pref_pop_2020 <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE)
+pref_pop_cleaned <- clean_pref_pop_2020(pref_pop_2020, sub_code = TRUE) %>%
+  rename(code = mun_code)
 
-# Match 2015 shapefile (`pref_shp_cleaned`) with 2020 Census data (`pref_pop_2020`)
-# Combine municipality code with sub-code
-pref_shp_cleaned <- mutate(pref_shp_cleaned, mun_code = code, code = str_c(code, KIHON1))
-# Combine municipality code with sub-code
-pref_pop_2020 <- mutate(pref_pop_2020, code = str_c(mun_code, str_pad(sub_code, 4, pad = "0")))
+# Clean 2019 House of Councillors election data
+pref_2019_HoC_PR_cleaned <- clean_pref_2019_HoC_PR(pref_2019_HoC_PR)
 
-### Municipalities that not split under the status quo ###
-# Match at the municipality level
-pop <- pref_pop_2020 %>%
-  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
-  dplyr::group_by(mun_code) %>%
-  dplyr::summarise(pop = sum(pop)) %>%
-  dplyr::rename(code = mun_code)
+# Clean 2022 House of Councillors election data
+pref_2022_HoC_PR_cleaned <- clean_pref_2022_HoC_PR(pref_2022_HoC_PR)
 
-geom <- pref_shp_cleaned %>%
-  dplyr::filter(mun_code %in% mun_not_freeze == FALSE) %>%
+# Estimate baseline votes
+pref_HoC_PR <- clean_pref_HoC_PR(pref_2019_HoC_PR_cleaned, pref_2022_HoC_PR_cleaned)
 
-  # Discard the data for Kansai International Airport (pop:0)
-  dplyr::slice(-c(which(pref_shp_cleaned$mun_code == 27213 &
-                          pref_shp_cleaned$KIHON1 == "0680"), #泉佐野市泉州空港北
-                  which(pref_shp_cleaned$mun_code == 27362 &
-                          pref_shp_cleaned$KIHON1 == "0030"), #田尻町泉州空港中
-                  which(pref_shp_cleaned$mun_code == 27228 &
-                          pref_shp_cleaned$KIHON1 == "0230") #泉南市泉州空港南
-                  )) %>%
+# Match `pref_shp_cleaned` with `pref_pop_cleaned`
+pref_join <- pref_shp_cleaned %>%
+  dplyr::mutate(sub_code = as.numeric(KIHON1)) %>%
+  dplyr::left_join(pref_pop_cleaned, by = c("code", "sub_code")) %>%
+  dplyr::select(code, mun_name, sub_code, sub_name, pop, geometry)
 
-  dplyr::group_by(mun_code) %>%
-  dplyr::summarise(geometry = sf::st_union(geometry)) %>%
-  dplyr::select(mun_code, geometry) %>%
-  dplyr::rename(code = mun_code)
+# Freeze municipalities except for `split_code` and `split_code_lh_2022`
+# Calculate the baseline votes per municipality
+pref_mun <- dplyr::bind_rows(
+  # Municipalities without splits
+  pref_mun <- pref_join %>%
+    dplyr::filter(code %in% c(split_code, split_code_lh_2022) == FALSE) %>%
+    dplyr::group_by(code, mun_name) %>%
+    dplyr::summarise(sub_code = first(sub_code),
+                     sub_name = "-",
+                     pop = sum(pop),
+                     geometry = sf::st_union(geometry)) %>%
+    dplyr::left_join(pref_HoC_PR, by = "mun_name"),
+  # Municipalities with splits
+  pref_join %>%
+    dplyr::filter(code %in% c(split_code, split_code_lh_2022)) %>%
+    dplyr::group_by(code) %>%
+    dplyr::mutate(pop_ratio = pop / sum(pop)) %>%
+    dplyr::left_join(pref_HoC_PR, by = "mun_name") %>%
+    dplyr::mutate(dplyr::across(tidyselect::starts_with("nv"), ~ .x * pop_ratio)) %>%
+    dplyr::select(-pop_ratio)
+)
 
-# Combine data frames
-pref_freeze <- merge(pop, geom, by = "code")
-
-# There are no municipality splits in Osaka under the enacted plan, and every single
-# municipality is correctly matched with its corresponding geometry data.
-# Finalize pref object
-pref <- pref_freeze %>%
-  sf::st_as_sf()
-pref$sub_code <- NA
-
-# Finally, confirm that these matching operations were conducted correctly
-sum(pref$pop) == sum(pref_pop_2020$pop)
+# Confirm that the population figure matches that of the redistricting committee
+sum(pref_mun$pop)
+sum(pref_mun$nv_ldp)
+sum(pref_HoC_PR$nv_ldp)
