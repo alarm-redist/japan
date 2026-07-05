@@ -70,4 +70,28 @@ saveRDS(
                    sep = "")))
 
 
+csv <- optimal_plan %>%
+  sf::st_drop_geometry() %>%
+  as.tibble() %>%
+  select(-adj) %>%
+  group_by(code, mun_name, district) %>%
+  summarise(pop = sum(pop)) %>%
+  # Fix manually for Fukuoka Minami ku
+  mutate(mun_name = case_when(
+    mun_name == "福岡市南区" & pop == 217000 ~ "福岡市南区（旧2区）",
+    mun_name == "福岡市南区" & pop == 43154 ~ "福岡市南区（旧5区）",
+    .default = mun_name)
+  )
+
+write_csv(
+  csv,
+  here::here(paste("data-out/pref/",
+                   as.character(pref_code),
+                   "_",
+                   as.character(pref_name),
+                   "_optimal_plan",
+                   ".csv",
+                   sep = "")))
+
+
 
